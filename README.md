@@ -1,2 +1,2 @@
-# de.systopia.contracts
-Contracts extension
+# de.systopia.contract
+Contract extension
