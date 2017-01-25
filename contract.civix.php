@@ -192,6 +192,9 @@ function _contract_civix_civicrm_managed(&$entities) {
       if (empty($e['module'])) {
         $e['module'] = 'de.systopia.contract';
       }
+      if (empty($e['params']['version'])) {
+        $e['params']['version'] = '3';
+      }
       $entities[] = $e;
     }
   }
