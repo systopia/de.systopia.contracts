@@ -8,6 +8,13 @@ return array(
       'replace_word' => 'Contract',
     )),
   array(
+    'entity' => 'WordReplacement',
+    'name' => 'Membership-Contract',
+    'params' => array(
+      'find_word' => 'membership',
+      'replace_word' => 'contract',
+    )),
+  array(
   'entity' => 'OptionValue',
   'name' => 'activity_type_contract_history',
   'params' => array(
