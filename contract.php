@@ -122,30 +122,16 @@ function contract_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
   _contract_civix_civicrm_alterSettingsFolders($metaDataFolders);
 }
 
-// --- Functions below this ship commented out. Uncomment as required. ---
+function contract_civicrm_buildForm($formName, &$form) {
+  switch ($formName) {
+    case 'CRM_Member_Form_MembershipView':
+      (new CRM_Contract_AlterContractForm)->showPaymentContractDetails($form);
+      break;
 
-/**
- * Implements hook_civicrm_preProcess().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_preProcess
- *
-function contract_civicrm_preProcess($formName, &$form) {
-
-} // */
-
-/**
- * Implements hook_civicrm_navigationMenu().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_navigationMenu
- *
-function contract_civicrm_navigationMenu(&$menu) {
-  _contract_civix_insert_navigation_menu($menu, NULL, array(
-    'label' => ts('The Page', array('domain' => 'de.systopia.contract')),
-    'name' => 'the_page',
-    'url' => 'civicrm/the-page',
-    'permission' => 'access CiviReport,access CiviContribute',
-    'operator' => 'OR',
-    'separator' => 0,
-  ));
-  _contract_civix_navigationMenu($menu);
-} // */
+    case 'CRM_Member_Form_Membership':
+      if($form->getAction() == CRM_Core_Action::UPDATE){
+        (new CRM_Contract_AlterContractForm)->makePaymentContractSelect2($form);
+      }
+      break;
+  }
+}
