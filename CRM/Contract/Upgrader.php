@@ -14,7 +14,7 @@ class CRM_Contract_Upgrader extends CRM_Contract_Upgrader_Base {
 
   public function postInstall() {
     $this->specifyCustomDataGroupExtends('contract_updates', array("Contract_Revived", "Contract_Updated", "Contract_Resumed"));
-    $this->specifyCustomDataGroupExtends('contract_cancellation', array('Contract_Terminated'));
+    $this->specifyCustomDataGroupExtends('contract_cancellation', array('Contract_Cancelled'));
    }
 
   public function uninstall() {

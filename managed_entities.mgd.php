@@ -26,8 +26,8 @@ foreach(array(
     'entity' => 'OptionValue',
     'name' => "OptionValue.activityType.{$activityType['name']}",
     'params' => array(
-      'label' => $activityType['name'],
-      'name' => $activityType['label'],
+      'name' => $activityType['name'],
+      'label' => $activityType['label'],
       'option_group_id' => 'activity_type'
   ));
 }
