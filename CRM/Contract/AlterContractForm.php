@@ -23,7 +23,7 @@ class CRM_Contract_AlterContractForm
 
         if ($form->elementExists($paymentContractElementName)) {
             $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $form->getContactId()));
-            $contributionRecurOptions = array_merge(array('' => '- none -'), array_map(array($this, 'writePaymentContractLabel'), $contributionRecurs['values']));
+            $contributionRecurOptions = array('' => '- none -') + array_map(array($this, 'writePaymentContractLabel'), $contributionRecurs['values']);
 
             $form->removeElement($paymentContractElementName);
             $form->add('select', $paymentContractElementName, ts('Payment Contract'), $contributionRecurOptions, false, array('class' => 'crm-select2'));
