@@ -125,12 +125,14 @@ function contract_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
 function contract_civicrm_buildForm($formName, &$form) {
   switch ($formName) {
     case 'CRM_Member_Form_MembershipView':
-      (new CRM_Contract_AlterContractForm)->showPaymentContractDetails($form);
+      $alter = new CRM_Contract_AlterContractForm($form);
+      $alter->showPaymentContractDetails();
       break;
 
     case 'CRM_Member_Form_Membership':
       if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
-        (new CRM_Contract_AlterContractForm)->makePaymentContractSelect2($form);
+        $alter = new CRM_Contract_AlterContractForm($form);
+        $alter->makePaymentContractSelect2();
       }
       break;
   }
