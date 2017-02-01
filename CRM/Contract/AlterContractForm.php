@@ -36,11 +36,16 @@ class CRM_Contract_AlterContractForm
 
         // Get the custom data that was sent to the template
         $details = $form->get_template_vars('viewCustomData');
-        $contributionRecurId = $details[$result['custom_group_id']][1]['fields'][$result['id']]['field_value'];
+
+        // We need to know the id for the row of the custom group table that
+        // this custom data is stored in
+        $customGroupRecordId = key($details[$result['custom_group_id']]);
+
+        $contributionRecurId = $details[$result['custom_group_id']][$customGroupRecordId]['fields'][$result['id']]['field_value'];
         if($contributionRecurId){
           // Write nice text and return this to the template
           $contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $contributionRecurId));
-          $details[$result['custom_group_id']][1]['fields'][$result['id']]['field_value'] = $this->writePaymentContractLabel($contributionRecur);
+          $details[$result['custom_group_id']][$customGroupRecordId]['fields'][$result['id']]['field_value'] = $this->writePaymentContractLabel($contributionRecur);
           $form->assign('viewCustomData', $details);
         }
 
