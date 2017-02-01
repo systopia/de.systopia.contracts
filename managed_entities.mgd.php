@@ -38,7 +38,7 @@ foreach(array(
 ) as $activityType){
   $mes[] = array(
     'entity' => 'OptionValue',
-    'name' => "OptionValue.activityType.{$activityType}",
+    'name' => "OptionValue.activityType.{$activityType['name']}",
     'params' => array(
       'label' => $activityType,
       'name' => $activityType,
