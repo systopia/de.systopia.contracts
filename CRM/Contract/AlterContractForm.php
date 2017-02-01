@@ -29,7 +29,9 @@ class CRM_Contract_AlterContractForm
         // Find the field we want to replace
         $result = civicrm_api3('CustomField', 'GetSingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
 
-        $paymentContractElementName = "custom_{$result['id']}_{$form->_groupTree[$result['custom_group_id']]['table_id']}";
+        $customGroupTableId = $form->getAction() == CRM_Core_Action::ADD ? '-1' : $form->_groupTree[$result['custom_group_id']]['table_id'];
+
+        $paymentContractElementName = "custom_{$result['id']}_{$customGroupTableId}";
         $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $form->getContactId()));
         $contributionRecurOptions = array('' => '- none -') + array_map(array($this, 'writePaymentContractLabel'), $contributionRecurs['values']);
 
