@@ -17,16 +17,24 @@ class CRM_Contract_AlterContractForm
     public function makePaymentContractSelect2($form)
     {
 
+        // We are actually dealing with two forms that have the same name.
+        // We are only interested in the one that generates the custom data fields
+        // Use the presence of $form->_groupTree as a test to see if this is the
+        // custom data form
+        //
+        if(!isset($form->_groupTree)){
+          return;
+        }
+
         // Find the field we want to replace
         $result = civicrm_api3('CustomField', 'GetSingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
-        $paymentContractElementName = "custom_{$result['id']}_{$form->_id}";
-        if ($form->elementExists($paymentContractElementName)) {
-            $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $form->getContactId()));
-            $contributionRecurOptions = array('' => '- none -') + array_map(array($this, 'writePaymentContractLabel'), $contributionRecurs['values']);
 
-            $form->removeElement($paymentContractElementName);
-            $form->add('select', $paymentContractElementName, ts('Payment Contract'), $contributionRecurOptions, false, array('class' => 'crm-select2'));
-        }
+        $paymentContractElementName = "custom_{$result['id']}_{$form->_groupTree[$result['custom_group_id']]['table_id']}";
+        $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $form->getContactId()));
+        $contributionRecurOptions = array('' => '- none -') + array_map(array($this, 'writePaymentContractLabel'), $contributionRecurs['values']);
+
+        $form->removeElement($paymentContractElementName);
+        $form->add('select', $paymentContractElementName, ts('Payment Contract'), $contributionRecurOptions, false, array('class' => 'crm-select2'));
     }
 
     public function showPaymentContractDetails($form)
@@ -38,13 +46,13 @@ class CRM_Contract_AlterContractForm
 
         // We need to know the id for the row of the custom group table that
         // this custom data is stored in
-        $customGroupRecordId = key($details[$result['custom_group_id']]);
+        $customGroupTableId = key($details[$result['custom_group_id']]);
 
-        $contributionRecurId = $details[$result['custom_group_id']][$customGroupRecordId]['fields'][$result['id']]['field_value'];
+        $contributionRecurId = $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'];
         if($contributionRecurId){
           // Write nice text and return this to the template
           $contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $contributionRecurId));
-          $details[$result['custom_group_id']][$customGroupRecordId]['fields'][$result['id']]['field_value'] = $this->writePaymentContractLabel($contributionRecur);
+          $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = $this->writePaymentContractLabel($contributionRecur);
           $form->assign('viewCustomData', $details);
         }
 
