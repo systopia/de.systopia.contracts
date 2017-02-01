@@ -40,8 +40,8 @@ foreach(array(
     'entity' => 'OptionValue',
     'name' => "OptionValue.activityType.{$activityType['name']}",
     'params' => array(
-      'label' => $activityType,
-      'name' => $activityType,
+      'name' => $activityType['name'],
+      'label' => $activityType['label'],
       'option_group_id' => 'encounter_medium'
   ));
 }
