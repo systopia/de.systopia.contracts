@@ -23,7 +23,7 @@ class CRM_Contract_AlterContractForm
 
         if ($form->elementExists($paymentContractElementName)) {
             $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $form->getContactId()));
-            $contributionRecurOptions = array_map(array($this, 'writePaymentContractLabel'), $contributionRecurs['values']);
+            $contributionRecurOptions = array_merge(array('' => '- none -'), array_map(array($this, 'writePaymentContractLabel'), $contributionRecurs['values']));
 
             $form->removeElement($paymentContractElementName);
             $form->add('select', $paymentContractElementName, ts('Payment Contract'), $contributionRecurOptions, false, array('class' => 'crm-select2'));
@@ -37,11 +37,13 @@ class CRM_Contract_AlterContractForm
         // Get the custom data that was sent to the template
         $details = $form->get_template_vars('viewCustomData');
         $contributionRecurId = $details[$result['custom_group_id']][1]['fields'][$result['id']]['field_value'];
+        if($contributionRecurId){
+          // Write nice text and return this to the template
+          $contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $contributionRecurId));
+          $details[$result['custom_group_id']][1]['fields'][$result['id']]['field_value'] = $this->writePaymentContractLabel($contributionRecur);
+          $form->assign('viewCustomData', $details);
+        }
 
-        // Write nice text and return this to the template
-        $contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $contributionRecurId));
-        $details[$result['custom_group_id']][1]['fields'][$result['id']]['field_value'] = $this->writePaymentContractLabel($contributionRecur);
-        $form->assign('viewCustomData', $details);
     }
 
     public function writePaymentContractLabel($contributionRecur)
