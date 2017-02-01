@@ -129,7 +129,7 @@ function contract_civicrm_buildForm($formName, &$form) {
       break;
 
     case 'CRM_Member_Form_Membership':
-      if($form->getAction() == CRM_Core_Action::UPDATE){
+      if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
         (new CRM_Contract_AlterContractForm)->makePaymentContractSelect2($form);
       }
       break;
