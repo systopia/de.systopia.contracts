@@ -8,10 +8,10 @@ abstract class CRM_Contract_Form_History extends CRM_Core_Form{
   }
 
   function buildQuickForm(){
-    CRM_Utils_System::setTitle($this->title);
+    CRM_Utils_System::setTitle(ucfirst($this->action).' contract');
     $this->addButtons(array(
         array('type' => 'cancel', 'name' => 'Cancel'),
-        array('type' => 'submit', 'name' => $this->buttonText, 'isDefault' => true)
+        array('type' => 'submit', 'name' => ucfirst($this->action), 'isDefault' => true)
     ));
     $this->assign('elementNames', $this->getRenderableElementNames());
     parent::buildQuickForm();
@@ -19,21 +19,24 @@ abstract class CRM_Contract_Form_History extends CRM_Core_Form{
 
   function getParams(){
     $this->id = CRM_Utils_Request::retrieve('id', 'Integer');
-    if(!$this->id){
+    if($this->id){
+      $this->set('id', $this->id);
+    }
+    if(!$this->get('id')){
       CRM_Core_Error::fatal('Missing a membership ID');
     }
     try{
-      $this->membership = civicrm_api3('Membership', 'getsingle', array('id' => $this->id));
+      $this->membership = civicrm_api3('Membership', 'getsingle', array('id' => $this->get('id')));
     }catch(Exception $e){
       CRM_Core_Error::fatal('Not a valid membership ID');
     }
-    $this->_contactId = $this->membership['contact_id']; //useful?
+    ; //useful?
   }
 
   function validateStartStatus(){
     $this->membershipStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->membership['status_id']));
     if(!in_array($this->membershipStatus['name'], $this->validStartStatuses)){
-      CRM_Core_Error::fatal("You cannot run '{$this->title}' when the membership status is '{$this->membershipStatus['name']}'.");
+      CRM_Core_Error::fatal("You cannot run '{$this->action}' when the membership status is '{$this->membershipStatus['name']}'.");
     }
   }
 
@@ -55,5 +58,12 @@ abstract class CRM_Contract_Form_History extends CRM_Core_Form{
       }
     }
     return $elementNames;
+  }
+
+  function postProcess(){
+    $this->membership['status_id'] = $this->endStatus;
+    $this->membership['is_override'] = $this->membership['status_id'] == 'Current' ? 0 : 1;
+    var_dump(civicrm_api3('Activity', 'create', array('target_id'=> $this->membership['contact_id'], 'activity_type_id' => CRM_Contract_Utils_ActionProperties::getByClass($this)['activityType'])));
+    civicrm_api3('Membership', 'create', $this->membership);
   }
 }
