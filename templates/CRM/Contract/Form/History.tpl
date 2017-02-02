@@ -8,6 +8,7 @@
     </div>
   {/foreach}
 
+  <p>TODO: add form designed for the update here</p>
   <div class="crm-submit-buttons">
     {include file="CRM/common/formButtons.tpl" location="bottom"}
   </div>
