@@ -137,3 +137,13 @@ function contract_civicrm_buildForm($formName, &$form) {
       break;
   }
 }
+
+function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &$values ){
+  switch ($objectName) {
+    case 'Membership':
+      $alter = new CRM_Contract_AlterMembershipLinks($objectId, $links, $mask, $values);
+      $alter->removeActions(array(CRM_Core_Action::UPDATE, CRM_Core_Action::RENEW));
+      $alter->addHistoryActions();
+      break;
+    }
+}
