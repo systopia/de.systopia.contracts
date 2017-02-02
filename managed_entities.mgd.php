@@ -46,4 +46,14 @@ foreach(array(
   ));
 }
 
+$mes[] = array(
+  'entity' => 'MembershipStatus',
+  'name' => "MembershipStatus.Paused",
+  'params' => array(
+    'name' => 'Paused',
+    'label' => 'Paused',
+    'is_active' => true,
+));
+
+
 return $mes;
