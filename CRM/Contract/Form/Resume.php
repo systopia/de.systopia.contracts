@@ -3,16 +3,9 @@
 
 class CRM_Contract_Form_Resume extends CRM_Contract_Form_History{
 
-  var $title = 'Resume Contract';
+  var $action = 'resume';
   var $validStartStatuses = array('Paused');
   var $endStatus = 'Current';
+  var $activityType = 'Contract_Resumed';
 
-  function preProcess() {
-    echo 'a';
-    parent::preProcess();
-  }
-  function buildQuickForm() {
-    echo 'b';
-    parent::buildForm();
-  }
 }
