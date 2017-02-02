@@ -8,6 +8,13 @@ abstract class CRM_Contract_Form_History extends CRM_Core_Form{
   }
 
   function buildQuickForm(){
+
+    $session = CRM_Core_Session::singleton();
+    $urlParams = "action=browse&reset=1&cid=24&selectedChild=grant";
+    $urlString = 'civicrm/contact/view';
+    $session->pushUserContext(CRM_Utils_System::url($urlString, $urlParams));
+
+
     CRM_Utils_System::setTitle(ucfirst($this->action).' contract');
     $this->addButtons(array(
         array('type' => 'cancel', 'name' => 'Cancel'),
@@ -63,7 +70,9 @@ abstract class CRM_Contract_Form_History extends CRM_Core_Form{
   function postProcess(){
     $this->membership['status_id'] = $this->endStatus;
     $this->membership['is_override'] = $this->membership['status_id'] == 'Current' ? 0 : 1;
-    var_dump(civicrm_api3('Activity', 'create', array('target_id'=> $this->membership['contact_id'], 'activity_type_id' => CRM_Contract_Utils_ActionProperties::getByClass($this)['activityType'])));
-    civicrm_api3('Membership', 'create', $this->membership);
+    $activity = civicrm_api3('Activity', 'create', array('target_id'=> $this->membership['contact_id'], 'activity_type_id' => CRM_Contract_Utils_ActionProperties::getByClass($this)['activityType']));
+    $membership = civicrm_api3('Membership', 'create', $this->membership);
+
+
   }
 }
