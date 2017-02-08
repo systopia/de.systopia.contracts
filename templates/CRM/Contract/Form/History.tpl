@@ -1,5 +1,7 @@
 <div class="crm-block crm-form-block">
 
+//TODO add confirmation messages based on action type
+
   {foreach from=$elementNames item=elementName}
     <div class="crm-section">
       <div class="label">{$form.$elementName.label}</div>
