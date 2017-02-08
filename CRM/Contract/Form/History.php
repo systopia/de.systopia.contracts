@@ -7,23 +7,6 @@ abstract class CRM_Contract_Form_History extends CRM_Core_Form{
     parent::preProcess();
   }
 
-  function buildQuickForm(){
-
-    $session = CRM_Core_Session::singleton();
-    $urlParams = "action=browse&reset=1&cid=24&selectedChild=grant";
-    $urlString = 'civicrm/contact/view';
-    $session->pushUserContext(CRM_Utils_System::url($urlString, $urlParams));
-
-
-    CRM_Utils_System::setTitle(ucfirst($this->action).' contract');
-    $this->addButtons(array(
-        array('type' => 'cancel', 'name' => 'Cancel'),
-        array('type' => 'submit', 'name' => ucfirst($this->action), 'isDefault' => true)
-    ));
-    $this->assign('elementNames', $this->getRenderableElementNames());
-    parent::buildQuickForm();
-  }
-
   function getParams(){
     $this->id = CRM_Utils_Request::retrieve('id', 'Integer');
     if($this->id){
@@ -37,7 +20,35 @@ abstract class CRM_Contract_Form_History extends CRM_Core_Form{
     }catch(Exception $e){
       CRM_Core_Error::fatal('Not a valid membership ID');
     }
-    ; //useful?
+  }
+
+  function buildQuickForm(){
+
+    CRM_Utils_System::setTitle(ucfirst($this->action).' contract');
+
+    if(in_array($this->action, array('resume', 'update', 'revive'))){
+
+      // add fields for update (and similar) actions
+      $alter = new CRM_Contract_AlterForm($this, $this->id);
+      $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $this->membership['contact_id']));
+      $contributionRecurOptions = array('' => '- none -') + array_map(array($alter, 'writePaymentContractLabel'), $contributionRecurs['values']);
+      $this->add('select', 'contract_recurring_contribution', ts('Payment Contract'), $contributionRecurOptions, false, array('class' => 'crm-select2'));
+
+      //add fields to record membership info
+      //
+    }
+    elseif($this->action == 'cancel'){
+      //
+      $this->add('text', 'contact_history_cancel_reason', ts('Cancellation reason'));
+    }else{
+    }
+
+    $this->addButtons(array(
+        array('type' => 'cancel', 'name' => 'Cancel'),
+        array('type' => 'submit', 'name' => ucfirst($this->action), 'isDefault' => true)
+    ));
+    $this->assign('elementNames', $this->getRenderableElementNames());
+    parent::buildQuickForm();
   }
 
   function validateStartStatus(){
@@ -66,13 +77,34 @@ abstract class CRM_Contract_Form_History extends CRM_Core_Form{
     }
     return $elementNames;
   }
-
   function postProcess(){
+
+    $session = CRM_Core_Session::singleton();
+
+    $activityParams = array(
+      'source_record_id' => $this->id,
+      'activity_type_id' => CRM_Contract_Utils_ActionProperties::getByClass($this)['activityType'],
+      // 'activity_date_time' => // currently allowing this to be assigned automatically
+      //TODO 'subject' =>
+      //TODO 'details' =>
+      'status_id' => 'Completed',
+      //TODO (see issue 410 for details) 'medium_id' => //
+      'source_contact_id'=> $session->getLoggedInContactID(),
+      'target_id'=> $this->membership['contact_id'],
+    );
+
+    // optional activity params
+
+    if(0){
+      // $activityParams['campaign_id'] => // membership_campaign_id
+    }
+
+    $activity = civicrm_api3('Activity', 'create', $activityParams);
+
     $this->membership['status_id'] = $this->endStatus;
     $this->membership['is_override'] = $this->membership['status_id'] == 'Current' ? 0 : 1;
-    $activity = civicrm_api3('Activity', 'create', array('target_id'=> $this->membership['contact_id'], 'activity_type_id' => CRM_Contract_Utils_ActionProperties::getByClass($this)['activityType']));
     $membership = civicrm_api3('Membership', 'create', $this->membership);
 
-
   }
+
 }
