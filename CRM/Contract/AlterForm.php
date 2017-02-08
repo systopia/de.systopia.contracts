@@ -1,43 +1,35 @@
 <?php
 
-class CRM_Contract_AlterContractForm
+class CRM_Contract_AlterForm
 {
-    public function __construct($form)
-    {
-        $this->form = $form;
+
+    function __construct($form, $contractId){
+      $this->form = $form;
+      $this->contract = civicrm_api3('Membership', 'getsingle', array('id' => $contractId));
+    }
+
+    function getSepaPaymentInstruments(){
+      if(!isset($this->sepaPaymentInstruments)){
         $result = civicrm_api3('OptionValue', 'get', array('option_group_id' => 'payment_instrument'));
         foreach ($result['values'] as $paymentInstrument) {
-            $this->paymentInstruments[$paymentInstrument['value']] = $paymentInstrument['label'];
+          $this->paymentInstruments[$paymentInstrument['value']] = $paymentInstrument['label'];
         }
         $result = civicrm_api3('OptionValue', 'get', array('option_group_id' => 'payment_instrument', 'name' => array('IN' => array('RCUR', 'OOFF', 'FRST'))));
         foreach ($result['values'] as $paymentInstrument) {
-            $this->sepaPaymentInstruments[] = $paymentInstrument['value'];
+          $this->sepaPaymentInstruments[] = $paymentInstrument['value'];
         }
+      }
+      return $this->sepaPaymentInstruments;
     }
 
-    public function makePaymentContractSelect2()
+
+    public function addPaymentContractSelect2($elementName)
     {
 
-        // We are actually dealing with two forms that have the same name.
-        // We are only interested in the one that generates the custom data fields
-        // Use the presence of $form->_groupTree as a test to see if this is the
-        // custom data form
-        //
-        if(!isset($this->form->_groupTree)){
-          return;
-        }
-
-        // Find the field we want to replace
-        $result = civicrm_api3('CustomField', 'GetSingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
-
-        $customGroupTableId = $this->form->getAction() == CRM_Core_Action::ADD ? '-1' : $this->form->_groupTree[$result['custom_group_id']]['table_id'];
-
-        $paymentContractElementName = "custom_{$result['id']}_{$customGroupTableId}";
-        $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $this->form->getContactId()));
+        $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $this->contract['contact_id']));
         $contributionRecurOptions = array('' => '- none -') + array_map(array($this, 'writePaymentContractLabel'), $contributionRecurs['values']);
 
-        $this->form->removeElement($paymentContractElementName);
-        $this->form->add('select', $paymentContractElementName, ts('Payment Contract'), $contributionRecurOptions, false, array('class' => 'crm-select2'));
+        $this->form->add('select', $elementName, ts('Payment Contract'), $contributionRecurOptions, false, array('class' => 'crm-select2'));
     }
 
     public function showPaymentContractDetails()
@@ -63,7 +55,7 @@ class CRM_Contract_AlterContractForm
 
     public function writePaymentContractLabel($contributionRecur)
     {
-        if (in_array($contributionRecur['payment_instrument_id'], $this->sepaPaymentInstruments)) {
+        if (in_array($contributionRecur['payment_instrument_id'], $this->getSepaPaymentInstruments())) {
             $sepaMandate = civicrm_api3('SepaMandate', 'getsingle', array(
             'entity_table' => 'civicrm_contribution_recur',
             'entity_id' => $contributionRecur['id'],

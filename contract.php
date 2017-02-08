@@ -123,16 +123,23 @@ function contract_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
 }
 
 function contract_civicrm_buildForm($formName, &$form) {
+
   switch ($formName) {
+
     case 'CRM_Member_Form_MembershipView':
-      $alter = new CRM_Contract_AlterContractForm($form);
+      $id =  CRM_Utils_Request::retrieve('id', 'Positive', $form);
+      $alter = new CRM_Contract_AlterForm($form, $id);
       $alter->showPaymentContractDetails();
       break;
 
     case 'CRM_Member_Form_Membership':
-      if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
-        $alter = new CRM_Contract_AlterContractForm($form);
-        $alter->makePaymentContractSelect2();
+      if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD)) && isset($form->_groupTree)){
+        $alter = new CRM_Contract_AlterForm($form, $form->_entityId);
+        $result = civicrm_api3('CustomField', 'GetSingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
+        $customGroupTableId = $form->getAction() == CRM_Core_Action::ADD ? '-1' : $form->_groupTree[$result['custom_group_id']]['table_id'];
+        $elementName = "custom_{$result['id']}_{$customGroupTableId}";
+        $form->removeElement($elementName);
+        $alter->addPaymentContractSelect2($elementName);
       }
       break;
   }
