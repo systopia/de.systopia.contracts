@@ -1,7 +1,14 @@
 <div class="crm-block crm-form-block">
 
-//TODO add confirmation messages based on action type
-
+<h3>
+  {if $historyAction eq 'cancel'}
+    Please choose a reason for cancelling this contract and click on '{$historyAction|ucfirst}' below
+  {elseif $isUpdate}
+    Please make required changes to the contract and click on '{$historyAction|ucfirst}' below
+  {else}
+    Please confirm that you want to {$historyAction} this contract by clicking on '{$historyAction|ucfirst}' below
+  {/if}
+</h3>
   {foreach from=$elementNames item=elementName}
     <div class="crm-section">
       <div class="label">{$form.$elementName.label}</div>
