@@ -128,18 +128,26 @@ function contract_civicrm_buildForm($formName, &$form) {
 
     case 'CRM_Member_Form_MembershipView':
       $id =  CRM_Utils_Request::retrieve('id', 'Positive', $form);
-      $alter = new CRM_Contract_AlterForm($form, $id);
-      $alter->showPaymentContractDetails();
+      $modifyForm = new CRM_Contract_FormUtils($form, $id);
+      $modifyForm->showPaymentContractDetails();
       break;
 
     case 'CRM_Member_Form_Membership':
-      if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD)) && isset($form->_groupTree)){
-        $alter = new CRM_Contract_AlterForm($form, $form->_entityId);
-        $result = civicrm_api3('CustomField', 'GetSingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
-        $customGroupTableId = $form->getAction() == CRM_Core_Action::ADD ? '-1' : $form->_groupTree[$result['custom_group_id']]['table_id'];
-        $elementName = "custom_{$result['id']}_{$customGroupTableId}";
-        $form->removeElement($elementName);
-        $alter->addPaymentContractSelect2($elementName);
+
+      // Membership form in add or edit mode
+
+      if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
+
+        // Standard form
+        if(!isset($form->_groupTree)){
+          $formUtils = new CRM_Contract_FormUtils($form, $form->_id);
+          $formUtils->removeMembershpEditDisallowedCoreFields();
+        // Custom data version
+        }else{
+          // var_dump($form->_groupTree);
+          $formUtils = new CRM_Contract_FormUtils($form, $form->_entityId);
+          $formUtils->removeMembershpEditDisallowedCustomFields();
+        }
       }
       break;
   }
