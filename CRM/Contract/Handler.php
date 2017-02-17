@@ -125,7 +125,7 @@ class CRM_Contract_Handler{
     }
 
     // add further fields as required by different actions
-    if(in_array($this->action->getName(), array('resume', 'update', 'revive'))){
+    if(in_array($this->action->getName(), array('resume', 'update', 'revive', 'sign'))){
       $activityParams += $this->getUpdateParams();
     }elseif($this->action->getName() == 'cancel'){
       $activityParams += $this->getCancelParams();
@@ -149,7 +149,7 @@ class CRM_Contract_Handler{
 
   function getUpdateParams(){
 
-    // See what fields have changed between updatedMembership and membership
+    // See what fields have changed between startMembership and endMembership
     $modifiedFieldKeys = $this->getModifiedFieldKeys($this->startMembership, $this->endMembership);
 
     if(count($modifiedFieldKeys)){
@@ -167,7 +167,7 @@ class CRM_Contract_Handler{
 
     $activityParams[$contractUpdateCustomFields['ch_annual']] = $newAnnualMembershipAmount;
     $activityParams[$contractUpdateCustomFields['ch_annual_diff']] = $amountDelta;
-    $activityParams[$contractUpdateCustomFields['ch_recurring_contribution']] = $this->updatedMembership[$this->contributionRecurCustomField];
+    $activityParams[$contractUpdateCustomFields['ch_recurring_contribution']] = $this->endMembership[$this->contributionRecurCustomField];
     $activityParams[$contractUpdateCustomFields['ch_frequency']] = 1; //TODO where should this come from? The SEPA mandate?
     $activityParams[$contractUpdateCustomFields['ch_from_ba']] = 1; //TODO where should this come from? The SEPA mandate?
     $activityParams[$contractUpdateCustomFields['ch_to_ba']] = 1; //TODO where should this come from? The SEPA mandate?
@@ -184,7 +184,10 @@ class CRM_Contract_Handler{
 
     foreach($to as $k => $v){
       // there are some fields that we know we don't want to check
-      if(!in_array($k, array('version', 'options', 'status_id', 'id'))){
+      // I'm not sure why the membership API create returns two fields from the
+      // MembershipType API when we are creating a new membership, but it does,
+      // so we exclude that too
+      if(!in_array($k, array('version', 'options', 'status_id', 'id', 'membership_name', 'relationship_name'))){
         if($v != $from[$k]){
           if(in_array($k, $membershipCustomFields)){
             $modifiedFields[$k] = array_search($k, $membershipCustomFields);
