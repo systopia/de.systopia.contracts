@@ -1,5 +1,5 @@
 <?php
-abstract class CRM_Contract_Form_History extends CRM_Core_Form{
+class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
   function preProcess(){
     $this->getParams();
@@ -12,6 +12,12 @@ abstract class CRM_Contract_Form_History extends CRM_Core_Form{
     if($this->id){
       $this->set('id', $this->id);
     }
+    $this->update_action = CRM_Utils_Request::retrieve('update_action', 'String');
+    if($this->update_action){
+      $this->set('update_action', $this->update_action);
+    }
+    $updateActionClass = 'CRM_Contract_Action_'.ucfirst($this->get('update_action'));
+    $this->updateAction = new $updateActionClass;
     if(!$this->get('id')){
       CRM_Core_Error::fatal('Missing a membership ID');
     }
@@ -34,19 +40,19 @@ abstract class CRM_Contract_Form_History extends CRM_Core_Form{
 
   function validateStartStatus(){
     $this->membershipStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->membership['status_id']));
-    if(!in_array($this->membershipStatus['name'], $this->validStartStatuses)){
-      CRM_Core_Error::fatal("You cannot run '{$this->action}' when the membership status is '{$this->membershipStatus['name']}'.");
+    if(!in_array($this->membershipStatus['name'], $this->updateAction->getValidStartStatuses())){
+      CRM_Core_Error::fatal("You cannot {$this->updateAction->getName()} a membership when its status is '{$this->membershipStatus['name']}'.");
     }
   }
 
   function buildQuickForm(){
 
-    CRM_Utils_System::setTitle(ucfirst($this->action).' contract');
+    CRM_Utils_System::setTitle(ucfirst($this->updateAction->getName()).' contract');
 
-    if(in_array($this->action, array('resume', 'update', 'revive'))){
+    if(in_array($this->updateAction->getName(), array('resume', 'update', 'revive'))){
 
       // add fields for update (and similar) actions
-      $alter = new CRM_Contract_AlterForm($this, $this->get('id'));
+      $alter = new CRM_Contract_FormUtils($this, $this->get('id'));
       $alter->addPaymentContractSelect2('contract_history_recurring_contribution');
       $mediums = civicrm_api3('Activity', 'getoptions', array(
         'sequential' => 1,
@@ -58,21 +64,22 @@ abstract class CRM_Contract_Form_History extends CRM_Core_Form{
       $this->add('select', 'contract_history_medium', ts('Medium'), $mediumOptions, false, array('class' => 'crm-select2'));
       $this->assign('isUpdate', true);
     }
-    elseif($this->action == 'cancel'){
+    elseif($this->updateAction->getName() == 'cancel'){
 
-      $this->add('text', 'contract_history_cancel_reason', ts('Cancellation reason'));
+
+      $this->add('select', 'contract_history_cancel_reason', ts('Cancellation reason'), $mediumOptions, false, array('class' => 'crm-select2'));
 
     }
 
     $this->addButtons(array(
         array('type' => 'cancel', 'name' => 'Back'), // since Cancel looks bad when viewed next to the Cancel action
-        array('type' => 'submit', 'name' => ucfirst($this->action), 'isDefault' => true)
+        array('type' => 'submit', 'name' => ucfirst($this->updateAction->getName()), 'isDefault' => true)
     ));
 
     $defaults['contract_history_recurring_contribution'] = $this->membership[$this->contributionRecurCustomField];
     $this->setDefaults($defaults);
 
-    $this->assign('historyAction', $this->action);
+    $this->assign('historyAction', $this->updateAction->getName());
     $this->assign('elementNames', $this->getRenderableElementNames());
     parent::buildQuickForm();
   }
@@ -97,56 +104,24 @@ abstract class CRM_Contract_Form_History extends CRM_Core_Form{
 
 
     $this->submitted = $this->exportValues();
+
+    // copy the original membership before it was updated and call it
+    // updatedMembership (even though it hasn't been updated yet) since we are
+    // about to update it (and the save it)
     $this->updatedMembership = $this->membership;
 
-    $this->updatedMembership['status_id'] = $this->endStatus;
+    $this->updatedMembership['status_id'] = $this->updateAction->getEndStatus();
     $this->updatedMembership['is_override'] = $this->membership['status_id'] == 'Current' ? 0 : 1;
     if(isset($this->submitted['contract_history_recurring_contribution'])){
       $this->updatedMembership[$this->contributionRecurCustomField] = $this->submitted['contract_history_recurring_contribution'];
     }
 
+    // The good thing about calling the API here is that
+    // CRM_Contract_HistoryApiWrapper will take care of creating activities for
+    // us.
     civicrm_api3('Membership', 'create', $this->updatedMembership);
-
-    $session = CRM_Core_Session::singleton();
-    $this->activityParams = array(
-      'source_record_id' => $this->id,
-      'activity_type_id' => CRM_Contract_Utils_ActionProperties::getByClass($this)['activityType'],
-      'subject' => "Contract [{$this->id}] $this->action", // A bit superfluous with most actions
-      'status_id' => 'Completed',
-      'medium_id' => $this->submitted['contract_history_medium'],
-      'source_contact_id'=> $session->getLoggedInContactID(),
-      'target_id'=> $this->updatedMembership['contact_id'],
-      // 'details' => // TODO Should we record anything else here? Suggest: no, not if we don't need to
-      // 'activity_date_time' => // TODO currently allowing this to be assigned automatically - is this OK?
-    );
-
-    // optional activity params
-
-    // add update activity info
-    if(in_array($this->action, array('resume', 'update', 'revive'))){
-      $this->getUpdateParams();
-    }elseif($this->action == 'cancel'){
-      $this->getCancelParams();
-    }
-
-    // add campaign params
-    if(0){
-      // $activityParams['campaign_id'] => // membership_campaign_id
-    }
-    $this->activityParams['options']['reload'] = 1;
-    $activity = civicrm_api3('Activity', 'create', $this->activityParams);
-
   }
 
-  function calcAnnualAmount($contributionRecur){
-    $frequencyUnitTranslate = array(
-      'day' => 365,
-      'week' => 52,
-      'month' => 12,
-      'year' => 1
-    );
-    return $contributionRecur['amount'] * $frequencyUnitTranslate[$contributionRecur['frequency_unit']] / $contributionRecur['frequency_interval'];
-  }
 
   /**
    * When a contracted is updated, record more detail on the changes
@@ -197,13 +172,6 @@ abstract class CRM_Contract_Form_History extends CRM_Core_Form{
     $this->activityParams[$this->translateActivityField['contact_history_cancel_reason']] = $this->submitted['contract_history_cancel_reason']; //TODO make select
   }
 
-  function getTranslateCustomFields($customGroup, $key = 'name'){
-    $result = civicrm_api3('CustomField', 'get', array( 'sequential' => 1, 'custom_group_id' => $customGroup ));
-    foreach($result['values'] as $v){
-      $translateCustomFields[$v[$key]] = 'custom_'.$v['id'];
-    }
-    return $translateCustomFields;
-  }
 
   function getTemplateFileName(){
     return 'CRM/Contract/Form/History.tpl';

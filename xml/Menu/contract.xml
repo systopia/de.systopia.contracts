@@ -1,28 +1,8 @@
 <?xml version="1.0"?>
 <menu>
   <item>
-    <path>civicrm/contract/update</path>
-    <page_callback>CRM_Contract_Form_Update</page_callback>
-    <access_arguments>edit memberships</access_arguments>
-  </item>
-  <item>
-    <path>civicrm/contract/pause</path>
-    <page_callback>CRM_Contract_Form_Pause</page_callback>
-    <access_arguments>edit memberships</access_arguments>
-  </item>
-  <item>
-    <path>civicrm/contract/resume</path>
-    <page_callback>CRM_Contract_Form_Resume</page_callback>
-    <access_arguments>edit memberships</access_arguments>
-  </item>
-  <item>
-    <path>civicrm/contract/cancel</path>
-    <page_callback>CRM_Contract_Form_Cancel</page_callback>
-    <access_arguments>edit memberships</access_arguments>
-  </item>
-  <item>
-    <path>civicrm/contract/revive</path>
-    <page_callback>CRM_Contract_Form_Revive</page_callback>
+    <path>civicrm/contract/modify</path>
+    <page_callback>CRM_Contract_Form_Modify</page_callback>
     <access_arguments>edit memberships</access_arguments>
   </item>
 </menu>
