@@ -163,10 +163,24 @@ function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &
     }
 }
 
+function contract_civicrm_pre($op, $objectName, $id, &$params){
+  if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
+    $object = CRM_Contract_Modify_BAOWrapper::singleton();
+    $object->pre($params);
+  }
+}
+
+function contract_civicrm_post($op, $objectName, $id, &$objectRef){
+  if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
+    $object = CRM_Contract_Modify_BAOWrapper::singleton();
+    $object->post($id);
+  }
+}
+
 function contract_civicrm_apiWrappers(&$wrappers, $apiRequest) {
   //&apiWrappers is an array of wrappers, you can add your(s) with the hook.
   // You can use the apiRequest to decide if you want to add the wrapper (eg. only wrap api.Contact.create)
   if($apiRequest['entity'] == 'Membership' & $apiRequest['action'] == 'create'){
-    $wrappers[] = CRM_Contract_HistoryApiWrapper::singleton();
+    $wrappers[] = CRM_Contract_Modify_APIWrapper::singleton();
   }
 }
