@@ -23,47 +23,53 @@ class CRM_Contract_Handler{
 
   }
 
-  function setStartMembership($id){
+  function storeStartMembership($id){
     $this->startMembership = civicrm_api3('Membership', 'getsingle', array('id' => $id));
     if($this->startMembership[$this->contributionRecurCustomField]){
       $this->startContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->startMembership[$this->contributionRecurCustomField]));
     }
     $this->startStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->startMembership['status_id']))['name'];
-  }
 
-  function setEndMembership($id){
-    $this->endMembership = civicrm_api3('Membership', 'getsingle', array('id' => $id));
-    if($this->endMembership[$this->contributionRecurCustomField]){
-      $this->endContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->endMembership[$this->contributionRecurCustomField]));
-    }
-    $this->endStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->endMembership['status_id']))['name'];
-    $this->setAction(); // At this point, we can set the action as we know what it will be
   }
 
   function setAction(){
-    $class = $this->lookupStatusUpdate($this->startStatus, $this->endStatus)['class'];
+    $class = $this->lookupStatusUpdate($this->startStatus, $this->proposedEndStatus)['class'];
     $this->action = new $class;
   }
 
   /**
    * Takes a set of API parameters that cover the proposed changes to the membership
    */
-  function addProposedParams($params){
+   function addProposedStatus($status){
+     if(is_numeric($status)){
+       $this->proposedEndStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $status))['name'];
+     }else{
+       $this->proposedEndStatus = $status;
+     }
+   }
 
+
+  function addProposedParams($params){
     $this->proposedParams = $params;
     //Do some extra processing of the status_id to make it easy to work with
     if(is_numeric($params['status_id'])){
-      $this->desiredEndStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->proposedParams['status_id']))['name'];
+      $this->proposedEndStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->proposedParams['status_id']))['name'];
     }else{
-      $this->desiredEndStatus = $this->proposedParams['status_id'];
+      $this->proposedEndStatus = $this->proposedParams['status_id'];
     }
+    if($this->proposedParams[$this->contributionRecurCustomField]){
+      $this->proposedContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->proposedParams[$this->contributionRecurCustomField]));
+    }
+    $this->proposedStatus = $this->proposedParams['status_id'];
+
+    $this->setAction(); // At this point, we can set the action as we know what it will be
   }
 
   /**
    * semantic wrapper around lookupStatusChange
    */
   function isValidStatusUpdate(){
-    if($this->lookupStatusUpdate($this->startStatus, $this->desiredEndStatus)){
+    if($this->lookupStatusUpdate($this->startStatus, $this->proposedEndStatus)){
       return true;
     }else{
       return false;
@@ -71,7 +77,9 @@ class CRM_Contract_Handler{
   }
 
   function isValidFieldUpdate(){
-    $class = $this->lookupStatusUpdate($this->startStatus, $this->desiredEndStatus)['class'];
+    $this->startStatus;
+    $this->proposedEndStatus;
+    $class = $this->lookupStatusUpdate($this->startStatus, $this->proposedEndStatus)['class'];
     $this->action = new $class;
     $modifiedFields = $this->getModifiedFieldKeys($this->startMembership, $this->proposedParams);
     $valid = $this->action->isValidFieldUpdate($modifiedFields);
@@ -104,39 +112,41 @@ class CRM_Contract_Handler{
     }
   }
 
-  function recordActivity(){
+  function generateActivityParams(){
 
     // set basic activity params
-    $activityParams = array(
-      'source_record_id' => $this->endMembership['id'],
+    $this->activityParams = array(
+      'source_record_id' => $this->startMembership['id'],
       'activity_type_id' => $this->action->getActivityType(),
-      'subject' => "Contract [{$this->endMembership['id']}] {$this->action->getName()}", // A bit superfluous with most actions
+      'subject' => "Contract [{$this->startMembership['id']}] {$this->action->getName()}", // A bit superfluous with most actions
       'status_id' => 'Completed',
       'medium_id' => $this->getMedium(),
-      'target_id'=> $this->endMembership['contact_id'],
+      'target_id'=> $this->startMembership['contact_id'], // TODO might this have changed?
       // 'details' => // TODO Should we record anything else here? Suggest: no, not if we don't need to
       // 'activity_date_time' => // TODO currently allowing this to be assigned automatically - is this OK?
     );
 
     // set the source contact id //TODO check is this is robust enough
     $session = CRM_Core_Session::singleton();
-    if(!$activityParams['source_contact_id'] = $session->getLoggedInContactID()){
-      $activityParams['source_contact_id'] = 1;
+    if(!$this->activityParams['source_contact_id'] = $session->getLoggedInContactID()){
+      $this->activityParams['source_contact_id'] = 1;
     }
 
     // add further fields as required by different actions
     if(in_array($this->action->getName(), array('resume', 'update', 'revive', 'sign'))){
-      $activityParams += $this->getUpdateParams();
+      $this->setUpdateParams();
     }elseif($this->action->getName() == 'cancel'){
-      $activityParams += $this->getCancelParams();
+      $this->setCancelParams();
     }
 
     // add campaign params
     if(0){
       // $activityParams['campaign_id'] => // membership_campaign_id
     }
-    $activityParams['options']['reload'] = 1;
-    $activity = civicrm_api3('Activity', 'create', $activityParams);
+  }
+
+  function saveActivity(){
+    $activity = civicrm_api3('Activity', 'create', $this->activityParams);
   }
 
   function setMedium($medium){
@@ -147,32 +157,41 @@ class CRM_Contract_Handler{
     return $this->medium = 1;
   }
 
-  function getUpdateParams(){
+  function setUpdateParams(){
 
-    // See what fields have changed between startMembership and endMembership
-    $modifiedFieldKeys = $this->getModifiedFieldKeys($this->startMembership, $this->endMembership);
+    // See what fields have changed between startMembership and endMembership //TODO this should actually contain more detail from the activity fields
+    // var_dump($this->startMembership);
+    // var_dump($this->endMembership);
 
-    if(count($modifiedFieldKeys)){
-      $activityParams['subject'] = "Contract update [".implode(', ', $modifiedFieldKeys)."]";
+    $modifiedFields = $this->getModifiedFieldKeys($this->startMembership, $this->proposedParams);
+    if(count($modifiedFields)){
+      $this->activityParams['subject'] = "Contract update [".implode(', ', $modifiedFields)."]";
     }else{
       //TODO should we abort and not record an activity at this point since nothing has changed?
-      $activityParams['subject'] = "Contract update";
+      $this->activityParams['subject'] = "Contract update";
     }
 
-    $newAnnualMembershipAmount = $this->calcAnnualAmount($this->endContributionRecur);
+    $newAnnualMembershipAmount = $this->calcAnnualAmount($this->proposedContributionRecur);
     $oldAnnualMembershipAmount = $this->calcAnnualAmount($this->startContributionRecur);
     $amountDelta = $newAnnualMembershipAmount - $oldAnnualMembershipAmount;
 
     $contractUpdateCustomFields = $this->translateCustomFields('contract_updates');
 
-    $activityParams[$contractUpdateCustomFields['ch_annual']] = $newAnnualMembershipAmount;
-    $activityParams[$contractUpdateCustomFields['ch_annual_diff']] = $amountDelta;
-    $activityParams[$contractUpdateCustomFields['ch_recurring_contribution']] = $this->endMembership[$this->contributionRecurCustomField];
-    $activityParams[$contractUpdateCustomFields['ch_frequency']] = 1; //TODO where should this come from? The SEPA mandate?
-    $activityParams[$contractUpdateCustomFields['ch_from_ba']] = 1; //TODO where should this come from? The SEPA mandate?
-    $activityParams[$contractUpdateCustomFields['ch_to_ba']] = 1; //TODO where should this come from? The SEPA mandate?
+    $this->activityParams[$contractUpdateCustomFields['ch_annual']] = $newAnnualMembershipAmount;
+    $this->activityParams[$contractUpdateCustomFields['ch_annual_diff']] = $amountDelta;
+    $this->activityParams[$contractUpdateCustomFields['ch_recurring_contribution']] = $this->proposedParams[$this->contributionRecurCustomField];
+    $this->activityParams[$contractUpdateCustomFields['ch_frequency']] = $this->proposedContributionRecur['frequency_interval'];
 
-    return $activityParams;
+    $sepaMandate = civicrm_api3('SepaMandate', 'get', array(
+      'entity_table' => "civicrm_contribution_recur",
+      'entity_id' => $this->proposedContributionRecur['id'],
+    ));
+
+    if($sepaMandate['count'] == 1){
+      // $activityParams[$contractUpdateCustomFields['ch_from_ba']] = $sepaMandate['values'][$sepaMandate['id']]['iban'];
+      // $activityParams[$contractUpdateCustomFields['ch_to_ba']] = ; //TODO where should this come from? The SEPA mandate?
+    }
+
   }
 
   function getModifiedFieldKeys($from, $to){
@@ -182,17 +201,20 @@ class CRM_Contract_Handler{
       $this->translateCustomFields('membership_general', 'label');
 
 
-    foreach($to as $k => $v){
-      // there are some fields that we know we don't want to check
-      // I'm not sure why the membership API create returns two fields from the
-      // MembershipType API when we are creating a new membership, but it does,
-      // so we exclude that too
-      if(!in_array($k, array('version', 'options', 'status_id', 'id', 'membership_name', 'relationship_name'))){
-        if($v != $from[$k]){
-          if(in_array($k, $membershipCustomFields)){
-            $modifiedFields[$k] = array_search($k, $membershipCustomFields);
+    $modifiedFields = array();
+
+    foreach($from as $fromField => $fromValue){
+      if(isset($to[$fromField]) && $fromField != 'status_id' ){
+        if(in_array($fromField, array('join_date', 'start_date', 'end_date'))){
+          // Dates in CiviCRM are passed in various formats so try and normalise
+          $fromValue = date('Y-m-d', strtotime($fromValue));
+          $to[$fromField] = date('Y-m-d', strtotime($to[$fromField]));
+        }
+        if($fromValue != $to[$fromField]){
+          if(in_array($fromField, $membershipCustomFields)){
+            $modifiedFields[$fromField] = array_search($fromField, $membershipCustomFields);
           }else{
-            $modifiedFields[$k] = civicrm_api3('Membership', 'getfield', array('name' => $k, 'action' => "get", ))['values']['title'];
+            $modifiedFields[$fromField] = civicrm_api3('Membership', 'getfield', array('name' => $fromField, 'action' => "get", ))['values']['title'];
           }
         }
       }
@@ -200,11 +222,9 @@ class CRM_Contract_Handler{
     return $modifiedFields;
   }
 
-  function getCancelParams(){
+  function setCancelParams(){
     $this->translateCustomFields('contract_cancellation');
-    $activityParams[$this->translateActivityField['contact_history_cancel_reason']] = $this->submitted['contract_history_cancel_reason']; //TODO make select
-
-    return $activityParams;
+    $this->activityParams[$this->translateActivityField['contact_history_cancel_reason']] = $this->submitted['contract_history_cancel_reason']; //TODO make select
 
   }
 

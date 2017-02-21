@@ -164,16 +164,16 @@ function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &
 }
 
 function contract_civicrm_pre($op, $objectName, $id, &$params){
-  if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
-    $object = CRM_Contract_Modify_BAOWrapper::singleton();
-    $object->pre($params);
+  if($objectName == 'Membership' && $op == 'edit'){
+    $BAOWrapper = CRM_Contract_Modify_BAOWrapper::singleton();
+    $BAOWrapper->pre($id, $params);
   }
 }
 
 function contract_civicrm_post($op, $objectName, $id, &$objectRef){
   if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
-    $object = CRM_Contract_Modify_BAOWrapper::singleton();
-    $object->post($id);
+    $BAOWrapper = CRM_Contract_Modify_BAOWrapper::singleton();
+    $BAOWrapper->post($id);
   }
 }
 

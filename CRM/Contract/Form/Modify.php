@@ -116,62 +116,8 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       $this->updatedMembership[$this->contributionRecurCustomField] = $this->submitted['contract_history_recurring_contribution'];
     }
 
-    // The good thing about calling the API here is that
-    // CRM_Contract_HistoryApiWrapper will take care of creating activities for
-    // us.
     civicrm_api3('Membership', 'create', $this->updatedMembership);
   }
-
-
-  /**
-   * When a contracted is updated, record more detail on the changes
-   */
-  function getUpdateParams(){
-
-    $membershipCustomFields =
-      $this->getTranslateCustomFields('membership_cancellation', 'label') +
-      $this->getTranslateCustomFields('membership_payment', 'label') +
-      $this->getTranslateCustomFields('membership_general', 'label');
-
-
-    // See what fields have changed between updatedMembership and membership
-    $updatedKeys = array();
-    foreach($this->updatedMembership as $k => $v){
-      if($v != $this->membership[$k]){
-        if(in_array($k, $membershipCustomFields)){
-          $updatedKeys[] = array_search($k, $membershipCustomFields);
-        }elseif($k != 'status_id'){
-          $updatedKeys[] = civicrm_api3('Membership', 'getfield', array('name' => $k, 'action' => "get", ))['values']['title'];
-        }
-      }
-    }
-    if(count($updatedKeys)){
-      $this->activityParams['subject'] = "Contract update [".implode(', ', $updatedKeys)."]";
-    }else{
-      //TODO should we abort and not record an activity at this point since nothing has changed?
-      $this->activityParams['subject'] = "Contract update";
-    }
-
-    $oldAnnualMembershipAmount = $this->calcAnnualAmount($this->contributionRecur);
-    $newContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->updatedMembership[$this->contributionRecurCustomField]));
-    $newAnnualMembershipAmount = $this->calcAnnualAmount($newContributionRecur);
-    $amountDelta = $newAnnualMembershipAmount - $oldAnnualMembershipAmount;
-
-    $contractUpdateCustomFields = $this->getTranslateCustomFields('contract_updates');
-
-    $this->activityParams[$contractUpdateCustomFields['ch_annual']] = $newAnnualMembershipAmount;
-    $this->activityParams[$contractUpdateCustomFields['ch_annual_diff']] = $amountDelta;
-    $this->activityParams[$contractUpdateCustomFields['ch_recurring_contribution']] = $this->updatedMembership[$this->contributionRecurCustomField];
-    $this->activityParams[$contractUpdateCustomFields['ch_frequency']] = 1; //TODO where should this come from? The SEPA mandate?
-    $this->activityParams[$contractUpdateCustomFields['ch_from_ba']] = 1; //TODO where should this come from? The SEPA mandate?
-    $this->activityParams[$contractUpdateCustomFields['ch_to_ba']] = 1; //TODO where should this come from? The SEPA mandate?
-  }
-
-  function getCancelParams(){
-    $this->getTranslateCustomFields('contract_cancellation');
-    $this->activityParams[$this->translateActivityField['contact_history_cancel_reason']] = $this->submitted['contract_history_cancel_reason']; //TODO make select
-  }
-
 
   function getTemplateFileName(){
     return 'CRM/Contract/Form/History.tpl';

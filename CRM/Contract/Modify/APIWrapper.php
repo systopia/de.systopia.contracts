@@ -19,23 +19,24 @@ class CRM_Contract_Modify_APIWrapper{
 
     // We only need to take action here if this is an edit
     if(isset($apiRequest['params']['id'])){
-      $this->contractHandler->setStartMembership($apiRequest['params']['id']);
-      $this->contractHandler->addProposedParams($apiRequest['params']);
+
+      $this->contractHandler->storeStartMembership($apiRequest['params']['id']);
+      $this->contractHandler->addProposedStatus($apiRequest['params']['status_id']);
+
       if(!$this->contractHandler->isValidStatusUpdate()){
-        throw new \CiviCRM_API3_Exception("Cannot update contract status from {$this->contractHandler->startStatus} to {$this->contractHandler->desiredEndStatus}.");
+        throw new \CiviCRM_API3_Exception("Cannot update contract status from {$this->contractHandler->startStatus} to {$this->contractHandler->proposedEndStatus}.");
       }
+
+      $this->contractHandler->addProposedParams($apiRequest['params']);
       if(!$this->contractHandler->isValidFieldUpdate()){
         throw new \CiviCRM_API3_Exception($this->contractHandler->errorMessage);
       }
     }
+    $apiRequest['params']['options']['reload']=1;
     return $apiRequest;
   }
 
   function toApiOutput($apiRequest, $result){
-
-    $this->contractHandler->setEndMembership($result['id']);
-    $this->contractHandler->recordActivity();
-
     return $result;
   }
 
