@@ -31,6 +31,10 @@ class CRM_Contract_Handler{
 
   }
 
+  /**
+   * this records the membership status at the START of a change (sequence)
+   *  and associated objects
+   */
   function setStartMembership($id){
     $this->startMembership = civicrm_api3('Membership', 'getsingle', array('id' => $id));
     if($this->startMembership[$this->contributionRecurCustomField]){
@@ -39,6 +43,10 @@ class CRM_Contract_Handler{
     $this->startStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->startMembership['status_id']))['name'];
   }
 
+  /**
+   * this records the membership status at the END of a change (sequence)
+   *  and associated objects
+   */
   function setEndMembership($id){
     $this->endMembership = civicrm_api3('Membership', 'getsingle', array('id' => $id));
     if($this->endMembership[$this->contributionRecurCustomField]){
