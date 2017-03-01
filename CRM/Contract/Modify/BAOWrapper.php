@@ -18,14 +18,12 @@ class CRM_Contract_Modify_BAOWrapper{
   function pre($id, $params){
 
     $this->contractHandler->storeStartMembership($id);
-
-    $this->contractHandler->addProposedStatus($params['status_id']);
+    $this->contractHandler->addProposedParams($params);
 
     if(!$this->contractHandler->isValidStatusUpdate()){
-      throw new \Exception("Cannot update contract status from {$this->contractHandler->startStatus} to {$this->contractHandler->proposedEndStatus}.");
+      throw new \Exception("Cannot update contract status from {$this->contractHandler->startStatus} to {$this->contractHandler->proposedStatus}.");
     }
 
-    $this->contractHandler->addProposedParams($params);
     $this->contractHandler->generateActivityParams();
 
     if(!$this->contractHandler->isValidFieldUpdate()){

@@ -33,35 +33,28 @@ class CRM_Contract_Handler{
   }
 
   function setAction(){
-    $class = $this->lookupStatusUpdate($this->startStatus, $this->proposedEndStatus)['class'];
+    $class = $this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)['class'];
     $this->action = new $class;
   }
 
-  /**
-   * Takes a set of API parameters that cover the proposed changes to the membership
-   */
-   function addProposedStatus($status){
-     if(is_numeric($status)){
-       $this->proposedEndStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $status))['name'];
-     }else{
-       $this->proposedEndStatus = $status;
-     }
-   }
-
-
   function addProposedParams($params){
-    $this->proposedParams = $params;
+
+    // If the status hasn't been supplied, then set it to the same as it was before (since we need it to do the look up)
+    if(!$params['status_id']){
+      $params['status_id'] = $this->startStatus;
+    };
+
     //Do some extra processing of the status_id to make it easy to work with
     if(is_numeric($params['status_id'])){
-      $this->proposedEndStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->proposedParams['status_id']))['name'];
+      $this->proposedStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $params['status_id']))['name'];
     }else{
-      $this->proposedEndStatus = $this->proposedParams['status_id'];
+      $this->proposedStatus = $this->proposedParams['status_id'];
     }
-    if($this->proposedParams[$this->contributionRecurCustomField]){
-      $this->proposedContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->proposedParams[$this->contributionRecurCustomField]));
+    if($params[$this->contributionRecurCustomField]){
+      $this->proposedContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $params[$this->contributionRecurCustomField]));
     }
-    $this->proposedStatus = $this->proposedParams['status_id'];
-
+    $this->proposedStatus = $params['status_id'];
+    $this->proposedParams = $params;
     $this->setAction(); // At this point, we can set the action as we know what it will be
   }
 
@@ -69,7 +62,7 @@ class CRM_Contract_Handler{
    * semantic wrapper around lookupStatusChange
    */
   function isValidStatusUpdate(){
-    if($this->lookupStatusUpdate($this->startStatus, $this->proposedEndStatus)){
+    if($this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)){
       return true;
     }else{
       return false;
@@ -78,8 +71,8 @@ class CRM_Contract_Handler{
 
   function isValidFieldUpdate(){
     $this->startStatus;
-    $this->proposedEndStatus;
-    $class = $this->lookupStatusUpdate($this->startStatus, $this->proposedEndStatus)['class'];
+    $this->proposedStatus;
+    $class = $this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)['class'];
     $this->action = new $class;
     $modifiedFields = $this->getModifiedFieldKeys($this->startMembership, $this->proposedParams);
     $valid = $this->action->isValidFieldUpdate($modifiedFields);
@@ -186,12 +179,45 @@ class CRM_Contract_Handler{
       'entity_table' => "civicrm_contribution_recur",
       'entity_id' => $this->proposedContributionRecur['id'],
     ));
-
     if($sepaMandate['count'] == 1){
-      // $activityParams[$contractUpdateCustomFields['ch_from_ba']] = $sepaMandate['values'][$sepaMandate['id']]['iban'];
-      // $activityParams[$contractUpdateCustomFields['ch_to_ba']] = ; //TODO where should this come from? The SEPA mandate?
+
+      print_r($activityParams);
+
+      $this->activityParams[$contractUpdateCustomFields['ch_from_ba']] =
+        $this->getBankAccountIdFromIban($sepaMandate['values'][$sepaMandate['id']]['iban']);
+
+      $this->activityParams[$contractUpdateCustomFields['ch_to_ba']] =
+        $this->getBankAccountIdFromIban($this->getCreditorIban($sepaMandate['values'][$sepaMandate['id']]['creditor_id']));
+
+      print_r($activityParams);
     }
 
+  }
+
+  function getBankAccountIdFromIban($iban){
+    try{
+      $result = civicrm_api3('BankingAccountReference', 'getsingle', array(
+        'reference_type_id' => 'iban',
+        'reference' => $iban,
+      ));
+    } catch(Exception $e){
+      throw new Exception("Could not find Banking account reference for IBAN {$iban}");
+    }
+    if(!$result['ba_id']){
+      throw new Exception("Bank account ID not defined for Bank account reference with ID {$result['id']}");
+    }
+    return $result['ba_id'];
+  }
+
+  function getCreditorIban($creditorId){
+    try{
+      $result = civicrm_api3('SepaCreditor', 'getsingle', array(
+        'id' => $creditorId,
+      ));
+    } catch(Exception $e){
+      throw new Exception("Could not find IBAN for SEPA creditor with Id {$creditorId}");
+    }
+    return $result['iban'];
   }
 
   function getModifiedFieldKeys($from, $to){
