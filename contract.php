@@ -151,7 +151,6 @@ function contract_civicrm_buildForm($formName, &$form) {
           $formUtils->removeMembershpEditDisallowedCoreFields();
         // Custom data version
         }else{
-          // var_dump($form->_groupTree);
           $formUtils = new CRM_Contract_FormUtils($form, $form->_entityId);
           $formUtils->removeMembershpEditDisallowedCustomFields();
         }
@@ -161,16 +160,12 @@ function contract_civicrm_buildForm($formName, &$form) {
     //Activity form in view mode
     case 'CRM_Activity_Form_Activity':
       if($form->getAction() == CRM_Core_Action::VIEW){
-        // var_dump($form);
-        // var_dump($form->_groupTree);
         $id =  CRM_Utils_Request::retrieve('id', 'Positive', $form);
         $modifyForm = new CRM_Contract_FormUtils($form, $id, 'Activity');
         $modifyForm->showPaymentContractDetails();
-        break;
-
       }
-
-
+      break;
+      
   }
 }
 
