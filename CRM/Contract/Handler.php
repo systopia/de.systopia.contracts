@@ -152,10 +152,6 @@ class CRM_Contract_Handler{
 
   function setUpdateParams(){
 
-    // See what fields have changed between startMembership and endMembership //TODO this should actually contain more detail from the activity fields
-    // var_dump($this->startMembership);
-    // var_dump($this->endMembership);
-
     $modifiedFields = $this->getModifiedFieldKeys($this->startMembership, $this->proposedParams);
     if(count($modifiedFields)){
       $this->activityParams['subject'] = "Contract update [".implode(', ', $modifiedFields)."]";
@@ -181,17 +177,13 @@ class CRM_Contract_Handler{
     ));
     if($sepaMandate['count'] == 1){
 
-      print_r($activityParams);
-
       $this->activityParams[$contractUpdateCustomFields['ch_from_ba']] =
         $this->getBankAccountIdFromIban($sepaMandate['values'][$sepaMandate['id']]['iban']);
 
       $this->activityParams[$contractUpdateCustomFields['ch_to_ba']] =
         $this->getBankAccountIdFromIban($this->getCreditorIban($sepaMandate['values'][$sepaMandate['id']]['creditor_id']));
 
-      print_r($activityParams);
     }
-
   }
 
   function getBankAccountIdFromIban($iban){
