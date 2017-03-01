@@ -93,7 +93,7 @@ class CRM_Contract_FormUtils
 
     public function getMembershpEditDisallowedCoreFields()
     {
-        return array('status_id');
+        return array('status_id', 'is_override');
     }
 
     public function removeMembershpEditDisallowedCustomFields()
