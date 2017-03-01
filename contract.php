@@ -131,18 +131,18 @@ function contract_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
 
 function contract_civicrm_buildForm($formName, &$form) {
 
+
   switch ($formName) {
 
+    // Membership form in view mode
     case 'CRM_Member_Form_MembershipView':
       $id =  CRM_Utils_Request::retrieve('id', 'Positive', $form);
       $modifyForm = new CRM_Contract_FormUtils($form, $id);
       $modifyForm->showPaymentContractDetails();
       break;
 
+    // Membership form in add or edit mode
     case 'CRM_Member_Form_Membership':
-
-      // Membership form in add or edit mode
-
       if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
 
         // Standard form
@@ -157,6 +157,20 @@ function contract_civicrm_buildForm($formName, &$form) {
         }
       }
       break;
+
+    //Activity form in view mode
+    case 'CRM_Activity_Form_Activity':
+      if($form->getAction() == CRM_Core_Action::VIEW){
+        // var_dump($form);
+        // var_dump($form->_groupTree);
+        $id =  CRM_Utils_Request::retrieve('id', 'Positive', $form);
+        $modifyForm = new CRM_Contract_FormUtils($form, $id, 'Activity');
+        $modifyForm->showPaymentContractDetails();
+        break;
+
+      }
+
+
   }
 }
 

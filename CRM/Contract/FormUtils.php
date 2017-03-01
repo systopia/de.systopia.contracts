@@ -9,10 +9,16 @@
 
 class CRM_Contract_FormUtils
 {
-    public function __construct($form, $contractId)
+    public function __construct($form, $id, $entity = 'Membership')
     {
+        $this->entity = $entity;
+        //If this is an activity form, then we need to get the contract ID before
+        if($entity =='Activity'){
+          $activity = civicrm_api3('Activity', 'getsingle', array('id' => $id));
+          $id = $activity['source_record_id'];
+        }
         $this->form = $form;
-        $this->contract = civicrm_api3('Membership', 'getsingle', array('id' => $contractId));
+        $this->contract = civicrm_api3('Membership', 'getsingle', array('id' => $id));
     }
 
     public function getSepaPaymentInstruments()
@@ -41,8 +47,11 @@ class CRM_Contract_FormUtils
 
     public function showPaymentContractDetails()
     {
-        $result = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
-
+        if($this->entity == 'Membership'){
+          $result = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
+        }elseif($this->entity == 'Activity'){
+          $result = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'contract_updates', 'name' => 'ch_recurring_contribution'));
+        }
         // Get the custom data that was sent to the template
         $details = $this->form->get_template_vars('viewCustomData');
 
