@@ -1,4 +1,12 @@
 <?php
+/*-------------------------------------------------------------+
+| SYSTOPIA Contract Extension                                  |
+| Copyright (C) 2017 SYSTOPIA                                  |
+| Author: M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
+|         B. Endres (endres -at- systopia.de)                  |
+| http://www.systopia.de/                                      |
++--------------------------------------------------------------*/
+
 /**
  * This class handles updates to contracts, checking that an update is valid and
  * ensuring that important changes are recorded.
@@ -23,13 +31,28 @@ class CRM_Contract_Handler{
 
   }
 
-  function storeStartMembership($id){
+  /**
+   * this records the membership status at the START of a change (sequence)
+   *  and associated objects
+   */
+  function setStartMembership($id){
     $this->startMembership = civicrm_api3('Membership', 'getsingle', array('id' => $id));
     if($this->startMembership[$this->contributionRecurCustomField]){
       $this->startContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->startMembership[$this->contributionRecurCustomField]));
     }
     $this->startStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->startMembership['status_id']))['name'];
-
+  }
+  /**
+   * this records the membership status at the END of a change (sequence)
+   *  and associated objects
+   */
+  function setEndMembership($id){
+    $this->endMembership = civicrm_api3('Membership', 'getsingle', array('id' => $id));
+    if($this->endMembership[$this->contributionRecurCustomField]){
+      $this->endContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->endMembership[$this->contributionRecurCustomField]));
+    }
+    $this->endStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->endMembership['status_id']))['name'];
+    $this->setAction(); // At this point, we can set the action as we know what it will be
   }
 
   function setAction(){
