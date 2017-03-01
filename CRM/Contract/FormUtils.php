@@ -106,7 +106,7 @@ class CRM_Contract_FormUtils
                 unset($this->form->_groupTree[$groupKey]);
             } else {
                 foreach ($group['fields'] as $fieldKey => $field) {
-                    if (in_array($field['column_name'], $customFieldsToRemove[$group['name']])) {
+                    if (isset($customFieldsToRemove[$group['name']]) && in_array($field['column_name'], $customFieldsToRemove[$group['name']])) {
                         unset($this->form->_groupTree[$groupKey]['fields'][$fieldKey]);
                     }
                 }

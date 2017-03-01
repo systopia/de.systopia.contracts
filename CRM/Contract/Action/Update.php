@@ -13,6 +13,10 @@ class CRM_Contract_Action_Update{
     return array('New', 'Current', 'Grace');
   }
 
+  function getValidEndStatuses(){
+    return array('New', 'Current', 'Grace');
+  }
+
   function getEndStatus(){
     return 'Current'; // TODO maybe we don't update the status for an update?
   }

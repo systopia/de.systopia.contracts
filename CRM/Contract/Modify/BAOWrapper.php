@@ -17,9 +17,8 @@ class CRM_Contract_Modify_BAOWrapper{
 
   function pre($id, $params){
 
-    $this->contractHandler->storeStartMembership($id);
+    $this->contractHandler->setStartMembership($id);
     $this->contractHandler->addProposedParams($params);
-
     if(!$this->contractHandler->isValidStatusUpdate()){
       throw new \Exception("Cannot update contract status from {$this->contractHandler->startStatus} to {$this->contractHandler->proposedStatus}.");
     }
@@ -33,6 +32,6 @@ class CRM_Contract_Modify_BAOWrapper{
   }
 
   function post($id){
-    $this->contractHandler->saveActivity();
+    $this->contractHandler->saveEntities();
   }
 }

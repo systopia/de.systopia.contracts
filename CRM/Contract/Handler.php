@@ -43,21 +43,25 @@ class CRM_Contract_Handler{
     $this->startStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->startMembership['status_id']))['name'];
   }
   /**
-   * this records the membership status at the END of a change (sequence)
+   * NOTE Not using this function any more...
    *  and associated objects
    */
-  function setEndMembership($id){
-    $this->endMembership = civicrm_api3('Membership', 'getsingle', array('id' => $id));
-    if($this->endMembership[$this->contributionRecurCustomField]){
-      $this->endContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->endMembership[$this->contributionRecurCustomField]));
-    }
-    $this->endStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->endMembership['status_id']))['name'];
-    $this->setAction(); // At this point, we can set the action as we know what it will be
-  }
+  // function setEndMembership($id){
+  //   $this->endMembership = civicrm_api3('Membership', 'getsingle', array('id' => $id));
+  //   if($this->endMembership[$this->contributionRecurCustomField]){
+  //     $this->endContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->endMembership[$this->contributionRecurCustomField]));
+  //   }
+  //   $this->endStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->endMembership['status_id']))['name'];
+  //   $this->setAction(); // At this point, we can set the action as we know what it will be
+  // }
 
   function setAction(){
-    $class = $this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)['class'];
-    $this->action = new $class;
+    if($class = $this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)['class']){
+      $this->action = new $class;
+    }else{
+      throw new Exception("No contract history activity covers the status change from '$this->startStatus' to '$this->proposedStatus'");
+
+    }
   }
 
   function addProposedParams($params){
@@ -69,13 +73,29 @@ class CRM_Contract_Handler{
 
     //Do some extra processing of the status_id to make it easy to work with
     if(is_numeric($params['status_id'])){
-      $this->proposedStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $params['status_id']))['name'];
+      $params['status_id'] = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $params['status_id']))['name'];
     }else{
-      $this->proposedStatus = $this->proposedParams['status_id'];
+      $params['status_id'] = $params['status_id'];
     }
-    if($params[$this->contributionRecurCustomField]){
+
+    // Deal with the fact that custom data can be presented in different ways depending on the object
+    if(isset($params['custom']) && is_array($params['custom'])){
+      foreach($params['custom'] as $key => $fieldToAdd){
+        if(!isset($params['custom_'.$key])){
+          $params['custom_'.$key] = current($fieldToAdd)['value'];
+        }
+      }
+    }
+
+    // If the contribution recur has not been submitted, presume it is what it was at the beginning
+    if(isset($params[$this->contributionRecurCustomField]) && $params[$this->contributionRecurCustomField]){
       $this->proposedContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $params[$this->contributionRecurCustomField]));
+    }else{
+      $this->proposedContributionRecur = $this->startContributionRecur;
+      $params[$this->contributionRecurCustomField] = $this->startMembership[$this->contributionRecurCustomField];
     }
+
+
     $this->proposedStatus = $params['status_id'];
     $this->proposedParams = $params;
     $this->setAction(); // At this point, we can set the action as we know what it will be
@@ -113,11 +133,21 @@ class CRM_Contract_Handler{
       foreach(self::$actions as $name){
         $action = new $name;
         foreach($action->getValidStartStatuses() as $status){
-          $this->statusChangeIndex[] = array(
-            'class' => $name,
-            'startStatus' => $status,
-            'endStatus' => $action->getEndStatus()
-          );
+          if(method_exists($action, 'getValidEndStatuses')){
+            foreach($action->getValidEndStatuses() as $endStatus){
+              $this->statusChangeIndex[] = array(
+                'class' => $name,
+                'startStatus' => $status,
+                'endStatus' => $endStatus
+              );
+            }
+          }else{
+            $this->statusChangeIndex[] = array(
+              'class' => $name,
+              'startStatus' => $status,
+              'endStatus' => $action->getEndStatus()
+            );
+          }
         }
       }
     }
@@ -155,15 +185,54 @@ class CRM_Contract_Handler{
       $this->setCancelParams();
     }
 
-    // add campaign params
-    if(0){
-      // $activityParams['campaign_id'] => // membership_campaign_id
+    // add campaign params if they have changed
+    $this->activityParams['campaign_id'] =
+      isset($this->proposedParams['campaign_id']) ?
+      $this->proposedParams['campaign_id'] :
+      $this->startMembership['campaign_id'];
+  }
+
+  function saveEntities(){
+    $activity = civicrm_api3('Activity', 'create', $this->activityParams);
+
+    //if we are proposing a new ContributionRecur, then we'll need to update the Contribution Recur with the new membership
+    if(isset($this->proposedParams[$this->contributionRecurCustomField]) && $this->proposedParams[$this->contributionRecurCustomField] != $this->startMembership[$this->contributionRecurCustomField]){
+
+      $this->proposedParams[$this->contributionRecurCustomField];
+      $this->startMembership[$this->contributionRecurCustomField];
+
+      // Need to work out what transaction id to assign
+      $contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array(
+        'id' => $this->proposedParams[$this->contributionRecurCustomField]
+      ));
+      // If recuring contribution doesn't have a transaction ID that is suitable for this contract, we need to create one
+      if(!isset($contributionRecur['trxn_id']) || strpos($contributionRecur['trxn_id'], "CONTRACT-{$this->startMembership['id']}") !== 0){
+        echo $this->contributionRecurParams['trxn_id'] = $this->assignNextTransactionId($this->startMembership['id']);
+        $this->contributionRecurParams['id'] = $this->proposedParams[$this->contributionRecurCustomField];
+        $contributionRecur = civicrm_api3('ContributionRecur', 'create', $this->contributionRecurParams);
+      }
     }
   }
 
-  function saveActivity(){
-    $activity = civicrm_api3('Activity', 'create', $this->activityParams);
+  function assignNextTransactionId($contractId){
+    $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array(
+      'trxn_id' => array('LIKE' => "CONTRACT-{$contractId}%"),
+    ));
+    if($contributionRecurs['values']){
+      foreach($contributionRecurs['values'] as $v){
+        $tids[] = $v['trxn_id'];
+      }
+      $tids = preg_filter('/CONTRACT\-\d+-(\d+)/', '$1', $tids);
+      if($tids){
+        return "CONTRACT-{$contractId}-".(string)(max($tids) + 1);
+      }else{
+        return  "CONTRACT-{$contractId}-2";
+      }
+    }else{
+      return  "CONTRACT-{$contractId}";
+    }
   }
+
 
   function setMedium($medium){
     return $this->medium;
