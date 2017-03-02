@@ -18,7 +18,9 @@ class CRM_Contract_FormUtils
           $id = $activity['source_record_id'];
         }
         $this->form = $form;
-        $this->contract = civicrm_api3('Membership', 'getsingle', array('id' => $id));
+        if(isset($this->form->_contactID)){
+          $this->contactId = $this->form->_contactID;
+        };
     }
 
     public function getSepaPaymentInstruments()
@@ -39,7 +41,7 @@ class CRM_Contract_FormUtils
 
     public function addPaymentContractSelect2($elementName)
     {
-        $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $this->contract['contact_id']));
+        $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $this->contactId));
         $contributionRecurOptions = array('' => '- none -') + array_map(array($this, 'writePaymentContractLabel'), $contributionRecurs['values']);
 
         $this->form->add('select', $elementName, ts('Payment Contract'), $contributionRecurOptions, false, array('class' => 'crm-select2'));
