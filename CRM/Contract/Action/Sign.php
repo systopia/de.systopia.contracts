@@ -24,4 +24,8 @@ class CRM_Contract_Action_Sign{
   function getName(){
     return 'sign';
   }
+
+  function isValidFieldUpdate($fields){
+    return true;
+  }
 }

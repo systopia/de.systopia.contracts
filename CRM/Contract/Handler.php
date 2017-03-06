@@ -36,11 +36,13 @@ class CRM_Contract_Handler{
    *  and associated objects
    */
   function setStartMembership($id){
-    $this->startMembership = civicrm_api3('Membership', 'getsingle', array('id' => $id));
-    if($this->startMembership[$this->contributionRecurCustomField]){
-      $this->startContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->startMembership[$this->contributionRecurCustomField]));
+    if($id){
+      $this->startMembership = civicrm_api3('Membership', 'getsingle', array('id' => $id));
+      if($this->startMembership[$this->contributionRecurCustomField]){
+        $this->startContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->startMembership[$this->contributionRecurCustomField]));
+      }
+      $this->startStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->startMembership['status_id']))['name'];
     }
-    $this->startStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->startMembership['status_id']))['name'];
   }
   /**
    * NOTE Not using this function any more...
@@ -129,16 +131,19 @@ class CRM_Contract_Handler{
   }
 
   private function lookupStatusUpdate($startStatus, $endStatus){
+    if(!$startStatus){
+      $startStatus='';
+    }
     if(!isset($this->statusChangeIndex)){
       foreach(self::$actions as $name){
         $action = new $name;
         foreach($action->getValidStartStatuses() as $status){
           if(method_exists($action, 'getValidEndStatuses')){
-            foreach($action->getValidEndStatuses() as $endStatus){
+            foreach($action->getValidEndStatuses() as $validEndStatus){
               $this->statusChangeIndex[] = array(
                 'class' => $name,
                 'startStatus' => $status,
-                'endStatus' => $endStatus
+                'endStatus' => $validEndStatus
               );
             }
           }else{

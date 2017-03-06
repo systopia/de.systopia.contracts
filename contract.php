@@ -165,7 +165,7 @@ function contract_civicrm_buildForm($formName, &$form) {
         $modifyForm->showPaymentContractDetails();
       }
       break;
-      
+
   }
 }
 
@@ -180,7 +180,7 @@ function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &
 }
 
 function contract_civicrm_pre($op, $objectName, $id, &$params){
-  if($objectName == 'Membership' && $op == 'edit'){
+  if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
     $BAOWrapper = CRM_Contract_Modify_BAOWrapper::singleton();
     $BAOWrapper->pre($id, $params);
   }
