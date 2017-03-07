@@ -28,6 +28,8 @@ class CRM_Contract_Handler{
   function __construct(){
     $CustomField = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
     $this->contributionRecurCustomField = 'custom_'.$CustomField['id'];
+    $CustomField = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_frequency'));
+    $this->membershipFrequencyCustomField = 'custom_'.$CustomField['id'];
 
   }
 
@@ -38,11 +40,31 @@ class CRM_Contract_Handler{
   function setStartMembership($id){
     if($id){
       $this->startMembership = civicrm_api3('Membership', 'getsingle', array('id' => $id));
+
+      // Why TF does the api return contact references as names, not IDs?
+      // (i.e. why does it return something that you cannot pass back to create
+      // for an update?! As a work around, I am going to overwriting custom_#
+      // with the value from custom_#_id.
+      //
+      // I am also unsetting the custom_#_# fields as they are also causing
+      // issues when combined with the contact reference fields
+
+      $dialoggerCustomField = 'custom_'.civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_general', 'name' => 'membership_dialoger'))['id'];
+      if(isset($this->startMembership[$dialoggerCustomField])){
+        $this->startMembership[$dialoggerCustomField] = $this->startMembership[$dialoggerCustomField.'_id'];
+      }
+
+      foreach($this->startMembership as $k => $v){
+        if(preg_match("/custom_\d+_\d+/", $k)){
+          unset($this->startMembership[$k]);
+        }
+      }
+
       if(isset($this->startMembership[$this->contributionRecurCustomField]) && $this->startMembership[$this->contributionRecurCustomField]){
         $this->startContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->startMembership[$this->contributionRecurCustomField]));
       }else{
-        $this->startContributionRecur =  null;
         $this->startMembership[$this->contributionRecurCustomField] = '';
+        $this->startContributionRecur =  null;
       }
       $this->startStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->startMembership['status_id']))['name'];
     }
@@ -92,13 +114,16 @@ class CRM_Contract_Handler{
       }
     }
 
-    // If the contribution recur has not been submitted, presume it is what it was at the beginning
-    if(isset($params[$this->contributionRecurCustomField]) && $params[$this->contributionRecurCustomField]){
-      $this->proposedContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $params[$this->contributionRecurCustomField]));
+    if(isset($params[$this->contributionRecurCustomField])){
+      if($params[$this->contributionRecurCustomField]){
+        $this->proposedContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $params[$this->contributionRecurCustomField]));
+      }else{
+        $this->proposedContributionRecur = null;
+      }
     }else{
       $this->proposedContributionRecur = $this->startContributionRecur;
-      $params[$this->contributionRecurCustomField] = $this->startMembership[$this->contributionRecurCustomField];
     }
+
 
 
     $this->proposedStatus = $params['status_id'];
@@ -204,8 +229,7 @@ class CRM_Contract_Handler{
     $activity = civicrm_api3('Activity', 'create', $this->activityParams);
 
     //if we are proposing a new ContributionRecur, then we'll need to update the Contribution Recur with the new membership
-    if(isset($this->proposedParams[$this->contributionRecurCustomField]) && $this->proposedParams[$this->contributionRecurCustomField] != $this->startMembership[$this->contributionRecurCustomField]){
-
+    if(isset($this->proposedParams[$this->contributionRecurCustomField]) && $this->proposedParams[$this->contributionRecurCustomField] && $this->proposedParams[$this->contributionRecurCustomField] != $this->startMembership[$this->contributionRecurCustomField]){
       // Need to work out what transaction id to assign
       $contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array(
         'id' => $this->proposedParams[$this->contributionRecurCustomField]
@@ -254,34 +278,62 @@ class CRM_Contract_Handler{
       $this->activityParams['subject'] = "Contract update [".implode(', ', $modifiedFields)."]";
     }else{
       //TODO should we abort and not record an activity at this point since nothing has changed?
+      //TODO We should probably invalidate the form
       $this->activityParams['subject'] = "Contract update";
     }
 
-    $newAnnualMembershipAmount = $this->calcAnnualAmount($this->proposedContributionRecur);
-    $oldAnnualMembershipAmount = $this->calcAnnualAmount($this->startContributionRecur);
-    $amountDelta = $newAnnualMembershipAmount - $oldAnnualMembershipAmount;
-
     $contractUpdateCustomFields = $this->translateCustomFields('contract_updates');
 
-    $this->activityParams[$contractUpdateCustomFields['ch_annual']] = $newAnnualMembershipAmount;
-    $this->activityParams[$contractUpdateCustomFields['ch_annual_diff']] = $amountDelta;
-    $this->activityParams[$contractUpdateCustomFields['ch_recurring_contribution']] = $this->proposedParams[$this->contributionRecurCustomField];
-    $this->activityParams[$contractUpdateCustomFields['ch_frequency']] = $this->proposedContributionRecur['frequency_interval'];
+    // If a contributionRecurCustomField has been passed in the parameters
+    if(isset($this->proposedParams[$this->contributionRecurCustomField])){
+      $newAnnualMembershipAmount = $this->calcAnnualAmount($this->proposedContributionRecur);
+      $oldAnnualMembershipAmount = $this->calcAnnualAmount($this->startContributionRecur);
+      $this->activityParams[$contractUpdateCustomFields['ch_annual_diff']] = $newAnnualMembershipAmount - $oldAnnualMembershipAmount;
+      $this->activityParams[$contractUpdateCustomFields['ch_annual']] = $newAnnualMembershipAmount;
+      $finalContributionRecur = $this->proposedContributionRecur;
+    }else{
+      $this->activityParams[$contractUpdateCustomFields['ch_annual_diff']] = 0;
+      $this->activityParams[$contractUpdateCustomFields['ch_annual']] = $this->calcAnnualAmount($this->startContributionRecur);
+      $finalContributionRecur = $this->startContributionRecur;
+    }
+
+    $this->activityParams[$contractUpdateCustomFields['ch_recurring_contribution']] = $finalContributionRecur['id'];
+    $translateFromContributionRecurFreqToContractFreq = array(
+      'month' => 1,
+      'year' => 12
+    );
+
+    if(isset($finalContributionRecur['frequency_unit'])){
+      $this->activityParams[$contractUpdateCustomFields['ch_frequency']]
+      = $translateFromContributionRecurFreqToContractFreq[$finalContributionRecur['frequency_unit']];
+    }
 
     $sepaMandate = civicrm_api3('SepaMandate', 'get', array(
       'entity_table' => "civicrm_contribution_recur",
-      'entity_id' => $this->proposedContributionRecur['id'],
+      'entity_id' => $finalContributionRecur['id'],
     ));
-    if($sepaMandate['count'] == 1){
 
+    if($sepaMandate['count'] == 1){
       $this->activityParams[$contractUpdateCustomFields['ch_from_ba']] =
         $this->getBankAccountIdFromIban($sepaMandate['values'][$sepaMandate['id']]['iban']);
-
       $this->activityParams[$contractUpdateCustomFields['ch_to_ba']] =
         $this->getBankAccountIdFromIban($this->getCreditorIban($sepaMandate['values'][$sepaMandate['id']]['creditor_id']));
-
     }
   }
+
+  function calcAnnualAmount($contributionRecur){
+    if(!$contributionRecur){
+      return 0;
+    }
+    $frequencyUnitTranslate = array(
+      'day' => 365,
+      'week' => 52,
+      'month' => 12,
+      'year' => 1
+    );
+    return $contributionRecur['amount'] * $frequencyUnitTranslate[$contributionRecur['frequency_unit']] / $contributionRecur['frequency_interval'];
+  }
+
 
   function getBankAccountIdFromIban($iban){
     try{
@@ -314,12 +366,26 @@ class CRM_Contract_Handler{
     return $result['iban'];
   }
 
+
+  // This is much more convoluted that I'd like it to be because we are using
+  // the parameters submitted with the API or the form, not an API call.
   function getModifiedFieldKeys($from, $to){
+    // foreach($from as $k => $v){
+    //   if(preg_match("/custom_\d+_\d+/", $k)){
+    //     unset($from[$k]);
+    //   }
+    // }
+    // foreach($to as $k => $v){
+    //   if(preg_match("/custom_\d+_\d+/", $k)){
+    //     unset($to[$k]);
+    //   }
+    // }
+
+
     $membershipCustomFields =
       $this->translateCustomFields('membership_cancellation', 'label') +
       $this->translateCustomFields('membership_payment', 'label') +
       $this->translateCustomFields('membership_general', 'label');
-
 
     $modifiedFields = array();
 
@@ -355,18 +421,4 @@ class CRM_Contract_Handler{
     }
     return $translateCustomFields;
   }
-
-  function calcAnnualAmount($contributionRecur){
-    if(!$contributionRecur){
-      return 0;
-    }
-    $frequencyUnitTranslate = array(
-      'day' => 365,
-      'week' => 52,
-      'month' => 12,
-      'year' => 1
-    );
-    return $contributionRecur['amount'] * $frequencyUnitTranslate[$contributionRecur['frequency_unit']] / $contributionRecur['frequency_interval'];
-  }
-
 }
