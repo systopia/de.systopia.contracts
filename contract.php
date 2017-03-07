@@ -136,23 +136,22 @@ function contract_civicrm_buildForm($formName, &$form) {
 
     // Membership form in view mode
     case 'CRM_Member_Form_MembershipView':
-      $id =  CRM_Utils_Request::retrieve('id', 'Positive', $form);
-      $modifyForm = new CRM_Contract_FormUtils($form, $id);
+      $contactId = CRM_Utils_Request::retrieve('cid', 'Positive', $form);
+      $modifyForm = new CRM_Contract_FormUtils($form, 'Membership');
       $modifyForm->showPaymentContractDetails();
       break;
 
     // Membership form in add or edit mode
     case 'CRM_Member_Form_Membership':
       if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
-
         // Standard form
         if(!isset($form->_groupTree)){
-          $formUtils = new CRM_Contract_FormUtils($form, $form->_id);
-          $formUtils->removeMembershpEditDisallowedCoreFields();
+          $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
+          $formUtils->removeMembershipEditDisallowedCoreFields();
         // Custom data version
         }else{
-          $formUtils = new CRM_Contract_FormUtils($form, $form->_entityId);
-          $formUtils->removeMembershpEditDisallowedCustomFields();
+          $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
+          $formUtils->removeMembershipEditDisallowedCustomFields();
         }
       }
       break;
@@ -161,7 +160,7 @@ function contract_civicrm_buildForm($formName, &$form) {
     case 'CRM_Activity_Form_Activity':
       if($form->getAction() == CRM_Core_Action::VIEW){
         $id =  CRM_Utils_Request::retrieve('id', 'Positive', $form);
-        $modifyForm = new CRM_Contract_FormUtils($form, $id, 'Activity');
+        $modifyForm = new CRM_Contract_FormUtils($form, 'Activity');
         $modifyForm->showPaymentContractDetails();
       }
       break;

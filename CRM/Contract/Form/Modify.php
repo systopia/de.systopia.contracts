@@ -60,8 +60,8 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     if(in_array($this->updateAction->getName(), array('resume', 'update', 'revive'))){
 
       // add fields for update (and similar) actions
-      $alter = new CRM_Contract_FormUtils($this, $this->get('id'));
-      $alter->addPaymentContractSelect2('contract_history_recurring_contribution');
+      $alter = new CRM_Contract_FormUtils($this, 'Membership');
+      $alter->addPaymentContractSelect2('contract_history_recurring_contribution', $this->membership['contact_id']);
       $mediums = civicrm_api3('Activity', 'getoptions', array(
         'sequential' => 1,
         'field' => "activity_medium_id",

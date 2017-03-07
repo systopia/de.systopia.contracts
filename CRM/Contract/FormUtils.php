@@ -9,18 +9,13 @@
 
 class CRM_Contract_FormUtils
 {
-    public function __construct($form, $id, $entity = 'Membership')
+    public function __construct($form, $entity)
     {
+
+        // The form object and type of entity that we are updating with the form
+        // is passed via the constructor
         $this->entity = $entity;
-        //If this is an activity form, then we need to get the contract ID before
-        if($entity =='Activity'){
-          $activity = civicrm_api3('Activity', 'getsingle', array('id' => $id));
-          $id = $activity['source_record_id'];
-        }
         $this->form = $form;
-        if(isset($this->form->_contactID)){
-          $this->contactId = $this->form->_contactID;
-        };
     }
 
     public function getSepaPaymentInstruments()
@@ -39,9 +34,9 @@ class CRM_Contract_FormUtils
         return $this->sepaPaymentInstruments;
     }
 
-    public function addPaymentContractSelect2($elementName)
+    public function addPaymentContractSelect2($elementName, $contactId)
     {
-        $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $this->contactId));
+        $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $contactId));
         $contributionRecurOptions = array('' => '- none -') + array_map(array($this, 'writePaymentContractLabel'), $contributionRecurs['values']);
 
         $this->form->add('select', $elementName, ts('Payment Contract'), $contributionRecurOptions, false, array('class' => 'crm-select2'));
@@ -84,7 +79,7 @@ class CRM_Contract_FormUtils
         }
     }
 
-    public function removeMembershpEditDisallowedCoreFields()
+    public function removeMembershipEditDisallowedCoreFields()
     {
         foreach ($this->getMembershpEditDisallowedCoreFields() as $element) {
             if ($this->form->elementExists($element)) {
@@ -98,7 +93,7 @@ class CRM_Contract_FormUtils
         return array('status_id', 'is_override');
     }
 
-    public function removeMembershpEditDisallowedCustomFields()
+    public function removeMembershipEditDisallowedCustomFields()
     {
         $customGroupsToRemove = array('membership_cancellation');
         $customFieldsToRemove['membership_payment'] = array('membership_annual', 'membership_frequency', 'membership_recurring_contribution');
