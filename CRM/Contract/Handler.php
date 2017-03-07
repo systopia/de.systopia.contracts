@@ -290,7 +290,12 @@ class CRM_Contract_Handler{
         'reference' => $iban,
       ));
     } catch(Exception $e){
-      throw new Exception("Could not find Banking account reference for IBAN {$iban}");
+      // TODO FOR BJORN
+      // At the moment, if we can't find a bank account, we just return ''.
+      // Instead, we should try and find an account id and be throwing an
+      // exception when we can't
+      return '';
+      // throw new Exception("Could not find Banking account reference for IBAN {$iban}");
     }
     if(!$result['ba_id']){
       throw new Exception("Bank account ID not defined for Bank account reference with ID {$result['id']}");
