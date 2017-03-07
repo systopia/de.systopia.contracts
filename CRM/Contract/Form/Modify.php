@@ -38,8 +38,11 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     try{
       $CustomField = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
       $this->contributionRecurCustomField = 'custom_'.$CustomField['id'];
-      if($this->membership[$this->contributionRecurCustomField]){
+      if(isset($this->membership[$this->contributionRecurCustomField]) && $this->membership[$this->contributionRecurCustomField]){
         $this->contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->membership[$this->contributionRecurCustomField]));
+      }else{
+        // Ensure that this is set to squish warnings later in buildQuickForm
+        $this->membership[$this->contributionRecurCustomField]='';
       }
     }catch(Exception $e){
       CRM_Core_Error::fatal('Could not find recurring contribution for this membership');
