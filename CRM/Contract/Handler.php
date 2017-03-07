@@ -38,8 +38,11 @@ class CRM_Contract_Handler{
   function setStartMembership($id){
     if($id){
       $this->startMembership = civicrm_api3('Membership', 'getsingle', array('id' => $id));
-      if($this->startMembership[$this->contributionRecurCustomField]){
+      if(isset($this->startMembership[$this->contributionRecurCustomField]) && $this->startMembership[$this->contributionRecurCustomField]){
         $this->startContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->startMembership[$this->contributionRecurCustomField]));
+      }else{
+        $this->startContributionRecur =  null;
+        $this->startMembership[$this->contributionRecurCustomField] = '';
       }
       $this->startStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->startMembership['status_id']))['name'];
     }
@@ -203,9 +206,6 @@ class CRM_Contract_Handler{
     //if we are proposing a new ContributionRecur, then we'll need to update the Contribution Recur with the new membership
     if(isset($this->proposedParams[$this->contributionRecurCustomField]) && $this->proposedParams[$this->contributionRecurCustomField] != $this->startMembership[$this->contributionRecurCustomField]){
 
-      $this->proposedParams[$this->contributionRecurCustomField];
-      $this->startMembership[$this->contributionRecurCustomField];
-
       // Need to work out what transaction id to assign
       $contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array(
         'id' => $this->proposedParams[$this->contributionRecurCustomField]
@@ -352,6 +352,9 @@ class CRM_Contract_Handler{
   }
 
   function calcAnnualAmount($contributionRecur){
+    if(!$contributionRecur){
+      return 0;
+    }
     $frequencyUnitTranslate = array(
       'day' => 365,
       'week' => 52,
