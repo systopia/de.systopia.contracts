@@ -40,15 +40,16 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       // I am also unsetting the custom_#_# fields as they are also causing
       // issues when combined with the contact reference fields
 
-      $dialoggerCustomField = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_general', 'name' => 'membership_dialoger'));
-      $this->membership['custom_'.$dialoggerCustomField['id']] = $this->membership['custom_'.$dialoggerCustomField['id'].'_id'];
+      $dialoggerCustomField = 'custom_'.civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_general', 'name' => 'membership_dialoger'))['id'];
+      if(isset($this->membership[$dialoggerCustomField])){
+        $this->membership[$dialoggerCustomField] = $this->membership[$dialoggerCustomField.'_id'];
+      }
 
       foreach($this->membership as $k => $v){
         if(preg_match("/custom_\d+_\d+/", $k)){
           unset($this->membership[$k]);
         }
       }
-
     }catch(Exception $e){
       CRM_Core_Error::fatal('Not a valid membership ID');
     }
