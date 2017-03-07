@@ -31,6 +31,19 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     }
     try{
       $this->membership = civicrm_api3('Membership', 'getsingle', array('id' => $this->get('id')));
+
+      // Why TF does the api return contact references as names, not IDs?
+      // (i.e. why does it return something that you cannot pass back to create
+      // for an update?! As a work around, I am going to overwriting custom_#
+      // with custom_#_id and also unsetting the _1 duplicates. This will break
+      // again if people put other contact reference type fields into the
+      // membership custom data
+
+      $dialoggerCustomField = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_general', 'name' => 'membership_dialoger'));
+      $this->membership['custom_'.$dialoggerCustomField['id']] = $this->membership['custom_'.$dialoggerCustomField['id'].'_id'];
+      unset($this->membership['custom_'.$dialoggerCustomField['id'].'_1']);
+      unset($this->membership['custom_'.$dialoggerCustomField['id'].'_1_id']);
+
     }catch(Exception $e){
       CRM_Core_Error::fatal('Not a valid membership ID');
     }
@@ -126,7 +139,6 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     if(isset($this->submitted['contract_history_recurring_contribution'])){
       $this->updatedMembership[$this->contributionRecurCustomField] = $this->submitted['contract_history_recurring_contribution'];
     }
-
     civicrm_api3('Membership', 'create', $this->updatedMembership);
   }
 
