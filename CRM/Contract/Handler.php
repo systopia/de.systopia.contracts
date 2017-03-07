@@ -212,7 +212,7 @@ class CRM_Contract_Handler{
       ));
       // If recuring contribution doesn't have a transaction ID that is suitable for this contract, we need to create one
       if(!isset($contributionRecur['trxn_id']) || strpos($contributionRecur['trxn_id'], "CONTRACT-{$this->startMembership['id']}") !== 0){
-        echo $this->contributionRecurParams['trxn_id'] = $this->assignNextTransactionId($this->startMembership['id']);
+        $this->contributionRecurParams['trxn_id'] = $this->assignNextTransactionId($this->startMembership['id']);
         $this->contributionRecurParams['id'] = $this->proposedParams[$this->contributionRecurCustomField];
         $contributionRecur = civicrm_api3('ContributionRecur', 'create', $this->contributionRecurParams);
       }
