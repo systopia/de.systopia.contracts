@@ -193,8 +193,6 @@ function contract_civicrm_post($op, $objectName, $id, &$objectRef){
 }
 
 function contract_civicrm_apiWrappers(&$wrappers, $apiRequest) {
-  //&apiWrappers is an array of wrappers, you can add your(s) with the hook.
-  // You can use the apiRequest to decide if you want to add the wrapper (eg. only wrap api.Contact.create)
   if($apiRequest['entity'] == 'Membership' & $apiRequest['action'] == 'create'){
     $wrappers[] = CRM_Contract_Modify_APIWrapper::singleton();
   }
