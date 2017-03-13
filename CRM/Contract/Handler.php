@@ -107,7 +107,7 @@ class CRM_Contract_Handler{
 
   function addProposedParams($params){
 
-    // TODO ensure that we skip the new status
+    // TODO ensure that we skip the new status FIXME
     if($params['status_id'] == 1 || $params['status_id'] = 'New'){
       $params['status_id'] = 'Current';
     };
@@ -424,9 +424,6 @@ class CRM_Contract_Handler{
    * the parameters submitted with the API or the form, not an API call.
    */
   function getModifiedFields($from, $to){
-
-    // var_dump($from);
-    // var_dump($to);
 
     $membershipCustomFields =
       $this->translateCustomFields('membership_cancellation', 'label') +
