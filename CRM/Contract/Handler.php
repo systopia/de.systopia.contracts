@@ -43,10 +43,13 @@ class CRM_Contract_Handler{
     $this->contributionRecurCustomField = 'custom_'.$CustomField['id'];
     $CustomField = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_frequency'));
     $this->membershipFrequencyCustomField = 'custom_'.$CustomField['id'];
+    $CustomField = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_customer_id'));
+    $this->membershipCustomerIdCustomField = 'custom_'.$CustomField['id'];
 
     $this->monitoredFields=array(
       'membership_type_id',
-      $this->contributionRecurCustomField
+      $this->contributionRecurCustomField,
+      $this->membershipCustomerIdCustomField
     );
   }
 
@@ -155,23 +158,7 @@ class CRM_Contract_Handler{
     }
   }
 
-  function isValidFieldUpdate(){
-    $this->startStatus;
-    $this->proposedStatus;
-    $class = $this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)['class'];
-    $this->action = new $class;
-    $modifiedFields = $this->getModifiedFields($this->startMembership, $this->proposedParams);
-    $valid = $this->action->isValidFieldUpdate($modifiedFields);
-    if(!$valid){
-      $this->errorMessage = $this->action->errorMessage;
-      return false;
-    }else{
-      return true;
-    }
-
-  }
-
-  private function lookupStatusUpdate($startStatus, $endStatus){
+  function lookupStatusUpdate($startStatus, $endStatus){
     if(!$startStatus){
       $startStatus='';
     }
@@ -211,6 +198,22 @@ class CRM_Contract_Handler{
         return $change;
       }
     }
+  }
+
+  function isValidFieldUpdate(){
+    $this->startStatus;
+    $this->proposedStatus;
+    $class = $this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)['class'];
+    $this->action = new $class;
+    $modifiedFields = $this->getModifiedFields($this->startMembership, $this->proposedParams);
+    $valid = $this->action->isValidFieldUpdate($modifiedFields);
+    if(!$valid){
+      $this->errorMessage = $this->action->errorMessage;
+      return false;
+    }else{
+      return true;
+    }
+
   }
 
   /**
