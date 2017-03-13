@@ -21,8 +21,11 @@ class CRM_Contract_Action_Revive{
     return 'Contract_Revived';
   }
 
-  function getName(){
+  function getAction(){
     return 'revive';
+  }
+  function getResult(){
+    return 'revived';
   }
 
   function isValidFieldUpdate($fields){

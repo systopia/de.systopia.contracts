@@ -14,15 +14,18 @@ class CRM_Contract_Action_Sign{
   }
 
   function getEndStatus(){
-    return 'New'; // TODO Will need to change to Current if we remove New
+    return 'Current'; // TODO Will need to change to Current if we remove New
   }
 
   function getActivityType(){
     return 'Contract_Signed';
   }
 
-  function getName(){
+  function getAction(){
     return 'sign';
+  }
+  function getResult(){
+    return 'signed';
   }
 
   function isValidFieldUpdate($fields){

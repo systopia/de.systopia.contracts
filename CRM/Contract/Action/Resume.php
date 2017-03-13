@@ -21,8 +21,11 @@ class CRM_Contract_Action_Resume{
     return 'Contract_Resumed';
   }
 
-  function getName(){
+  function getAction(){
     return 'resume';
+  }
+  function getResult(){
+    return 'resumed';
   }
 
   function isValidFieldUpdate($fields){

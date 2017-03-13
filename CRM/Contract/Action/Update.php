@@ -25,8 +25,11 @@ class CRM_Contract_Action_Update{
     return 'Contract_Updated';
   }
 
-  function getName(){
+  function getAction(){
     return 'update';
+  }
+  function getResult(){
+    return 'updated';
   }
 
   function isValidFieldUpdate($fields){

@@ -21,8 +21,11 @@ class CRM_Contract_Action_Pause{
     return 'Contract_Paused';
   }
 
-  function getName(){
+  function getAction(){
     return 'pause';
+  }
+  function getResult(){
+    return 'paused';
   }
 
   function isValidFieldUpdate($fields){

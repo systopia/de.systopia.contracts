@@ -21,8 +21,11 @@ class CRM_Contract_Action_Cancel{
     return 'Contract_Cancelled';
   }
 
-  function getName(){
+  function getAction(){
     return 'cancel';
+  }
+  function getResult(){
+    return 'canceled';
   }
 
   function isValidFieldUpdate($fields){
