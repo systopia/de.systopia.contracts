@@ -24,6 +24,7 @@ class CRM_Contract_Modify_BAOWrapper{
     }
 
     $this->contractHandler->generateActivityParams();
+
     if(!$this->contractHandler->isValidFieldUpdate()){
       throw new \CiviCRM_API3_Exception($this->contractHandler->errorMessage);
     }

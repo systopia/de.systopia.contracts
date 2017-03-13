@@ -14,9 +14,19 @@
 class CRM_Contract_Handler{
 
   /**
-   * Whether this contract has had any significant changes
+   * Whether this contract has had any significant changes, i.e. whether any
+   * $monitoredFields have changed.
+   * @var Boolean
    */
-  var $significantUpdates = 0;
+  var $significantChanges = 0;
+
+  /**
+   * When one or more of these fields have changed, we should record a
+   * Contract_Update activity.
+   */
+  var $monitoredFields = array(
+
+  );
 
   /**
    * The various actions that can happen to contracts
@@ -86,7 +96,9 @@ class CRM_Contract_Handler{
 
   function addProposedParams($params){
 
-    // If the status hasn't been supplied, then set it to the same as it was before (since we need it to do the look up)
+    // If a proposed status hasn't been supplied, then presume it will stay the
+    // same as it was before. We need it to be set when working out if this is a
+    // valid status change.
     if(!$params['status_id']){
       $params['status_id'] = $this->startStatus;
     };
@@ -107,17 +119,23 @@ class CRM_Contract_Handler{
       }
     }
 
+    // Massage the proposed recurring contribution field since we need this when
+    // working out what has changed and what should be recorded.
+    // If it has been set, i.e. proposed
     if(isset($params[$this->contributionRecurCustomField])){
+      // and it has been set to a specific ID
       if($params[$this->contributionRecurCustomField]){
+        // Then retreive the propsed recurring contribution object
         $this->proposedContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $params[$this->contributionRecurCustomField]));
       }else{
+        // Else set it to none.
         $this->proposedContributionRecur = null;
       }
     }else{
+      // If it hasn't been pased, then presume that is the same as it was at the
+      // beginning.
       $this->proposedContributionRecur = $this->startContributionRecur;
     }
-
-
 
     $this->proposedStatus = $params['status_id'];
     $this->proposedParams = $params;
@@ -193,6 +211,10 @@ class CRM_Contract_Handler{
     }
   }
 
+  /**
+   * This is where we set activity parameters so that entities can be saved.
+   * @return [type] [description]
+   */
   function generateActivityParams(){
 
     // set basic activity params
@@ -203,8 +225,6 @@ class CRM_Contract_Handler{
       'status_id' => 'Completed',
       'medium_id' => $this->getMedium(),
       'target_id'=> $this->startMembership['contact_id'], // TODO might this have changed?
-      // 'details' => // TODO Should we record anything else here? Suggest: no, not if we don't need to
-      // 'activity_date_time' => // TODO currently allowing this to be assigned automatically - is this OK?
     );
 
     // set the source contact id //TODO check is this is robust enough
@@ -227,11 +247,26 @@ class CRM_Contract_Handler{
       $this->startMembership['campaign_id'];
   }
 
+  /**
+   * Called after the contract has been saved to save other entities if
+   * necessary. This presumes (but doesn't check) that
+   * $this->generateActivityParams() has been run.
+   */
   function saveEntities(){
-    $activity = civicrm_api3('Activity', 'create', $this->activityParams);
 
-    //if we are proposing a new ContributionRecur, then we'll need to update the Contribution Recur with the new membership
-    if(isset($this->proposedParams[$this->contributionRecurCustomField]) && $this->proposedParams[$this->contributionRecurCustomField] && $this->proposedParams[$this->contributionRecurCustomField] != $this->startMembership[$this->contributionRecurCustomField]){
+    // This should only be called if significant changes have been made
+    if($this->significantChanges){
+      $activity = civicrm_api3('Activity', 'create', $this->activityParams);
+    }
+
+    //if we are changing the recurring contribution associated with this
+    //contract a new ContributionRecur, then we'll need to update the
+    // recurring contribution with a reference to the new membership
+    if(
+      isset($this->proposedParams[$this->contributionRecurCustomField]) &&
+      $this->proposedParams[$this->contributionRecurCustomField] &&
+      ($this->proposedParams[$this->contributionRecurCustomField] != $this->startMembership[$this->contributionRecurCustomField])
+    ){
       // Need to work out what transaction id to assign
       $contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array(
         'id' => $this->proposedParams[$this->contributionRecurCustomField]
