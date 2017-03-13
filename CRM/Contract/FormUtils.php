@@ -36,7 +36,12 @@ class CRM_Contract_FormUtils
 
     public function addPaymentContractSelect2($elementName, $contactId)
     {
-        $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $contactId));
+        // Sometimes we call this function with an unknown contact. In these instances, return an empty array or recurring contributions
+        if($contactId){
+          $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $contactId));
+        }else{
+          $contributionRecurs['values']=array();
+        }
         $contributionRecurOptions = array('' => '- none -') + array_map(array($this, 'writePaymentContractLabel'), $contributionRecurs['values']);
 
         $this->form->add('select', $elementName, ts('Payment Contract'), $contributionRecurOptions, false, array('class' => 'crm-select2'));

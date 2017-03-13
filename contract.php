@@ -143,15 +143,26 @@ function contract_civicrm_buildForm($formName, &$form) {
 
     // Membership form in add or edit mode
     case 'CRM_Member_Form_Membership':
+      $contactId = CRM_Utils_Request::retrieve('cid', 'Positive', $form);
       if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
         // Standard form
         if(!isset($form->_groupTree)){
           $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
-          $formUtils->removeMembershipEditDisallowedCoreFields();
+          // NOTE for initial launch: all core membership fields should be editable
+          // $formUtils->removeMembershipEditDisallowedCoreFields();
+          // NOTE for initial launch: allow editing of payment contracts via the standard form
+
         // Custom data version
         }else{
           $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
-          $formUtils->removeMembershipEditDisallowedCustomFields();
+
+          $result = civicrm_api3('CustomField', 'GetSingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
+          $customGroupTableId = $form->getAction() == CRM_Core_Action::ADD ? '-1' : $form->_groupTree[$result['custom_group_id']]['table_id'];
+          $elementName = "custom_{$result['id']}_{$customGroupTableId}";
+          $form->removeElement($elementName);
+          $formUtils->addPaymentContractSelect2($elementName, $contactId);
+          // NOTE for initial launch: all custom membership fields should be editable
+          // $formUtils->removeMembershipEditDisallowedCustomFields();
         }
       }
       break;
