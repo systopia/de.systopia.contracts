@@ -14,8 +14,13 @@
 class CRM_Contract_Handler{
 
   /**
-  * The various actions that can happen to contracts
-  */
+   * Whether this contract has had any significant changes
+   */
+  var $significantUpdates = 0;
+
+  /**
+   * The various actions that can happen to contracts
+   */
   static $actions = array(
     'CRM_Contract_Action_Cancel',
     'CRM_Contract_Action_Pause',
@@ -34,8 +39,8 @@ class CRM_Contract_Handler{
   }
 
   /**
-   * this records the membership status at the START of a change (sequence)
-   *  and associated objects
+   * This records the membership status at the START of a change (sequence)
+   * and associated objects
    */
   function setStartMembership($id){
     if($id){
@@ -69,18 +74,6 @@ class CRM_Contract_Handler{
       $this->startStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->startMembership['status_id']))['name'];
     }
   }
-  /**
-   * NOTE Not using this function any more...
-   *  and associated objects
-   */
-  // function setEndMembership($id){
-  //   $this->endMembership = civicrm_api3('Membership', 'getsingle', array('id' => $id));
-  //   if($this->endMembership[$this->contributionRecurCustomField]){
-  //     $this->endContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->endMembership[$this->contributionRecurCustomField]));
-  //   }
-  //   $this->endStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->endMembership['status_id']))['name'];
-  //   $this->setAction(); // At this point, we can set the action as we know what it will be
-  // }
 
   function setAction(){
     if($class = $this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)['class']){
@@ -271,7 +264,6 @@ class CRM_Contract_Handler{
     }
   }
 
-
   function setMedium($medium){
     return $this->medium;
   }
@@ -343,7 +335,6 @@ class CRM_Contract_Handler{
     return $contributionRecur['amount'] * $frequencyUnitTranslate[$contributionRecur['frequency_unit']] / $contributionRecur['frequency_interval'];
   }
 
-
   function getBankAccountIdFromIban($iban){
     try{
       $result = civicrm_api3('BankingAccountReference', 'getsingle', array(
@@ -375,21 +366,10 @@ class CRM_Contract_Handler{
     return $result['iban'];
   }
 
-
-  // This is much more convoluted that I'd like it to be because we are using
-  // the parameters submitted with the API or the form, not an API call.
+  /** This is much more convoluted that I'd like it to be because we are using
+   * the parameters submitted with the API or the form, not an API call.
+   */
   function getModifiedFieldKeys($from, $to){
-    // foreach($from as $k => $v){
-    //   if(preg_match("/custom_\d+_\d+/", $k)){
-    //     unset($from[$k]);
-    //   }
-    // }
-    // foreach($to as $k => $v){
-    //   if(preg_match("/custom_\d+_\d+/", $k)){
-    //     unset($to[$k]);
-    //   }
-    // }
-
 
     $membershipCustomFields =
       $this->translateCustomFields('membership_cancellation', 'label') +
