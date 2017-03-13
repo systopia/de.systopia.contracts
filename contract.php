@@ -158,7 +158,7 @@ function contract_civicrm_buildForm($formName, &$form) {
           $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
 
           $result = civicrm_api3('CustomField', 'GetSingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
-          $customGroupTableId = $form->getAction() == CRM_Core_Action::ADD ? '-1' : $form->_groupTree[$result['custom_group_id']]['table_id'];
+          $customGroupTableId = $form->_groupTree[$result['custom_group_id']]['table_id'] ? $form->_groupTree[$result['custom_group_id']]['table_id'] : '-1';
           $elementName = "custom_{$result['id']}_{$customGroupTableId}";
           $form->removeElement($elementName);
           $formUtils->addPaymentContractSelect2($elementName, $contactId);
