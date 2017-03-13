@@ -172,8 +172,11 @@ function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &
   switch ($objectName) {
     case 'Membership':
       $alter = new CRM_Contract_AlterMembershipLinks($objectId, $links, $mask, $values);
-      $alter->removeActions(array(CRM_Core_Action::UPDATE, CRM_Core_Action::RENEW));
-      $alter->addHistoryActions();
+      // NOTE for initial launch: Allow updating of contracts via standard form.
+      // $alter->removeActions(array(CRM_Core_Action::RENEW, CRM_Core_Action::DELETE, CRM_Core_Action::UPDATE));
+      $alter->removeActions(array(CRM_Core_Action::RENEW, CRM_Core_Action::DELETE));
+      // NOTE for initial launch: Remove links to new actions for updating contracts
+      // $alter->addHistoryActions();
       break;
     }
 }
