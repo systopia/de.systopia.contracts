@@ -18,7 +18,7 @@ class CRM_Contract_Action_Cancel{
   }
 
   function getActivityType(){
-    return 'Contract_Resumed';
+    return 'Contract_Cancelled';
   }
 
   function getName(){
