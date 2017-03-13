@@ -22,11 +22,9 @@ class CRM_Contract_Handler{
 
   /**
    * When one or more of these fields have changed, we should record a
-   * Contract_Update activity.
+   * Contract_Update activity (set when constructed)
    */
-  var $monitoredFields = array(
-
-  );
+  var $monitoredFields = array();
 
   /**
    * The various actions that can happen to contracts
@@ -46,6 +44,10 @@ class CRM_Contract_Handler{
     $CustomField = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_frequency'));
     $this->membershipFrequencyCustomField = 'custom_'.$CustomField['id'];
 
+    $this->monitoredFields=array(
+      'membership_type_id',
+      $this->contributionRecurCustomField
+    );
   }
 
   /**
@@ -158,7 +160,7 @@ class CRM_Contract_Handler{
     $this->proposedStatus;
     $class = $this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)['class'];
     $this->action = new $class;
-    $modifiedFields = $this->getModifiedFieldKeys($this->startMembership, $this->proposedParams);
+    $modifiedFields = $this->getModifiedFields($this->startMembership, $this->proposedParams);
     $valid = $this->action->isValidFieldUpdate($modifiedFields);
     if(!$valid){
       $this->errorMessage = $this->action->errorMessage;
@@ -309,7 +311,7 @@ class CRM_Contract_Handler{
 
   function setUpdateParams(){
 
-    $modifiedFields = $this->getModifiedFieldKeys($this->startMembership, $this->proposedParams);
+    $modifiedFields = $this->getModifiedFields($this->startMembership, $this->proposedParams);
     if(count($modifiedFields)){
       $this->activityParams['subject'] = "Contract update [".implode(', ', $modifiedFields)."]";
     }else{
@@ -404,7 +406,10 @@ class CRM_Contract_Handler{
   /** This is much more convoluted that I'd like it to be because we are using
    * the parameters submitted with the API or the form, not an API call.
    */
-  function getModifiedFieldKeys($from, $to){
+  function getModifiedFields($from, $to){
+
+    // var_dump($from);
+    // var_dump($to);
 
     $membershipCustomFields =
       $this->translateCustomFields('membership_cancellation', 'label') +
@@ -427,6 +432,13 @@ class CRM_Contract_Handler{
             $modifiedFields[$fromField] = civicrm_api3('Membership', 'getfield', array('name' => $fromField, 'action' => "get", ))['values']['title'];
           }
         }
+      }
+    }
+
+    foreach($modifiedFields as $name => $label){
+      if(in_array($name, $this->monitoredFields)){
+        $this->significantChanges = 1;
+        break;
       }
     }
     return $modifiedFields;
