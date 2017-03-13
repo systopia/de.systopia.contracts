@@ -115,4 +115,13 @@ class CRM_Contract_FormUtils
             }
         }
     }
+
+    public function filterMembershipStatuses($element){
+      foreach($element->_options as $key => $option){
+        if(!in_array($option['text'], array('Current', 'Cancelled'))){
+          unset($element->_options[$key]);
+        }
+      }
+
+    }
 }

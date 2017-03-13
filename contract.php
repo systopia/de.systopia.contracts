@@ -148,6 +148,7 @@ function contract_civicrm_buildForm($formName, &$form) {
         // Standard form
         if(!isset($form->_groupTree)){
           $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
+          $formUtils->filterMembershipStatuses($form->getElement('status_id'));
           // NOTE for initial launch: all core membership fields should be editable
           // $formUtils->removeMembershipEditDisallowedCoreFields();
           // NOTE for initial launch: allow editing of payment contracts via the standard form
