@@ -26,11 +26,11 @@ class CRM_Contract_AlterMembershipLinks
           $action = new $class;
             if(in_array($membershipStatus['name'], $action->getValidStartStatuses())){
                 $this->links[] = array(
-                    'name' => ucfirst($action->getName()),
-                    'title' => ucfirst("{$action->getName()} Contract"),
+                    'name' => ucfirst($action->getAction()),
+                    'title' => ucfirst("{$action->getAction()} Contract"),
                     'url' => "civicrm/contract/modify",
                     'bit' => CRM_Core_Action::UPDATE,
-                    'qs' => "update_action={$action->getName()}&id=%%id%%",
+                    'qs' => "update_action={$action->getAction()}&id=%%id%%",
                 );
             }
         }

@@ -71,15 +71,15 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
   function validateStartStatus(){
     $this->membershipStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->membership['status_id']));
     if(!in_array($this->membershipStatus['name'], $this->updateAction->getValidStartStatuses())){
-      CRM_Core_Error::fatal("You cannot {$this->updateAction->getName()} a membership when its status is '{$this->membershipStatus['name']}'.");
+      CRM_Core_Error::fatal("You cannot {$this->updateAction->getAction()} a membership when its status is '{$this->membershipStatus['name']}'.");
     }
   }
 
   function buildQuickForm(){
 
-    CRM_Utils_System::setTitle(ucfirst($this->updateAction->getName()).' contract');
+    CRM_Utils_System::setTitle(ucfirst($this->updateAction->getAction()).' contract');
 
-    if(in_array($this->updateAction->getName(), array('resume', 'update', 'revive'))){
+    if(in_array($this->updateAction->getAction(), array('resume', 'update', 'revive'))){
 
       // add fields for update (and similar) actions
       $alter = new CRM_Contract_FormUtils($this, 'Membership');
@@ -94,7 +94,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       $this->add('select', 'contract_history_medium', ts('Medium'), $mediumOptions, false, array('class' => 'crm-select2'));
       $this->assign('isUpdate', true);
     }
-    elseif($this->updateAction->getName() == 'cancel'){
+    elseif($this->updateAction->getAction() == 'cancel'){
 
 
       $this->add('select', 'contract_history_cancel_reason', ts('Cancellation reason'), $mediumOptions, false, array('class' => 'crm-select2'));
@@ -103,22 +103,18 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     $this->addButtons(array(
         array('type' => 'cancel', 'name' => 'Back'), // since Cancel looks bad when viewed next to the Cancel action
-        array('type' => 'submit', 'name' => ucfirst($this->updateAction->getName()), 'isDefault' => true)
+        array('type' => 'submit', 'name' => ucfirst($this->updateAction->getAction()), 'isDefault' => true)
     ));
 
     $defaults['contract_history_recurring_contribution'] = $this->membership[$this->contributionRecurCustomField];
     $this->setDefaults($defaults);
 
-    $this->assign('historyAction', $this->updateAction->getName());
+    $this->assign('historyAction', $this->updateAction->getAction());
     $this->assign('elementNames', $this->getRenderableElementNames());
     parent::buildQuickForm();
   }
 
   function getRenderableElementNames() {
-    // The _elements list includes some items which should not be
-    // auto-rendered in the loop -- such as "qfKey" and "buttons".  These
-    // items don't have labels.  We'll identify renderable by filtering on
-    // the 'label'.
     $elementNames = array();
     foreach ($this->_elements as $element) {
       /** @var HTML_QuickForm_Element $element */
