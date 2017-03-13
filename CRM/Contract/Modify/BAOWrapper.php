@@ -4,19 +4,19 @@ class CRM_Contract_Modify_BAOWrapper{
 
   private static $_singleton;
 
-  private function __construct(){
-    $this->contractHandler = new CRM_Contract_Handler();
+  private function __construct($op){
+    $this->op = $op;
+    $this->contractHandler = new CRM_Contract_Handler($op);
   }
 
-  public static function singleton() {
+  public static function singleton($op) {
     if (!self::$_singleton) {
-      self::$_singleton = new CRM_Contract_Modify_BAOWrapper();
+      self::$_singleton = new CRM_Contract_Modify_BAOWrapper($op);
     }
     return self::$_singleton;
   }
 
   function pre($id, $params){
-
     $this->contractHandler->setStartMembership($id);
     $this->contractHandler->addProposedParams($params);
     if(!$this->contractHandler->isValidStatusUpdate()){
@@ -32,6 +32,10 @@ class CRM_Contract_Modify_BAOWrapper{
   }
 
   function post($id){
+    if($this->op == 'create'){
+      $this->contractHandler->insertMissingParams($id);
+    }
+    // Necessary only in the case of a new contract
     $this->contractHandler->saveEntities();
   }
 }

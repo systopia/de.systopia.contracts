@@ -97,9 +97,20 @@ class CRM_Contract_Handler{
       throw new Exception("No contract history activity covers the status change from '$this->startStatus' to '$this->proposedStatus'");
 
     }
+
+    //We should always treat the signing action as significant as we want to
+    //record an activity
+    if($this->action->getAction() == 'sign'){
+      $this->significantChanges = 1;
+    }
   }
 
   function addProposedParams($params){
+
+    // TODO ensure that we skip the new status
+    if($params['status_id'] == 1 || $params['status_id'] = 'New'){
+      $params['status_id'] = 'Current';
+    };
 
     // If a proposed status hasn't been supplied, then presume it will stay the
     // same as it was before. We need it to be set when working out if this is a
@@ -163,7 +174,7 @@ class CRM_Contract_Handler{
       $startStatus='';
     }
     // NOTE for initial launch: limit transitions to starting and ending with $validStatuses
-    $validStatuses = array('Current', 'Cancelled');
+    $validStatuses = array('', 'Current', 'Cancelled');
 
     if(!isset($this->statusChangeIndex)){
       foreach(self::$actions as $name){
@@ -226,7 +237,7 @@ class CRM_Contract_Handler{
     $this->activityParams = array(
       'source_record_id' => $this->startMembership['id'],
       'activity_type_id' => $this->action->getActivityType(),
-      'subject' => "Contract [{$this->startMembership['id']}] {$this->action->getName()}", // A bit superfluous with most actions
+      'subject' => "Contract {$this->startMembership['id']} {$this->action->getResult()}", // A bit superfluous with most actions
       'status_id' => 'Completed',
       'medium_id' => $this->getMedium(),
       'target_id'=> $this->startMembership['contact_id'], // TODO might this have changed?
@@ -239,9 +250,9 @@ class CRM_Contract_Handler{
     }
 
     // add further fields as required by different actions
-    if(in_array($this->action->getName(), array('resume', 'update', 'revive', 'sign'))){
+    if(in_array($this->action->getAction(), array('resume', 'update', 'revive', 'sign'))){
       $this->setUpdateParams();
-    }elseif($this->action->getName() == 'cancel'){
+    }elseif($this->action->getAction() == 'cancel'){
       $this->setCancelParams();
     }
 
@@ -258,7 +269,6 @@ class CRM_Contract_Handler{
    * $this->generateActivityParams() has been run.
    */
   function saveEntities(){
-
     // This should only be called if significant changes have been made
     if($this->significantChanges){
       $activity = civicrm_api3('Activity', 'create', $this->activityParams);
@@ -283,6 +293,15 @@ class CRM_Contract_Handler{
         $contributionRecur = civicrm_api3('ContributionRecur', 'create', $this->contributionRecurParams);
       }
     }
+  }
+
+  // This is used when we a creating a new membership since we need to
+  function insertMissingParams($id){
+    $this->setStartMembership($id);
+    $this->startMembership['id'] = $id;
+    $this->generateActivityParams();
+    // $this->activityParams['subject'] = "Contract {$this->startMembership['id']} {$this->action->getResult()}";
+    // $this->activityParams['source_record_id'] = $id;
   }
 
   function assignNextTransactionId($contractId){
@@ -315,14 +334,9 @@ class CRM_Contract_Handler{
   function setUpdateParams(){
 
     $modifiedFields = $this->getModifiedFields($this->startMembership, $this->proposedParams);
-    if(count($modifiedFields)){
-      $this->activityParams['subject'] = "Contract update [".implode(', ', $modifiedFields)."]";
-    }else{
-      //TODO should we abort and not record an activity at this point since nothing has changed?
-      //TODO We should probably invalidate the form
-      $this->activityParams['subject'] = "Contract update";
+    if($this->action->getAction() == 'update'){
+      $this->activityParams['subject'] .= " [".implode(', ', $modifiedFields)."]";
     }
-
     $contractUpdateCustomFields = $this->translateCustomFields('contract_updates');
 
     // If a contributionRecurCustomField has been passed in the parameters
