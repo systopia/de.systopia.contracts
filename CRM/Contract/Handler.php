@@ -263,6 +263,71 @@ class CRM_Contract_Handler{
       $this->startMembership['campaign_id'];
   }
 
+  function setUpdateParams(){
+
+    // Set activity params
+
+    $modifiedFields = $this->getModifiedFields($this->startMembership, $this->proposedParams);
+    if($this->action->getAction() == 'update'){
+      $this->activityParams['subject'] .= ": ".implode(', ', $modifiedFields);
+    }
+    $contractUpdateCustomFields = $this->translateCustomFields('contract_updates');
+
+    // If a contributionRecurCustomField has been passed in the parameters
+    if(isset($this->proposedParams[$this->contributionRecurCustomField])){
+      $newAnnualMembershipAmount = $this->calcAnnualAmount($this->proposedContributionRecur);
+      $oldAnnualMembershipAmount = $this->calcAnnualAmount($this->startContributionRecur);
+      $this->activityParams[$contractUpdateCustomFields['ch_annual_diff']] = $newAnnualMembershipAmount - $oldAnnualMembershipAmount;
+      $this->activityParams[$contractUpdateCustomFields['ch_annual']] = $newAnnualMembershipAmount;
+      $finalContributionRecur = $this->proposedContributionRecur;
+    }else{
+      $this->activityParams[$contractUpdateCustomFields['ch_annual_diff']] = 0;
+      $this->activityParams[$contractUpdateCustomFields['ch_annual']] = $this->calcAnnualAmount($this->startContributionRecur);
+      $finalContributionRecur = $this->startContributionRecur;
+    }
+
+    $this->activityParams[$contractUpdateCustomFields['ch_recurring_contribution']] = $finalContributionRecur['id'];
+    $translateFromContributionRecurFreqToContractFreq = array(
+      'month' => 1,
+      'year' => 12
+    );
+
+    $this->activityParams[$contractUpdateCustomFields['ch_frequency']] =
+      isset($finalContributionRecur['frequency_unit']) ?
+      $translateFromContributionRecurFreqToContractFreq[$finalContributionRecur['frequency_unit']] : '';
+
+    $sepaMandate = civicrm_api3('SepaMandate', 'get', array(
+      'entity_table' => "civicrm_contribution_recur",
+      'entity_id' => $finalContributionRecur['id'],
+    ));
+
+    if($sepaMandate['count'] == 1){
+      $this->activityParams[$contractUpdateCustomFields['ch_from_ba']] =
+        $this->getBankAccountIdFromIban($sepaMandate['values'][$sepaMandate['id']]['iban']);
+      $this->activityParams[$contractUpdateCustomFields['ch_to_ba']] =
+        $this->getBankAccountIdFromIban($this->getCreditorIban($sepaMandate['values'][$sepaMandate['id']]['creditor_id']));
+    }
+
+    // set membership params
+    $membershipPaymentCustomFields = $this->translateCustomFields('membership_payment');
+
+    $this->membershipParams[$membershipPaymentCustomFields['membership_frequency']] =
+      $this->activityParams[$contractUpdateCustomFields['ch_frequency']];
+
+      // $this->activityParams[$contractUpdateCustomFields['ch_annual']];
+    $this->membershipParams['skip_wrapper'] = true; // Avoid an infinite loop
+    $this->membershipParams['id'] = $this->startMembership['id'];
+    // var_dump($this->proposedParams);
+    // var_dump($this->activityParams);
+    // var_dump($this->membershipParams);
+  }
+
+  function setCancelParams(){
+    $this->translateCustomFields('contract_cancellation');
+    $this->activityParams[$this->translateActivityField['contact_history_cancel_reason']] = $this->submitted['contract_history_cancel_reason']; //TODO make select
+
+  }
+
   /**
    * Called after the contract has been saved to save other entities if
    * necessary. This presumes (but doesn't check) that
@@ -272,6 +337,8 @@ class CRM_Contract_Handler{
     // This should only be called if significant changes have been made
     if($this->significantChanges){
       $activity = civicrm_api3('Activity', 'create', $this->activityParams);
+      $this->membershipParams['options']['reload'] = 1;
+      $membership = civicrm_api3('Membership', 'create', $this->membershipParams);
     }
 
     //if we are changing the recurring contribution associated with this
@@ -295,13 +362,14 @@ class CRM_Contract_Handler{
     }
   }
 
-  // This is used when we a creating a new membership since we need to
+  // This is used when we a creating a new membership since we couldn't set
+  // these values until we knew the ID of the membership we created.
   function insertMissingParams($id){
     $this->setStartMembership($id);
     $this->startMembership['id'] = $id;
     $this->generateActivityParams();
-    // $this->activityParams['subject'] = "Contract {$this->startMembership['id']} {$this->action->getResult()}";
-    // $this->activityParams['source_record_id'] = $id;
+    $this->membershipParams['id'] = $id;
+    $this->membershipParams['status_id'] = 2; // set to current (skip new) TODO Delete new
   }
 
   function assignNextTransactionId($contractId){
@@ -331,50 +399,7 @@ class CRM_Contract_Handler{
     return $this->medium = 1;
   }
 
-  function setUpdateParams(){
 
-    $modifiedFields = $this->getModifiedFields($this->startMembership, $this->proposedParams);
-    if($this->action->getAction() == 'update'){
-      $this->activityParams['subject'] .= " [".implode(', ', $modifiedFields)."]";
-    }
-    $contractUpdateCustomFields = $this->translateCustomFields('contract_updates');
-
-    // If a contributionRecurCustomField has been passed in the parameters
-    if(isset($this->proposedParams[$this->contributionRecurCustomField])){
-      $newAnnualMembershipAmount = $this->calcAnnualAmount($this->proposedContributionRecur);
-      $oldAnnualMembershipAmount = $this->calcAnnualAmount($this->startContributionRecur);
-      $this->activityParams[$contractUpdateCustomFields['ch_annual_diff']] = $newAnnualMembershipAmount - $oldAnnualMembershipAmount;
-      $this->activityParams[$contractUpdateCustomFields['ch_annual']] = $newAnnualMembershipAmount;
-      $finalContributionRecur = $this->proposedContributionRecur;
-    }else{
-      $this->activityParams[$contractUpdateCustomFields['ch_annual_diff']] = 0;
-      $this->activityParams[$contractUpdateCustomFields['ch_annual']] = $this->calcAnnualAmount($this->startContributionRecur);
-      $finalContributionRecur = $this->startContributionRecur;
-    }
-
-    $this->activityParams[$contractUpdateCustomFields['ch_recurring_contribution']] = $finalContributionRecur['id'];
-    $translateFromContributionRecurFreqToContractFreq = array(
-      'month' => 1,
-      'year' => 12
-    );
-
-    if(isset($finalContributionRecur['frequency_unit'])){
-      $this->activityParams[$contractUpdateCustomFields['ch_frequency']]
-      = $translateFromContributionRecurFreqToContractFreq[$finalContributionRecur['frequency_unit']];
-    }
-
-    $sepaMandate = civicrm_api3('SepaMandate', 'get', array(
-      'entity_table' => "civicrm_contribution_recur",
-      'entity_id' => $finalContributionRecur['id'],
-    ));
-
-    if($sepaMandate['count'] == 1){
-      $this->activityParams[$contractUpdateCustomFields['ch_from_ba']] =
-        $this->getBankAccountIdFromIban($sepaMandate['values'][$sepaMandate['id']]['iban']);
-      $this->activityParams[$contractUpdateCustomFields['ch_to_ba']] =
-        $this->getBankAccountIdFromIban($this->getCreditorIban($sepaMandate['values'][$sepaMandate['id']]['creditor_id']));
-    }
-  }
 
   function calcAnnualAmount($contributionRecur){
     if(!$contributionRecur){
@@ -456,12 +481,6 @@ class CRM_Contract_Handler{
       }
     }
     return $modifiedFields;
-  }
-
-  function setCancelParams(){
-    $this->translateCustomFields('contract_cancellation');
-    $this->activityParams[$this->translateActivityField['contact_history_cancel_reason']] = $this->submitted['contract_history_cancel_reason']; //TODO make select
-
   }
 
   function translateCustomFields($customGroup, $key = 'name'){
