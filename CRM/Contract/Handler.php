@@ -362,8 +362,10 @@ class CRM_Contract_Handler{
     }
   }
 
-  // This is used when we a creating a new membership since we couldn't set
-  // these values until we knew the ID of the membership we created.
+  /**
+   * This is used when we a creating a new membership since we couldn't set
+   * these values until we knew the ID of the membership we created.
+   */
   function insertMissingParams($id){
     $this->setStartMembership($id);
     $this->startMembership['id'] = $id;
