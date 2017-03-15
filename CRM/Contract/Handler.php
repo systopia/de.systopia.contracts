@@ -147,15 +147,19 @@ class CRM_Contract_Handler{
   function setAction(){
     if($class = $this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)['class']){
       $this->action = new $class;
+
+      //We should always treat the signing action as significant as we want to
+      //record an activity
+      if($this->action->getAction() == 'sign'){
+        $this->significantChanges = 1;
+      }
+    //If we can't find an action, report an error
     }else{
-      throw new Exception("No contract history activity covers the status change from '$this->startStatus' to '$this->proposedStatus'");
-
-    }
-
-    //We should always treat the signing action as significant as we want to
-    //record an activity
-    if($this->action->getAction() == 'sign'){
-      $this->significantChanges = 1;
+      if($this->startStatus == 'Cancelled' && $this->proposedStatus == 'Cancelled'){
+        $this->errors['status_id'] = "Cannot update contract status while $this->startStatus.";
+      }else{
+        $this->errors['status_id'] = "Cannot update contract status from '$this->startStatus' to '$this->proposedStatus'";
+      }
     }
   }
 
@@ -202,10 +206,11 @@ class CRM_Contract_Handler{
   }
 
   function isValidStatusUpdate(){
-    if($this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)){
-      return true;
-    }else{
+    $this->setAction();
+    if(isset($this->errors['status_id'])){
       return false;
+    }else{
+      return true;
     }
   }
 

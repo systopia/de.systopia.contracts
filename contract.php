@@ -145,18 +145,20 @@ function contract_civicrm_buildForm($formName, &$form) {
     case 'CRM_Member_Form_Membership':
       $contactId = CRM_Utils_Request::retrieve('cid', 'Positive', $form);
       if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
-        // Standard form
-        if(!isset($form->_groupTree)){
-          $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
+
+        CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'js/membership-edit.js');
+
+        $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
+        if($form->elementExists('status_id')){
           $formUtils->filterMembershipStatuses($form->getElement('status_id'));
+        }
+        if(!isset($form->_groupTree)){
           // NOTE for initial launch: all core membership fields should be editable
           // $formUtils->removeMembershipEditDisallowedCoreFields();
           // NOTE for initial launch: allow editing of payment contracts via the standard form
 
         // Custom data version
         }else{
-          $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
-
           $result = civicrm_api3('CustomField', 'GetSingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
           $customGroupTableId = $form->_groupTree[$result['custom_group_id']]['table_id'] ? $form->_groupTree[$result['custom_group_id']]['table_id'] : '-1';
           $elementName = "custom_{$result['id']}_{$customGroupTableId}";
@@ -181,10 +183,18 @@ function contract_civicrm_buildForm($formName, &$form) {
 }
 
 function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors){
-  // switch ($formName) {
-  //   case 'CRM_Member_Form_Membership':
-  //     $errors['status_id'] = 'This is always wrong';
-  // }
+  switch ($formName) {
+    case 'CRM_Member_Form_Membership':
+      if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
+        $id = CRM_Utils_Request::retrieve('id', 'Positive', $form);
+        $contractHandler = new CRM_Contract_Handler();
+        $contractHandler->setStartMembership($id);
+        $contractHandler->addProposedParams($fields);
+        if(!$contractHandler->isValidStatusUpdate()){
+          $errors['status_id']=$contractHandler->errors['status_id'];
+        }
+    }
+  }
 }
 
 function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &$values ){

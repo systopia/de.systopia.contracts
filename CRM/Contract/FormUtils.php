@@ -115,13 +115,18 @@ class CRM_Contract_FormUtils
             }
         }
     }
-
+    /**
+     * Replaced with js/membership-edit.js for now as filtering was doing weird
+     * things to the status_id
+     */
     public function filterMembershipStatuses($element){
-      foreach($element->_options as $key => $option){
-        if(!in_array($option['text'], array('Current', 'Cancelled'))){
-          unset($element->_options[$key]);
-        }
-      }
-
+      // // var_dump($element->_options);
+      // foreach($element->_options as $key => $option){
+      //   if(!in_array($option['text'], array('Current', 'Cancelled', '- select -'))){
+      //     unset($element->_options[$key]);
+      //   }
+      // }
+      // // unset($element->_options[0]);
+      // // // var_dump($element->_options);
     }
 }

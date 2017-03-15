@@ -19,10 +19,6 @@ class CRM_Contract_Modify_BAOWrapper{
   }
 
   function pre($id, $params){
-    if(isset($params['skip_wrapper']) && $params['skip_wrapper']){
-      $this->skip = true;
-      return;
-    }
     $this->contractHandler->setStartMembership($id);
     $this->contractHandler->addProposedParams($params);
     if(!$this->contractHandler->isValidStatusUpdate()){
@@ -38,16 +34,9 @@ class CRM_Contract_Modify_BAOWrapper{
   }
 
   function post($id){
-    if($this->skip == true){
-      return;
-    }
-    // var_dump($this->contractHandler->membershipParams);
     if($this->op == 'create'){
       $this->contractHandler->insertMissingParams($id);
-      // var_dump($this->contractHandler->membershipParams);
     }
     $this->contractHandler->saveEntities();
-    civicrm_api3('Membership', 'create', array('id'=>'134', 'custom_18'=>'98', 'skip_wrapper' => true));
-    // var_dump($this->contractHandler->membershipParams);exit;
   }
 }
