@@ -41,16 +41,13 @@ class CRM_Contract_Handler{
   function __construct(){
     $CustomField = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
     $this->contributionRecurCustomField = 'custom_'.$CustomField['id'];
-    $CustomField = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_frequency'));
-    $this->membershipFrequencyCustomField = 'custom_'.$CustomField['id'];
-    $CustomField = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_customer_id'));
-    $this->membershipCustomerIdCustomField = 'custom_'.$CustomField['id'];
 
     $this->monitoredFields=array(
       'membership_type_id',
       'status_id',
-      $this->contributionRecurCustomField,
-      $this->membershipCustomerIdCustomField
+      'membership_payment.membership_recurring_contribution',
+      'membership_payment.membership_frequency',
+      'membership_payment.membership_customer_id',
     );
   }
 
@@ -75,11 +72,8 @@ class CRM_Contract_Handler{
         $this->startMembership[$dialoggerCustomField] = $this->startMembership[$dialoggerCustomField.'_id'];
       }
 
-      foreach($this->startMembership as $k => $v){
-        if(preg_match("/custom_\d+_\d+/", $k)){
-          unset($this->startMembership[$k]);
-        }
-      }
+      $this->saneifyCustomFieldIds($this->startMembership);
+
 
       if(isset($this->startMembership[$this->contributionRecurCustomField]) && $this->startMembership[$this->contributionRecurCustomField]){
         $this->startContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->startMembership[$this->contributionRecurCustomField]));
@@ -88,11 +82,13 @@ class CRM_Contract_Handler{
         $this->startContributionRecur =  null;
       }
       $this->startStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->startMembership['status_id']))['name'];
+
+      // Ensure that the start membership status is refered to by the name, not the id.
+      $this->startMembership['status_id'] = $this->startStatus;
     }
   }
 
   function addProposedParams($params){
-
     // TODO ensure that we skip the new status FIXME
     if($params['status_id'] == 1 || $params['status_id'] == 'New'){
       $params['status_id'] = 'Current';
@@ -138,7 +134,6 @@ class CRM_Contract_Handler{
       // beginning.
       $this->proposedContributionRecur = $this->startContributionRecur;
     }
-
     $this->proposedStatus = $params['status_id'];
     $this->proposedParams = $params;
     $this->setAction(); // At this point, we can set the action as we know what it will be
@@ -156,7 +151,7 @@ class CRM_Contract_Handler{
     //If we can't find an action, report an error
     }else{
       if($this->startStatus == 'Cancelled' && $this->proposedStatus == 'Cancelled'){
-        $this->errors['status_id'] = "Cannot update contract status while $this->startStatus.";
+        $this->errors['status_id'] = "Cannot update a contract if the status is $this->startStatus.";
       }else{
         $this->errors['status_id'] = "Cannot update contract status from '$this->startStatus' to '$this->proposedStatus'";
       }
@@ -214,20 +209,14 @@ class CRM_Contract_Handler{
     }
   }
 
-  function isValidFieldUpdate(){
-    $this->startStatus;
-    $this->proposedStatus;
-    $class = $this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)['class'];
-    $this->action = new $class;
-    $modifiedFields = $this->getModifiedFields($this->startMembership, $this->proposedParams);
-    $valid = $this->action->isValidFieldUpdate($modifiedFields);
-    if(!$valid){
-      $this->errorMessage = $this->action->errorMessage;
-      return false;
-    }else{
-      return true;
+  function validateFieldUpdate(){
+    if(!$this->action){
+      throw new Exception('No action defined for this contract update.');
     }
 
+    $modifiedFields = $this->getModifiedFields($this->startMembership, $this->proposedParams);
+    $this->action->validateFieldUpdate($modifiedFields);
+    $this->errors = $this->action->errors;
   }
 
   /**
@@ -317,12 +306,7 @@ class CRM_Contract_Handler{
     $this->membershipParams[$membershipPaymentCustomFields['membership_frequency']] =
       $this->activityParams[$contractUpdateCustomFields['ch_frequency']];
 
-      // $this->activityParams[$contractUpdateCustomFields['ch_annual']];
-    $this->membershipParams['skip_wrapper'] = true; // Avoid an infinite loop
     $this->membershipParams['id'] = $this->startMembership['id'];
-    // var_dump($this->proposedParams);
-    // var_dump($this->activityParams);
-    // var_dump($this->membershipParams);
   }
 
   function setCancelParams(){
@@ -364,7 +348,7 @@ class CRM_Contract_Handler{
 
   /**
    * This is used when we a creating a new membership since we couldn't set
-   * these values until we knew the ID of the membership we created.
+   * these values until we knew the ID of the membership we created.in_array
    */
   function insertMissingParams($id){
     $this->setStartMembership($id);
@@ -457,39 +441,62 @@ class CRM_Contract_Handler{
    */
   function getModifiedFields($from, $to){
 
-    $membershipCustomFields =
-      $this->translateCustomFields('membership_cancellation', 'label') +
-      $this->translateCustomFields('membership_payment', 'label') +
-      $this->translateCustomFields('membership_general', 'label');
+    // Retreive metadata on relevant core and custom fields so we can work out
+    // what has changed
+    $customGroupNames = array('membership_cancellation', 'membership_payment','membership_general');
+    $customGroups = civicrm_api3('CustomGroup', 'get', array( 'name' => array('IN' => $customGroupNames)))['values'];
+    $membershipCustomFields = array();
+    foreach($customGroupNames as $customGroup){
+      foreach(civicrm_api3('CustomField', 'get', array( 'custom_group_id' => $customGroup))['values'] as $field){
+        $membershipCustomFields['custom_'.$field['id']] = $field;
+      };
+    }
+    foreach(civicrm_api3('Membership', 'getfields', array( 'api_action' => 'get'))['values'] as $field){
+      $membershipCoreFields[$field['name']] = $field;
+    }
 
+    $this->saneifyCustomFieldIds($to);
     $modifiedFields = array();
+    // Start off with a definitive list of all membership core and custom fields
+    // (whether they have been defined or not). Relying on membership.get (which
+    // is what we have stored in $from) isn't robust enough as some fields are
+    // only returned when they are set.
 
-    foreach($from as $fromField => $fromValue){
-      if(isset($to[$fromField])){
-        if(in_array($fromField, array('join_date', 'start_date', 'end_date'))){
-          // Dates in CiviCRM are passed in various formats so try and normalise
-          $fromValue = date('Y-m-d', strtotime($fromValue));
-          $to[$fromField] = date('Y-m-d', strtotime($to[$fromField]));
+    foreach(array_keys($membershipCoreFields) + array_keys($membershipCustomFields) as $field){
+
+      // We can't be thinking about modifying it unless it is defined in $to
+      if(isset($to[$field])){
+        // Dates in CiviCRM are passed in various formats. This is an attempt to
+        // convert dates passed as params to the same format that the api produces
+        if(isset($to[$field]) && in_array($field, array('join_date', 'start_date', 'end_date'))){
+          $to[$field] = date('Y-m-d', strtotime($to[$field]));
         }
-        if($fromValue != $to[$fromField]){
-          if(in_array($fromField, $membershipCustomFields)){
-            $modifiedFields[$fromField] = array_search($fromField, $membershipCustomFields);
+
+        // If the field has been modified means either...
+        if(
+          // ...the field was not set in from but is set in to and has a value
+          (!isset($from[$field]) && $to[$field]) ||
+          // ... OR the field was set in from and to and is different
+          (isset($from[$field]) && $from[$field] != $to[$field])
+        ){
+          $modifiedFields[$field]['id'] = $field;
+          if(isset($membershipCustomFields[$field])){
+            $modifiedFields[$field]['name'] = $customGroups[$membershipCustomFields[$field]['custom_group_id']]['name'].'.'.$membershipCustomFields[$field]['name'];
+            $modifiedFields[$field]['title'] = $membershipCustomFields[$field]['label'];
           }else{
-            $modifiedFields[$fromField] = civicrm_api3('Membership', 'getfield', array('name' => $fromField, 'action' => "get", ))['values']['title'];
+            $modifiedFields[$field]['name'] = $field;
+            $modifiedFields[$field]['title'] = $membershipCoreFields[$field]['title'];
+          }
+          $modifiedFields[$field]['from'] = isset($from[$field]) ? $from[$field] : '';
+          $modifiedFields[$field]['to'] = $to[$field];
+          if(array_search($modifiedFields[$field]['name'], $this->monitoredFields) !== false){
+            $this->significantChanges = true;
+            $modifiedFields[$field]['monitored'] = true;
+          }else{
+            $modifiedFields[$field]['monitored'] = false;
           }
         }
       }
-    }
-
-    foreach($modifiedFields as $name => $label){
-      if(in_array($name, $this->monitoredFields)){
-        $this->significantChanges = 1;
-        break;
-      }
-    }
-
-    if(isset($modifiedFields['status_id'])){
-      unset($modifiedFields['status_id']);
     }
     return $modifiedFields;
   }
@@ -500,5 +507,17 @@ class CRM_Contract_Handler{
       $translateCustomFields[$v[$key]] = 'custom_'.$v['id'];
     }
     return $translateCustomFields;
+  }
+  /**
+   * Sometimes you get custom_20_7876 but you want custom_20.
+   * This function does that for you
+   */
+  function saneifyCustomFieldIds(&$array){
+    foreach($array as $k => $v){
+      if(preg_match("/(custom_\d+)_\-?\d+$/", $k, $matches)){
+        unset($array[$matches[0]]);
+        $array[$matches[1]] = $v;
+      }
+    }
   }
 }

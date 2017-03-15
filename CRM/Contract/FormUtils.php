@@ -100,8 +100,9 @@ class CRM_Contract_FormUtils
 
     public function removeMembershipEditDisallowedCustomFields()
     {
-        $customGroupsToRemove = array('membership_cancellation');
-        $customFieldsToRemove['membership_payment'] = array('membership_annual', 'membership_frequency', 'membership_recurring_contribution');
+        // $customGroupsToRemove = array('membership_cancellation');
+        $customGroupsToRemove = array();
+        $customFieldsToRemove['membership_payment'] = array('membership_annual', 'membership_frequency');
 
         foreach ($this->form->_groupTree as $groupKey => $group) {
             if (in_array($group['name'], $customGroupsToRemove)) {
@@ -115,11 +116,13 @@ class CRM_Contract_FormUtils
             }
         }
     }
+
     /**
      * Replaced with js/membership-edit.js for now as filtering was doing weird
      * things to the status_id
      */
-    public function filterMembershipStatuses($element){
+    public function filterMembershipStatuses($element)
+    {
       // // var_dump($element->_options);
       // foreach($element->_options as $key => $option){
       //   if(!in_array($option['text'], array('Current', 'Cancelled', '- select -'))){

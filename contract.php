@@ -165,7 +165,7 @@ function contract_civicrm_buildForm($formName, &$form) {
           $form->removeElement($elementName);
           $formUtils->addPaymentContractSelect2($elementName, $contactId);
           // NOTE for initial launch: all custom membership fields should be editable
-          // $formUtils->removeMembershipEditDisallowedCustomFields();
+          $formUtils->removeMembershipEditDisallowedCustomFields();
         }
       }
       break;
@@ -189,11 +189,33 @@ function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$e
         $id = CRM_Utils_Request::retrieve('id', 'Positive', $form);
         $contractHandler = new CRM_Contract_Handler();
         $contractHandler->setStartMembership($id);
+        $fields['membership_type_id'] = $fields['membership_type_id'][1];
         $contractHandler->addProposedParams($fields);
         if(!$contractHandler->isValidStatusUpdate()){
           $errors['status_id']=$contractHandler->errors['status_id'];
+          return;
         }
-    }
+        $contractHandler->validateFieldUpdate();
+        if(count($contractHandler->action->errors)){
+          $errors = $contractHandler->action->errors;
+          // We have to add the number back onto the custom field id
+          foreach($errors as $key => $message){
+            if(!in_array($key, $form->_elementIndex)){
+              // If it isn't in the element index, presume it is a custom field
+              // with the end missing and find the appropriate key for it.
+              foreach($form->_elementIndex as $element => $discard){
+                if(strpos($element, $key) === 0){
+                  $errors[$element] = $message;
+                  unset($errors[$key]);
+                  break;
+                }
+              }
+            }
+          }
+          // Go through
+          $errors['custom_20_-1'] = $errors['custom_20'];
+        }
+      }
   }
 }
 

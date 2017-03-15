@@ -27,10 +27,11 @@ class CRM_Contract_Modify_BAOWrapper{
 
     $this->contractHandler->generateActivityParams();
 
-    if(!$this->contractHandler->isValidFieldUpdate()){
-      throw new \Exception($this->contractHandler->errorMessage);
+    $this->contractHandler->validateFieldUpdate();
+    $this->contractHandler->validateFieldUpdate();
+    if(count($this->contractHandler->action->errors)){
+      throw new \Exception(current($this->contractHandler->action->errors));
     }
-    // TODO some membership status changes (e.g. to Cancelled or Paused) do not allow us to change membership fields. check to see that we are not trying to change membership fields if changing to these particular statuses
   }
 
   function post($id){
