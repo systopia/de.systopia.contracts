@@ -264,6 +264,7 @@ class CRM_Contract_Handler{
 
   function setUpdateParams(){
 
+
     // Set activity params
 
     $modifiedFields = $this->getModifiedFields($this->startMembership, $this->proposedParams);
@@ -276,12 +277,12 @@ class CRM_Contract_Handler{
     if(isset($this->proposedParams[$this->contributionRecurCustomField])){
       $newAnnualMembershipAmount = $this->calcAnnualAmount($this->proposedContributionRecur);
       $oldAnnualMembershipAmount = $this->calcAnnualAmount($this->startContributionRecur);
-      $this->activityParams[$contractUpdateCustomFields['ch_annual_diff']] = $newAnnualMembershipAmount - $oldAnnualMembershipAmount;
-      $this->activityParams[$contractUpdateCustomFields['ch_annual']] = $newAnnualMembershipAmount;
+      $this->activityParams[$contractUpdateCustomFields['ch_annual_diff']] = (string) $newAnnualMembershipAmount - $oldAnnualMembershipAmount; // CiviCRM prefers currencies as strings, LOL
+      $this->activityParams[$contractUpdateCustomFields['ch_annual']] = $newAnnualMembershipAmount; // CiviCRM prefers currencies as strings, LOL
       $finalContributionRecur = $this->proposedContributionRecur;
     }else{
       $this->activityParams[$contractUpdateCustomFields['ch_annual_diff']] = 0;
-      $this->activityParams[$contractUpdateCustomFields['ch_annual']] = $this->calcAnnualAmount($this->startContributionRecur);
+      $this->activityParams[$contractUpdateCustomFields['ch_annual']] = $this->calcAnnualAmount($this->startContributionRecur); // CiviCRM prefers currencies as strings, LOL
       $finalContributionRecur = $this->startContributionRecur;
     }
 
@@ -394,7 +395,7 @@ class CRM_Contract_Handler{
 
   function calcAnnualAmount($contributionRecur){
     if(!$contributionRecur){
-      return 0;
+      return (string) 0;
     }
     $frequencyUnitTranslate = array(
       'day' => 365,
@@ -402,7 +403,7 @@ class CRM_Contract_Handler{
       'month' => 12,
       'year' => 1
     );
-    return $contributionRecur['amount'] * $frequencyUnitTranslate[$contributionRecur['frequency_unit']] / $contributionRecur['frequency_interval'];
+    return (string) $contributionRecur['amount'] * $frequencyUnitTranslate[$contributionRecur['frequency_unit']] / $contributionRecur['frequency_interval'];
   }
 
   function getBankAccountIdFromIban($iban){
