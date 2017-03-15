@@ -7,7 +7,7 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-class CRM_Contract_Action_Pause{
+class CRM_Contract_Action_Pause extends CRM_Contract_Action{
 
   function getValidStartStatuses(){
     return array('New', 'Current', 'Grace');
@@ -28,7 +28,7 @@ class CRM_Contract_Action_Pause{
     return 'paused';
   }
 
-  function isValidFieldUpdate($fields){
+  function validateFieldUpdate($fields){
     if(count($fields)){
       $this->errorMessage = 'You cannot update fields when pausing a contract';
       return false;

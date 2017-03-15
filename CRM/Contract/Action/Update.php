@@ -7,7 +7,7 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-class CRM_Contract_Action_Update{
+class CRM_Contract_Action_Update extends CRM_Contract_Action{
 
   function getValidStartStatuses(){
     return array('New', 'Current', 'Grace');
@@ -32,7 +32,7 @@ class CRM_Contract_Action_Update{
     return 'updated';
   }
 
-  function isValidFieldUpdate($fields){
+  function validateFieldUpdate($fields){
     return true;
   }
 }

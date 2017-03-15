@@ -7,7 +7,7 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-class CRM_Contract_Action_Resume{
+class CRM_Contract_Action_Resume extends CRM_Contract_Action{
 
   function getValidStartStatuses(){
     return array('Paused');
@@ -28,7 +28,7 @@ class CRM_Contract_Action_Resume{
     return 'resumed';
   }
 
-  function isValidFieldUpdate($fields){
+  function validateFieldUpdate($fields){
     return true;
   }
 

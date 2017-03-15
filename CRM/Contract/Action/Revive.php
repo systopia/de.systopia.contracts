@@ -7,7 +7,7 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-class CRM_Contract_Action_Revive{
+class CRM_Contract_Action_Revive extends CRM_Contract_Action{
 
   function getValidStartStatuses(){
     return array('Cancelled');
@@ -28,7 +28,7 @@ class CRM_Contract_Action_Revive{
     return 'revived';
   }
 
-  function isValidFieldUpdate($fields){
+  function validateFieldUpdate($fields){
     return true;
   }
 }

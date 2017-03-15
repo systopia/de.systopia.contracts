@@ -7,7 +7,7 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-class CRM_Contract_Action_Cancel{
+class CRM_Contract_Action_Cancel extends CRM_Contract_Action{
 
   function getValidStartStatuses(){
     return array('New', 'Current', 'Grace');
@@ -28,13 +28,18 @@ class CRM_Contract_Action_Cancel{
     return 'canceled';
   }
 
-  function isValidFieldUpdate($fields){
-    if(count($fields)){
-      $this->errorMessage = 'You cannot update fields when cancelling a contract';
-      return false;
-    }else{
-      return true;
+  function validateFieldUpdate($fields){
+    // The only fields that should be allowed to be updated when cancelling a
+    // contract are the status (obviously) and the cancellation reason.
+    //
+    // We should also check that the cancellation date is set.
+
+    foreach ($fields as $id => $field){
+      if(in_array($field['name'], array( 'status_id', 'is_override','membership_cancellation.membership_cancel_reason', 'membership_cancellation.membership_cancel_date'))){
+        unset($fields[$id]);
+      }else{
+        $this->errors[$id] = "Cannot update {$field['title']} when cancelling a membership";
+      }
     }
   }
-
 }
