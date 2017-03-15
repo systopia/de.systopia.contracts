@@ -91,21 +91,6 @@ class CRM_Contract_Handler{
     }
   }
 
-  function setAction(){
-    if($class = $this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)['class']){
-      $this->action = new $class;
-    }else{
-      throw new Exception("No contract history activity covers the status change from '$this->startStatus' to '$this->proposedStatus'");
-
-    }
-
-    //We should always treat the signing action as significant as we want to
-    //record an activity
-    if($this->action->getAction() == 'sign'){
-      $this->significantChanges = 1;
-    }
-  }
-
   function addProposedParams($params){
 
     // TODO ensure that we skip the new status FIXME
@@ -159,14 +144,18 @@ class CRM_Contract_Handler{
     $this->setAction(); // At this point, we can set the action as we know what it will be
   }
 
-  /**
-   * semantic wrapper around lookupStatusChange
-   */
-  function isValidStatusUpdate(){
-    if($this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)){
-      return true;
+  function setAction(){
+    if($class = $this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)['class']){
+      $this->action = new $class;
     }else{
-      return false;
+      throw new Exception("No contract history activity covers the status change from '$this->startStatus' to '$this->proposedStatus'");
+
+    }
+
+    //We should always treat the signing action as significant as we want to
+    //record an activity
+    if($this->action->getAction() == 'sign'){
+      $this->significantChanges = 1;
     }
   }
 
@@ -209,6 +198,14 @@ class CRM_Contract_Handler{
       if($change['startStatus'] == $startStatus && $change['endStatus'] == $endStatus){
         return $change;
       }
+    }
+  }
+
+  function isValidStatusUpdate(){
+    if($this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)){
+      return true;
+    }else{
+      return false;
     }
   }
 
