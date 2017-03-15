@@ -16,22 +16,6 @@ class CRM_Contract_Modify_APIWrapper{
   }
 
   function fromApiInput($apiRequest){
-
-    // We only need to take action here if this is an edit
-    // if(isset($apiRequest['params']['id'])){
-    //
-    //   $this->contractHandler->setStartMembership($apiRequest['params']['id']);
-    //   $this->contractHandler->addProposedParams($apiRequest['params']);
-    //
-    //   if(!$this->contractHandler->isValidStatusUpdate()){
-    //     throw new \CiviCRM_API3_Exception("Cannot update contract status from {$this->contractHandler->startStatus} to {$this->contractHandler->proposedStatus}.");
-    //   }
-    //
-    //   if(!$this->contractHandler->isValidFieldUpdate()){
-    //     throw new \CiviCRM_API3_Exception($this->contractHandler->errorMessage);
-    //   }
-    // }
-    // $apiRequest['params']['options']['reload']=1;
     return $apiRequest;
   }
 
