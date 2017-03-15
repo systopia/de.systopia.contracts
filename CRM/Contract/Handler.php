@@ -270,10 +270,9 @@ class CRM_Contract_Handler{
     // Set activity params
 
     foreach($this->getModifiedFields() as $modifiedField){
-      if($modifiedField['monitored']){
+      if($modifiedField['monitored'] and $modifiedField['id'] != 'status_id'){
         $subjectLineMonitoredFields[] = "[{$modifiedField['title']} {$modifiedField['from']}>{$modifiedField['to']}]";
       }
-
     }
 
     $this->activityParams['subject'] .= ": ".implode('; ', $subjectLineMonitoredFields).'.';
