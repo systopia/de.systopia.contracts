@@ -339,7 +339,6 @@ class CRM_Contract_Handler{
     if($this->significantChanges){
       $activity = civicrm_api3('Activity', 'create', $this->activityParams);
       $this->membershipParams['options']['reload'] = 1;
-      $membership = civicrm_api3('Membership', 'create', $this->membershipParams);
     }
 
     //if we are changing the recurring contribution associated with this
