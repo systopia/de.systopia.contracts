@@ -180,6 +180,13 @@ function contract_civicrm_buildForm($formName, &$form) {
   }
 }
 
+function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors){
+  // switch ($formName) {
+  //   case 'CRM_Member_Form_Membership':
+  //     $errors['status_id'] = 'This is always wrong';
+  // }
+}
+
 function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &$values ){
   switch ($objectName) {
     case 'Membership':
@@ -201,9 +208,22 @@ function contract_civicrm_pre($op, $objectName, $id, &$params){
 }
 
 function contract_civicrm_post($op, $objectName, $id, &$objectRef){
-  if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
-    $BAOWrapper = CRM_Contract_Modify_BAOWrapper::singleton($op);
-    $BAOWrapper->post($id);
+  if($objectName == 'Membership')
+    if(in_array($op, array('create', 'edit'))){
+      $BAOWrapper = CRM_Contract_Modify_BAOWrapper::singleton($op);
+      $BAOWrapper->post($id);
+  }
+  if($objectName == 'Activity'){
+    if($op == 'create'){
+      $activityType = civicrm_api3('OptionValue', 'getsingle', array(
+        'option_group_id' => "activity_type",
+        'value' => $objectRef->activity_type_id,
+        'return' => 'name'
+      ));
+      if(in_array($activityType['name'], array('Membership Signup', 'Membership Renewal', 'Change Membership Status', 'Change Membership Type', 'Membership Renewal Reminder'))){
+        civicrm_api3('Activity', 'delete', array(id => $id));
+      }
+    }
   }
 }
 
