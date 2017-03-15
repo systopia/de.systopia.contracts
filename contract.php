@@ -148,6 +148,13 @@ function contract_civicrm_buildForm($formName, &$form) {
 
         CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'js/membership-edit.js');
 
+        if($form->getAction() == CRM_Core_Action::ADD){
+          $form->setDefaults(array(
+            'is_override' => true,
+            'status_id' => civicrm_api3('MembershipStatus', 'getsingle', array('name' => "current"))['id']
+          ));
+        }
+
         $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
         if($form->elementExists('status_id')){
           $formUtils->filterMembershipStatuses($form->getElement('status_id'));
@@ -160,7 +167,7 @@ function contract_civicrm_buildForm($formName, &$form) {
         // Custom data version
         }else{
           $result = civicrm_api3('CustomField', 'GetSingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
-          $customGroupTableId = $form->_groupTree[$result['custom_group_id']]['table_id'] ? $form->_groupTree[$result['custom_group_id']]['table_id'] : '-1';
+          $customGroupTableId = isset($form->_groupTree[$result['custom_group_id']]['table_id']) ? $form->_groupTree[$result['custom_group_id']]['table_id'] : '-1';
           $elementName = "custom_{$result['id']}_{$customGroupTableId}";
           $form->removeElement($elementName);
           $formUtils->addPaymentContractSelect2($elementName, $contactId);
@@ -212,8 +219,6 @@ function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$e
               }
             }
           }
-          // Go through
-          $errors['custom_20_-1'] = $errors['custom_20'];
         }
       }
   }

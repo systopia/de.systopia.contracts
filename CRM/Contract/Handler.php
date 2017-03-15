@@ -79,16 +79,21 @@ class CRM_Contract_Handler{
         $this->startContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->startMembership[$this->contributionRecurCustomField]));
       }else{
         $this->startMembership[$this->contributionRecurCustomField] = '';
-        $this->startContributionRecur =  null;
+        $this->startContributionRecur = null;
       }
       $this->startStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->startMembership['status_id']))['name'];
 
       // Ensure that the start membership status is refered to by the name, not the id.
       $this->startMembership['status_id'] = $this->startStatus;
+    }else{
+      $this->startMembership = null;
+      $this->startStatus = null;
+      $this->startContributionRecur = null;
     }
   }
 
   function addProposedParams($params){
+
     // TODO ensure that we skip the new status FIXME
     if($params['status_id'] == 1 || $params['status_id'] == 'New'){
       $params['status_id'] = 'Current';
@@ -134,6 +139,7 @@ class CRM_Contract_Handler{
       // beginning.
       $this->proposedContributionRecur = $this->startContributionRecur;
     }
+
     $this->proposedStatus = $params['status_id'];
     $this->proposedParams = $params;
     $this->setAction(); // At this point, we can set the action as we know what it will be
@@ -143,8 +149,9 @@ class CRM_Contract_Handler{
     if($class = $this->lookupStatusUpdate($this->startStatus, $this->proposedStatus)['class']){
       $this->action = new $class;
 
-      //We should always treat the signing action as significant as we want to
-      //record an activity
+      // We should always treat the signing action as significant as we want to
+      // record an activity. NOTE: This may now not be necessary as we treat
+      // status changes as significant.
       if($this->action->getAction() == 'sign'){
         $this->significantChanges = 1;
       }
