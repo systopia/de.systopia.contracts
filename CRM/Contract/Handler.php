@@ -109,7 +109,7 @@ class CRM_Contract_Handler{
   function addProposedParams($params){
 
     // TODO ensure that we skip the new status FIXME
-    if($params['status_id'] == 1 || $params['status_id'] = 'New'){
+    if($params['status_id'] == 1 || $params['status_id'] == 'New'){
       $params['status_id'] = 'Current';
     };
 
