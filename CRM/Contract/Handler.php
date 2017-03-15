@@ -48,6 +48,7 @@ class CRM_Contract_Handler{
 
     $this->monitoredFields=array(
       'membership_type_id',
+      'status_id',
       $this->contributionRecurCustomField,
       $this->membershipCustomerIdCustomField
     );
@@ -399,8 +400,6 @@ class CRM_Contract_Handler{
     return $this->medium = 1;
   }
 
-
-
   function calcAnnualAmount($contributionRecur){
     if(!$contributionRecur){
       return 0;
@@ -445,7 +444,14 @@ class CRM_Contract_Handler{
     return $result['iban'];
   }
 
-  /** This is much more convoluted that I'd like it to be because we are using
+  /**
+   * getModifiedFields compares submitted fields to orginal fields and looks at
+   * which ones have changed.
+   *
+   * If significant fields have changed, we record the changes in a contract
+   * history activity.
+   *
+   * This is much more convoluted that I'd like it to be because we are using
    * the parameters submitted with the API or the form, not an API call.
    */
   function getModifiedFields($from, $to){
@@ -458,7 +464,7 @@ class CRM_Contract_Handler{
     $modifiedFields = array();
 
     foreach($from as $fromField => $fromValue){
-      if(isset($to[$fromField]) && $fromField != 'status_id' ){
+      if(isset($to[$fromField])){
         if(in_array($fromField, array('join_date', 'start_date', 'end_date'))){
           // Dates in CiviCRM are passed in various formats so try and normalise
           $fromValue = date('Y-m-d', strtotime($fromValue));
@@ -480,6 +486,11 @@ class CRM_Contract_Handler{
         break;
       }
     }
+
+    if(isset($modifiedFields['status_id'])){
+      unset($modifiedFields['status_id']);
+    }
+
     return $modifiedFields;
   }
 
