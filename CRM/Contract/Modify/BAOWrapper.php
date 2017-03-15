@@ -18,7 +18,17 @@ class CRM_Contract_Modify_BAOWrapper{
     return self::$_singleton;
   }
 
-  function pre($id, $params){
+  function pre($id, &$params){
+
+    // ensure is_overide is always on
+    var_dump($params);
+    $params['is_override'] = true;
+
+    if($params['status_id'] == civicrm_api3('MembershipStatus', 'getsingle', array('name' => "pending"))['id']){
+      $params['status_id'] = civicrm_api3('MembershipStatus', 'getsingle', array('name' => "current"))['id'];
+    }
+    var_dump($params);
+
     $this->contractHandler->setStartMembership($id);
     $this->contractHandler->addProposedParams($params);
     if(!$this->contractHandler->isValidStatusUpdate()){
