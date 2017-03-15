@@ -221,7 +221,7 @@ function contract_civicrm_post($op, $objectName, $id, &$objectRef){
         'return' => 'name'
       ));
       if(in_array($activityType['name'], array('Membership Signup', 'Membership Renewal', 'Change Membership Status', 'Change Membership Type', 'Membership Renewal Reminder'))){
-        civicrm_api3('Activity', 'delete', array(id => $id));
+        civicrm_api3('Activity', 'delete', array('id' => $id));
       }
     }
   }
