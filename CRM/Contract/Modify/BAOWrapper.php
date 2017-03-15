@@ -12,7 +12,7 @@ class CRM_Contract_Modify_BAOWrapper{
 
   public static function singleton($op) {
     if (!self::$_singleton) {
-      self::$_singleton = new CRM_Contract_Modify_BAOWrapper();
+      self::$_singleton = new CRM_Contract_Modify_BAOWrapper($op);
       self::$_singleton->op = $op;
     }
     return self::$_singleton;
