@@ -7,13 +7,13 @@ class CRM_Contract_Modify_BAOWrapper{
   private $skip = false;
 
   private function __construct($op){
-    $this->op = $op;
-    $this->contractHandler = new CRM_Contract_Handler($op);
+    $this->contractHandler = new CRM_Contract_Handler();
   }
 
   public static function singleton($op) {
     if (!self::$_singleton) {
-      self::$_singleton = new CRM_Contract_Modify_BAOWrapper($op);
+      self::$_singleton = new CRM_Contract_Modify_BAOWrapper();
+      self::$_singleton->op = $op;
     }
     return self::$_singleton;
   }
@@ -32,7 +32,7 @@ class CRM_Contract_Modify_BAOWrapper{
     $this->contractHandler->generateActivityParams();
 
     if(!$this->contractHandler->isValidFieldUpdate()){
-      throw new \CiviCRM_API3_Exception($this->contractHandler->errorMessage);
+      throw new \Exception($this->contractHandler->errorMessage);
     }
     // TODO some membership status changes (e.g. to Cancelled or Paused) do not allow us to change membership fields. check to see that we are not trying to change membership fields if changing to these particular statuses
   }
