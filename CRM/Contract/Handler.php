@@ -46,6 +46,8 @@ class CRM_Contract_Handler{
       'membership_type_id',
       'status_id',
       'membership_payment.membership_recurring_contribution',
+      'membership_payment.membership_annual',
+      'membership_payment.membership_frequency',
       'membership_payment.membership_frequency',
       'membership_payment.membership_customer_id',
     );
@@ -221,7 +223,7 @@ class CRM_Contract_Handler{
       throw new Exception('No action defined for this contract update.');
     }
 
-    $modifiedFields = $this->getModifiedFields($this->startMembership, $this->proposedParams);
+    $modifiedFields = $this->getModifiedFields();
     $this->action->validateFieldUpdate($modifiedFields);
     $this->errors = $this->action->errors;
   }
@@ -267,10 +269,14 @@ class CRM_Contract_Handler{
 
     // Set activity params
 
-    $modifiedFields = $this->getModifiedFields($this->startMembership, $this->proposedParams);
-    if($this->action->getAction() == 'update'){
-      $this->activityParams['subject'] .= ": ".implode(', ', $modifiedFields);
+    foreach($this->getModifiedFields() as $modifiedField){
+      if($modifiedField['monitored']){
+        $subjectLineMonitoredFields[] = "[{$modifiedField['title']} {$modifiedField['from']}>{$modifiedField['to']}]";
+      }
+
     }
+
+    $this->activityParams['subject'] .= ": ".implode('; ', $subjectLineMonitoredFields).'.';
     $contractUpdateCustomFields = $this->translateCustomFields('contract_updates');
 
     // If a contributionRecurCustomField has been passed in the parameters
@@ -447,7 +453,11 @@ class CRM_Contract_Handler{
    * This is much more convoluted that I'd like it to be because we are using
    * the parameters submitted with the API or the form, not an API call.
    */
-  function getModifiedFields($from, $to){
+  function getModifiedFields(){
+
+    // Shorter names are nicer to work with
+    $from = $this->startMembership;
+    $to = $this->proposedParams;
 
     // Retreive metadata on relevant core and custom fields so we can work out
     // what has changed
