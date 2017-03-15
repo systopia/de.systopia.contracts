@@ -324,9 +324,8 @@ class CRM_Contract_Handler{
   }
 
   function setCancelParams(){
-    $this->translateCustomFields('contract_cancellation');
-    $this->activityParams[$this->translateActivityField['contact_history_cancel_reason']] = $this->submitted['contract_history_cancel_reason']; //TODO make select
-
+    $cancelCustomFields = $this->translateCustomFields('contract_cancellation');
+    $this->activityParams[$cancelCustomFields['contact_history_cancel_reason']] = $this->submitted['contract_history_cancel_reason'];
   }
 
   /**
@@ -338,7 +337,6 @@ class CRM_Contract_Handler{
     // This should only be called if significant changes have been made
     if($this->significantChanges){
       $activity = civicrm_api3('Activity', 'create', $this->activityParams);
-      $this->membershipParams['options']['reload'] = 1;
     }
 
     //if we are changing the recurring contribution associated with this
@@ -491,7 +489,6 @@ class CRM_Contract_Handler{
     if(isset($modifiedFields['status_id'])){
       unset($modifiedFields['status_id']);
     }
-
     return $modifiedFields;
   }
 
