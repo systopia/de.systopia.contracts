@@ -476,16 +476,18 @@ class CRM_Contract_Handler{
     $modifiedFields = array();
     // Start off with a definitive list of all membership core and custom fields
     // (whether they have been defined or not). Relying on membership.get (which
-    // is what we have stored in $from) isn't robust enough as some fields are
+    // is what we have stored in $from) isn't robust eno$membershipCustomFields[$field]ugh as some fields are
     // only returned when they are set.
 
     foreach(array_keys($membershipCoreFields) + array_keys($membershipCustomFields) as $field){
-
       // We can't be thinking about modifying it unless it is defined in $to
       if(isset($to[$field])){
         // Dates in CiviCRM are passed in various formats. This is an attempt to
         // convert dates passed as params to the same format that the api produces
-        if(isset($to[$field]) && in_array($field, array('join_date', 'start_date', 'end_date'))){
+        if(
+          isset($to[$field]) && (in_array($field, array('join_date', 'start_date', 'end_date', ))) ||
+          (isset($membershipCustomFields[$field]) && in_array($membershipCustomFields[$field]['name'], array('membership_cancel_date', 'membership_resume_date')))
+        ){
           $to[$field] = date('Y-m-d', strtotime($to[$field]));
         }
 

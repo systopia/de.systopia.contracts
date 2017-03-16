@@ -207,7 +207,7 @@ function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$e
           $errors = $contractHandler->action->errors;
           // We have to add the number back onto the custom field id
           foreach($errors as $key => $message){
-            if(!in_array($key, $form->_elementIndex)){
+            if(!isset($form->_elementIndex[$key])){
               // If it isn't in the element index, presume it is a custom field
               // with the end missing and find the appropriate key for it.
               foreach($form->_elementIndex as $element => $discard){
