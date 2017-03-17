@@ -56,12 +56,12 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     try{
       $CustomField = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
-      $this->contributionRecurCustomField = 'custom_'.$CustomField['id'];
-      if(isset($this->membership[$this->contributionRecurCustomField]) && $this->membership[$this->contributionRecurCustomField]){
-        $this->contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->membership[$this->contributionRecurCustomField]));
+      $this->contributionRecurField = 'custom_'.$CustomField['id'];
+      if(isset($this->membership[$this->contributionRecurField]) && $this->membership[$this->contributionRecurField]){
+        $this->contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->membership[$this->contributionRecurField]));
       }else{
         // Ensure that this is set to squish warnings later in buildQuickForm
-        $this->membership[$this->contributionRecurCustomField]='';
+        $this->membership[$this->contributionRecurField]='';
       }
     }catch(Exception $e){
       CRM_Core_Error::fatal('Could not find recurring contribution for this membership');
@@ -106,7 +106,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
         array('type' => 'submit', 'name' => ucfirst($this->updateAction->getAction()), 'isDefault' => true)
     ));
 
-    $defaults['contract_history_recurring_contribution'] = $this->membership[$this->contributionRecurCustomField];
+    $defaults['contract_history_recurring_contribution'] = $this->membership[$this->contributionRecurField];
     $this->setDefaults($defaults);
 
     $this->assign('historyAction', $this->updateAction->getAction());
@@ -139,7 +139,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     $this->updatedMembership['status_id'] = $this->updateAction->getEndStatus();
     $this->updatedMembership['is_override'] = $this->membership['status_id'] == 'Current' ? 0 : 1;
     if(isset($this->submitted['contract_history_recurring_contribution'])){
-      $this->updatedMembership[$this->contributionRecurCustomField] = $this->submitted['contract_history_recurring_contribution'];
+      $this->updatedMembership[$this->contributionRecurField] = $this->submitted['contract_history_recurring_contribution'];
     }
     civicrm_api3('Membership', 'create', $this->updatedMembership);
   }

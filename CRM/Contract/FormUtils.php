@@ -102,7 +102,7 @@ class CRM_Contract_FormUtils
     {
         // $customGroupsToRemove = array('membership_cancellation');
         $customGroupsToRemove = array();
-        $customFieldsToRemove['membership_payment'] = array('membership_annual', 'membership_frequency');
+        $customFieldsToRemove['membership_payment'] = array();
 
         foreach ($this->form->_groupTree as $groupKey => $group) {
             if (in_array($group['name'], $customGroupsToRemove)) {

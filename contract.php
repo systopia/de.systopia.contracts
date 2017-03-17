@@ -146,7 +146,10 @@ function contract_civicrm_buildForm($formName, &$form) {
       $contactId = CRM_Utils_Request::retrieve('cid', 'Positive', $form);
       if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
 
+        // Use JS to hide form elements
         CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'js/membership-edit.js');
+        CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('filteredMembershipStatuses' => civicrm_api3('MembershipStatus', 'get', ['name' => ['IN' => ['Current', 'Cancelled']]])));
+        CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('hiddenCustomFields' => civicrm_api3('CustomField', 'get', ['name' => ['IN' => ['membership_annual', 'membership_frequency']]])));
 
         if($form->getAction() == CRM_Core_Action::ADD){
           $form->setDefaults(array(
@@ -156,9 +159,6 @@ function contract_civicrm_buildForm($formName, &$form) {
         }
 
         $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
-        if($form->elementExists('status_id')){
-          $formUtils->filterMembershipStatuses($form->getElement('status_id'));
-        }
         if(!isset($form->_groupTree)){
           // NOTE for initial launch: all core membership fields should be editable
           // $formUtils->removeMembershipEditDisallowedCoreFields();

@@ -24,33 +24,96 @@ class CRM_Contract_Handler{
    * When one or more of these fields have changed, we should record a
    * Contract_Update activity (set when constructed)
    */
-  var $monitoredFields = array();
+  var $monitoredFields = [];
 
   /**
    * The various actions that can happen to contracts
    */
-  static $actions = array(
+  static $actions = [
     'CRM_Contract_Action_Cancel',
     'CRM_Contract_Action_Pause',
     'CRM_Contract_Action_Resume',
     'CRM_Contract_Action_Revive',
     'CRM_Contract_Action_Sign',
     'CRM_Contract_Action_Update'
-  );
+  ];
 
   function __construct(){
-    $CustomField = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
-    $this->contributionRecurCustomField = 'custom_'.$CustomField['id'];
 
-    $this->monitoredFields=array(
-      'membership_type_id',
-      'status_id',
-      'membership_payment.membership_recurring_contribution',
-      'membership_payment.membership_annual',
-      'membership_payment.membership_frequency',
-      'membership_payment.membership_frequency',
-      'membership_payment.membership_customer_id',
-    );
+
+    // Get a definitive list of all core fields and all custom fields indexed by
+    // the name and that they are referenced by in forms
+    foreach(civicrm_api3('CustomGroup', 'get', ['extends' => 'membership'])['values'] as $group){
+      foreach(civicrm_api3('CustomField', 'get', ['custom_group_id' => $group['name']])['values'] as $key => $field){
+        $id = 'custom_'.$field['id'];
+        $membershipCustomFields[$id] = $field;
+        $membershipCustomFields[$id]['id'] = $id;
+        // Adding the 'full name' makes custom fields easier to work with
+        $membershipCustomFields[$id]['full_name'] = $group['name'].'.'.$field['name'];
+        $membershipCustomFields[$id]['title'] = $field['label'];
+      };
+    }
+    // This will return custom fields as well but is missing the group name and
+    // field name, hence we retrieived the custom fields seperatley.
+    foreach(civicrm_api3('Membership', 'getfields', array( 'api_action' => 'get'))['values'] as $key=> $field){
+      $membershipCoreFields[$field['name']] = $field;
+      $membershipCoreFields[$field['name']]['id'] = $key;
+      // We do this so we can use the full name across both core and custom
+      // fields.
+      $membershipCoreFields[$field['name']]['full_name'] = $field['name'];
+    }
+
+    // Order is important. We prefer the data in $membershipCustomFields
+    // so add this first.
+    $this->membershipFields = $membershipCustomFields + $membershipCoreFields;
+
+    foreach($this->membershipFields as $field){
+      $this->membershipFieldsByFullName[$field['full_name']] = $field;
+    }
+
+    // Do the same for activities. This is a cut and paste, search and replace
+    // job from above at the moment :( Refactor when you have time.
+    foreach(civicrm_api3('CustomGroup', 'get', ['extends' => 'activity'])['values'] as $group){
+      foreach(civicrm_api3('CustomField', 'get', ['custom_group_id' => $group['name']])['values'] as $key => $field){
+        $id = 'custom_'.$field['id'];
+        $activityCustomFields[$id] = $field;
+        $activityCustomFields[$id]['id'] = $id;
+        // Adding the 'full name' makes custom fields easier to work with
+        $activityCustomFields[$id]['full_name'] = $group['name'].'.'.$field['name'];
+        $activityCustomFields[$id]['title'] = $field['label'];
+      };
+    }
+    // This will return custom fields as well but is missing the group name and
+    // field name, hence we retrieived the custom fields seperatley.
+    foreach(civicrm_api3('Activity', 'getfields', array( 'api_action' => 'get'))['values'] as $key=> $field){
+      $activityCoreFields[$field['name']] = $field;
+      $activityCoreFields[$field['name']]['id'] = $key;
+      // We do this so we can use the full name across both core and custom
+      // fields.
+      $activityCoreFields[$field['name']]['full_name'] = $field['name'];
+    }
+
+    // Order is important. We prefer the data in $activityCustomFields
+    // so add this first.
+    $this->activityFields = $activityCustomFields + $activityCoreFields;
+
+    foreach($this->activityFields as $field){
+      $this->activityFieldsByFullName[$field['full_name']] = $field;
+    }
+
+
+    // Define monitored (using the above defined 'full_name' for activity and membership)
+    $this->monitoredFields=[
+      'membership_type_id' => array('activity_field'=>'contract_updates.ch_membership_type'),
+      'status_id' => array(),
+      'membership_payment.membership_recurring_contribution' => array('activity_field'=>'contract_updates.ch_recurring_contribution'),
+      'membership_payment.membership_annual' => array('activity_field'=>'contract_updates.ch_annual'),
+      'membership_payment.membership_frequency' => array('activity_field'=>'contract_updates.ch_frequency'),
+      // 'membership_payment.membership_customer_id' => array('activity_field'=>'xxx') // TODO sounds like this needs to be added
+    ];
+
+    // A shorthand as we reference this a fair amount
+    $this->contributionRecurField = $this->membershipFieldsByFullName['membership_payment.membership_recurring_contribution']['id'];
   }
 
   /**
@@ -61,26 +124,21 @@ class CRM_Contract_Handler{
     if($id){
       $this->startMembership = civicrm_api3('Membership', 'getsingle', array('id' => $id));
 
+      $this->saneifyCustomFieldIds($this->startMembership);
+
       // Why TF does the api return contact references as names, not IDs?
       // (i.e. why does it return something that you cannot pass back to create
       // for an update?! As a work around, I am going to overwriting custom_#
       // with the value from custom_#_id.
-      //
-      // I am also unsetting the custom_#_# fields as they are also causing
-      // issues when combined with the contact reference fields
-
-      $dialoggerCustomField = 'custom_'.civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_general', 'name' => 'membership_dialoger'))['id'];
+      $dialoggerCustomField = $this->membershipFieldsByFullName['membership_general.membership_dialoger']['id'];
       if(isset($this->startMembership[$dialoggerCustomField])){
         $this->startMembership[$dialoggerCustomField] = $this->startMembership[$dialoggerCustomField.'_id'];
       }
 
-      $this->saneifyCustomFieldIds($this->startMembership);
-
-
-      if(isset($this->startMembership[$this->contributionRecurCustomField]) && $this->startMembership[$this->contributionRecurCustomField]){
-        $this->startContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->startMembership[$this->contributionRecurCustomField]));
+      if(isset($this->startMembership[$this->contributionRecurField]) && $this->startMembership[$this->contributionRecurField]){
+        $this->startContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->startMembership[$this->contributionRecurField]));
       }else{
-        $this->startMembership[$this->contributionRecurCustomField] = '';
+        $this->startMembership[$this->contributionRecurField] = '';
         $this->startContributionRecur = null;
       }
       $this->startStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->startMembership['status_id']))['name'];
@@ -93,6 +151,52 @@ class CRM_Contract_Handler{
       $this->startContributionRecur = null;
     }
   }
+
+  function sanitizeParams(&$params){
+    // var_dump($params['custom'][16]);exit;
+    // Deal with the fact that custom data can be presented in different ways depending on the object
+    if(isset($params['custom']) && is_array($params['custom'])){
+      foreach($params['custom'] as $key => $fieldToAdd){
+        if(!isset($params['custom_'.$key])){
+          $params['custom_'.$key] = current($fieldToAdd)['value'];
+        }
+      }
+    }
+  }
+
+  function insanitizeParams(&$params){
+    foreach($params as $k => $v){
+        if(preg_match("/custom_(\d+)$/", $k, $matches)){
+          foreach($params['custom'][$matches[1]] as &$customField){
+            $customField['value']=$v;
+          }
+        }
+      }
+    }
+
+  function preProcessParams(&$params){
+
+    // Contract should always have status overrriden
+    $params['is_override'] = true;
+
+    // Contracts should not have pending membership statuses - convert to
+    // current
+    if($params['status_id'] == civicrm_api3('MembershipStatus', 'getsingle', array('name' => "pending"))['id']){
+      $params['status_id'] = civicrm_api3('MembershipStatus', 'getsingle', array('name' => "current"))['id'];
+    }
+
+    // If a recurring contribution has been passed into these parameters
+    if($params[$this->membershipFieldsByFullName['membership_payment.membership_recurring_contribution']['id']]){
+      $ContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $params[$this->membershipFieldsByFullName['membership_payment.membership_recurring_contribution']['id']]));
+
+      // Calculate the membership amount field and the membership frequency
+      $params[$this->membershipFieldsByFullName['membership_payment.membership_annual']['id']] = $this->calcAnnualAmount($ContributionRecur);
+
+      // Calculate the frequency
+      $params[$this->membershipFieldsByFullName['membership_payment.membership_frequency']['id']] = $this->calcPaymentFrequency($ContributionRecur);
+    }
+  }
+
 
   function addProposedParams($params){
 
@@ -115,23 +219,14 @@ class CRM_Contract_Handler{
       $params['status_id'] = $params['status_id'];
     }
 
-    // Deal with the fact that custom data can be presented in different ways depending on the object
-    if(isset($params['custom']) && is_array($params['custom'])){
-      foreach($params['custom'] as $key => $fieldToAdd){
-        if(!isset($params['custom_'.$key])){
-          $params['custom_'.$key] = current($fieldToAdd)['value'];
-        }
-      }
-    }
-
     // Massage the proposed recurring contribution field since we need this when
     // working out what has changed and what should be recorded.
     // If it has been set, i.e. proposed
-    if(isset($params[$this->contributionRecurCustomField])){
+    if(isset($params[$this->contributionRecurField])){
       // and it has been set to a specific ID
-      if($params[$this->contributionRecurCustomField]){
+      if($params[$this->contributionRecurField]){
         // Then retreive the propsed recurring contribution object
-        $this->proposedContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $params[$this->contributionRecurCustomField]));
+        $this->proposedContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $params[$this->contributionRecurField]));
       }else{
         // Else set it to none.
         $this->proposedContributionRecur = null;
@@ -244,7 +339,8 @@ class CRM_Contract_Handler{
       'target_id'=> $this->startMembership['contact_id'], // TODO might this have changed?
     );
 
-    // set the source contact id //TODO check is this is robust enough
+    // set the source contact id
+    // TODO check is this is robust enough
     $session = CRM_Core_Session::singleton();
     if(!$this->activityParams['source_contact_id'] = $session->getLoggedInContactID()){
       $this->activityParams['source_contact_id'] = 1;
@@ -252,9 +348,9 @@ class CRM_Contract_Handler{
 
     // add further fields as required by different actions
     if(in_array($this->action->getAction(), array('resume', 'update', 'revive', 'sign'))){
-      $this->setUpdateParams();
+      $this->generateActivityUpdateParams();
     }elseif($this->action->getAction() == 'cancel'){
-      $this->setCancelParams();
+      $this->generateActivityCancelParams();
     }
 
     // add campaign params if they have changed
@@ -264,65 +360,77 @@ class CRM_Contract_Handler{
       $this->startMembership['campaign_id'];
   }
 
-  function setUpdateParams(){
+  function generateActivityUpdateParams(){
+
+    // A shorthand just to make the code easier to read
+    $from = $this->startMembership;
+    $to = $this->proposedParams;
 
 
-    // Set activity params
+    // Go through each monitored field
+    foreach (array_keys($this->monitoredFields) as $monitoredField) {
+      // If we want to record this field in the activity
+      if(isset($this->monitoredFields[$monitoredField]['activity_field'])){
 
-    foreach($this->getModifiedFields() as $modifiedField){
-      if($modifiedField['monitored'] and $modifiedField['id'] != 'status_id'){
-        $subjectLineMonitoredFields[] = "[{$modifiedField['title']} {$modifiedField['from']}>{$modifiedField['to']}]";
+        // Some shorthands for readability
+        $activityFieldId = $this->activityFieldsByFullName[$this->monitoredFields[$monitoredField]['activity_field']]['id'];
+        $membershipFieldId = $this->membershipFieldsByFullName[$monitoredField]['id'];
+
+        // If modified
+        if(isset($to[$membershipFieldId])){
+          $this->activityParams[$activityFieldId] = $to[$membershipFieldId];
+          // Otherwise record the previous value
+        }else{
+          $this->activityParams[$activityFieldId] = $from[$membershipFieldId];
+        }
       }
     }
 
+    // Set subject based on modified fields
+    foreach($this->getModifiedFields() as $modifiedField){
+      if($modifiedField['monitored'] and $modifiedField['id'] != 'status_id'){
+        $subjectLineMonitoredFields[] = "[{$modifiedField['title']} {$modifiedField['from']} > {$modifiedField['to']}]";
+      }
+    }
     $this->activityParams['subject'] .= ": ".implode('; ', $subjectLineMonitoredFields).'.';
-    $contractUpdateCustomFields = $this->translateCustomFields('contract_updates');
 
-    // If a contributionRecurCustomField has been passed in the parameters
-    if(isset($this->proposedParams[$this->contributionRecurCustomField])){
-      $newAnnualMembershipAmount = $this->calcAnnualAmount($this->proposedContributionRecur);
-      $oldAnnualMembershipAmount = $this->calcAnnualAmount($this->startContributionRecur);
-      $this->activityParams[$contractUpdateCustomFields['ch_annual_diff']] = (string) $newAnnualMembershipAmount - $oldAnnualMembershipAmount; // CiviCRM prefers currencies as strings, LOL
-      $this->activityParams[$contractUpdateCustomFields['ch_annual']] = $newAnnualMembershipAmount; // CiviCRM prefers currencies as strings, LOL
-      $finalContributionRecur = $this->proposedContributionRecur;
+    // Work out the difference in annual membership amount
+
+    // If membership_payment.membership_annual is in the params, it must have changed.
+    if(isset($to[$this->membershipFieldsByFullName['membership_payment.membership_annual']['id']])){
+      $this->activityParams[$this->activityFieldsByFullName['contract_updates.ch_annual_diff']['id']] =
+        $to[$this->membershipFieldsByFullName['membership_payment.membership_annual']['id']] - $from[$this->membershipFieldsByFullName['membership_payment.membership_annual']['id']];
     }else{
-      $this->activityParams[$contractUpdateCustomFields['ch_annual_diff']] = 0;
-      $this->activityParams[$contractUpdateCustomFields['ch_annual']] = $this->calcAnnualAmount($this->startContributionRecur); // CiviCRM prefers currencies as strings, LOL
-      $finalContributionRecur = $this->startContributionRecur;
+      $this->activityParams[$this->activityFieldsByFullName['contract_updates.ch_annual_diff']['id']] = 0;
     }
 
-    $this->activityParams[$contractUpdateCustomFields['ch_recurring_contribution']] = $finalContributionRecur['id'];
-    $translateFromContributionRecurFreqToContractFreq = array(
-      'month' => 1,
-      'year' => 12
-    );
+    // For some reason, we are not storing the bank account IDs in the
+    // membership. Hence we need to do a bit of extra work to work out what they
+    // are and store them in the activity.
 
-    $this->activityParams[$contractUpdateCustomFields['ch_frequency']] =
-      isset($finalContributionRecur['frequency_unit']) ?
-      $translateFromContributionRecurFreqToContractFreq[$finalContributionRecur['frequency_unit']] : '';
+    // We can look up the new recurring contribution from our activity params
+    // (handy!)
+    $contributionRecurId = $this->activityParams[$this->activityFieldsByFullName['contract_updates.ch_recurring_contribution']['id']];
 
-    $sepaMandate = civicrm_api3('SepaMandate', 'get', array(
-      'entity_table' => "civicrm_contribution_recur",
-      'entity_id' => $finalContributionRecur['id'],
-    ));
-
-    if($sepaMandate['count'] == 1){
-      $this->activityParams[$contractUpdateCustomFields['ch_from_ba']] =
-        $this->getBankAccountIdFromIban($sepaMandate['values'][$sepaMandate['id']]['iban']);
-      $this->activityParams[$contractUpdateCustomFields['ch_to_ba']] =
-        $this->getBankAccountIdFromIban($this->getCreditorIban($sepaMandate['values'][$sepaMandate['id']]['creditor_id']));
+    //If this membership has a recurring contribution
+    if($contributionRecurId){
+      //Check if it is a sepa recurring contribution
+      $sepaMandate = civicrm_api3('SepaMandate', 'get', array(
+        'entity_table' => "civicrm_contribution_recur",
+        'entity_id' => $contributionRecurId
+      ));
+      if($sepaMandate['count'] == 1){
+        // var_dump($sepaMandate);
+        // var_dump($this->activityFieldsByFullName['contract_updates.ch_from_ba']['id']);
+        $this->activityParams[$this->activityFieldsByFullName['contract_updates.ch_from_ba']['id']] =
+          $this->getBankAccountIdFromIban($sepaMandate['values'][$sepaMandate['id']]['iban']);
+        $this->activityParams[$this->activityFieldsByFullName['contract_updates.ch_to_ba']['id']] =
+          $this->getBankAccountIdFromIban($this->getCreditorIban($sepaMandate['values'][$sepaMandate['id']]['creditor_id']));
+      }
     }
-
-    // set membership params
-    $membershipPaymentCustomFields = $this->translateCustomFields('membership_payment');
-
-    $this->membershipParams[$membershipPaymentCustomFields['membership_frequency']] =
-      $this->activityParams[$contractUpdateCustomFields['ch_frequency']];
-
-    $this->membershipParams['id'] = $this->startMembership['id'];
   }
 
-  function setCancelParams(){
+  function generateActivityCancelParams(){
     $cancelCustomFields = $this->translateCustomFields('contract_cancellation');
     $this->activityParams[$cancelCustomFields['contact_history_cancel_reason']] = $this->submitted['contract_history_cancel_reason'];
   }
@@ -342,18 +450,18 @@ class CRM_Contract_Handler{
     //contract a new ContributionRecur, then we'll need to update the
     // recurring contribution with a reference to the new membership
     if(
-      isset($this->proposedParams[$this->contributionRecurCustomField]) &&
-      $this->proposedParams[$this->contributionRecurCustomField] &&
-      ($this->proposedParams[$this->contributionRecurCustomField] != $this->startMembership[$this->contributionRecurCustomField])
+      isset($this->proposedParams[$this->contributionRecurField]) &&
+      $this->proposedParams[$this->contributionRecurField] &&
+      ($this->proposedParams[$this->contributionRecurField] != $this->startMembership[$this->contributionRecurField])
     ){
       // Need to work out what transaction id to assign
       $contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array(
-        'id' => $this->proposedParams[$this->contributionRecurCustomField]
+        'id' => $this->proposedParams[$this->contributionRecurField]
       ));
       // If recuring contribution doesn't have a transaction ID that is suitable for this contract, we need to create one
       if(!isset($contributionRecur['trxn_id']) || strpos($contributionRecur['trxn_id'], "CONTRACT-{$this->startMembership['id']}") !== 0){
         $this->contributionRecurParams['trxn_id'] = $this->assignNextTransactionId($this->startMembership['id']);
-        $this->contributionRecurParams['id'] = $this->proposedParams[$this->contributionRecurCustomField];
+        $this->contributionRecurParams['id'] = $this->proposedParams[$this->contributionRecurField];
         $contributionRecur = civicrm_api3('ContributionRecur', 'create', $this->contributionRecurParams);
       }
     }
@@ -399,9 +507,6 @@ class CRM_Contract_Handler{
   }
 
   function calcAnnualAmount($contributionRecur){
-    if(!$contributionRecur){
-      return (string) 0;
-    }
     $frequencyUnitTranslate = array(
       'day' => 365,
       'week' => 52,
@@ -409,6 +514,16 @@ class CRM_Contract_Handler{
       'year' => 1
     );
     return (string) $contributionRecur['amount'] * $frequencyUnitTranslate[$contributionRecur['frequency_unit']] / $contributionRecur['frequency_interval'];
+  }
+
+  function calcPaymentFrequency($contributionRecur){
+    if($contributionRecur['frequency_unit'] == 'month'){
+      return $contributionRecur['frequency_interval'];
+    }
+
+    // Don't guess. Return an empty string if we don't know
+    // TODO Or maybe report an exception here?
+    return '';
   }
 
   function getBankAccountIdFromIban($iban){
@@ -451,64 +566,59 @@ class CRM_Contract_Handler{
    *
    * This is much more convoluted that I'd like it to be because we are using
    * the parameters submitted with the API or the form, not an API call.
+   *
+   * TODO cache the results of this function so we don't call it more than
+   * necessary (if it feels worth it)
    */
   function getModifiedFields(){
+    // Define this array since we are returning it even if it nothing was
+    // modified
+    $modifiedFields = [];
 
     // Shorter names are nicer to work with
     $from = $this->startMembership;
     $to = $this->proposedParams;
 
-    // Retreive metadata on relevant core and custom fields so we can work out
-    // what has changed
-    $customGroupNames = array('membership_cancellation', 'membership_payment','membership_general');
-    $customGroups = civicrm_api3('CustomGroup', 'get', array( 'name' => array('IN' => $customGroupNames)))['values'];
-    $membershipCustomFields = array();
-    foreach($customGroupNames as $customGroup){
-      foreach(civicrm_api3('CustomField', 'get', array( 'custom_group_id' => $customGroup))['values'] as $field){
-        $membershipCustomFields['custom_'.$field['id']] = $field;
-      };
-    }
-    foreach(civicrm_api3('Membership', 'getfields', array( 'api_action' => 'get'))['values'] as $field){
-      $membershipCoreFields[$field['name']] = $field;
-    }
-
+    // The parameters might come with badly named keys
     $this->saneifyCustomFieldIds($to);
-    $modifiedFields = array();
-    // Start off with a definitive list of all membership core and custom fields
-    // (whether they have been defined or not). Relying on membership.get (which
-    // is what we have stored in $from) isn't robust eno$membershipCustomFields[$field]ugh as some fields are
-    // only returned when they are set.
 
-    foreach(array_keys($membershipCoreFields) + array_keys($membershipCustomFields) as $field){
-      // We can't be thinking about modifying it unless it is defined in $to
+    foreach(array_keys($this->membershipFields) as $field){
+
+      // Fields can only have been modified if they are defined in the $to array
       if(isset($to[$field])){
+
         // Dates in CiviCRM are passed in various formats. This is an attempt to
         // convert dates passed as params to the same format that the api produces
         if(
-          isset($to[$field]) && (in_array($field, array('join_date', 'start_date', 'end_date', ))) ||
-          (isset($membershipCustomFields[$field]) && in_array($membershipCustomFields[$field]['name'], array('membership_cancel_date', 'membership_resume_date')))
+          isset($to[$field]) &&
+          in_array($this->membershipFields[$field]['full_name'], [
+            'join_date',
+            'start_date',
+            'end_date',
+            'membership_cancellation.membership_cancel_date',
+            'membership_cancellation.membership_resume_date'
+          ])
         ){
           $to[$field] = date('Y-m-d', strtotime($to[$field]));
+          $from[$field] = date('Y-m-d', strtotime($from[$field]));
         }
 
-        // If the field has been modified means either...
+        // Check if the field has been modified.
         if(
-          // ...the field was not set in from but is set in to and has a value
+          // EITHER the field was not set in $from but have a value in $to
           (!isset($from[$field]) && $to[$field]) ||
-          // ... OR the field was set in from and to and is different
+          // OR the field was set in $from and in $to and the values are
+          // different
           (isset($from[$field]) && $from[$field] != $to[$field])
         ){
           $modifiedFields[$field]['id'] = $field;
-          if(isset($membershipCustomFields[$field])){
-            $modifiedFields[$field]['name'] = $customGroups[$membershipCustomFields[$field]['custom_group_id']]['name'].'.'.$membershipCustomFields[$field]['name'];
-            $modifiedFields[$field]['title'] = $membershipCustomFields[$field]['label'];
-          }else{
-            $modifiedFields[$field]['name'] = $field;
-            $modifiedFields[$field]['title'] = $membershipCoreFields[$field]['title'];
-          }
+          $modifiedFields[$field]['full_name'] = $this->membershipFields[$field]['full_name'];
+          $modifiedFields[$field]['full_name'] = $this->membershipFields[$field]['full_name'];
+          $modifiedFields[$field]['title'] = $this->membershipFields[$field]['title'];
+
           $modifiedFields[$field]['from'] = isset($from[$field]) ? $from[$field] : '';
           $modifiedFields[$field]['to'] = $to[$field];
-          if(array_search($modifiedFields[$field]['name'], $this->monitoredFields) !== false){
+          if(in_array($this->membershipFields[$field]['full_name'], array_keys($this->monitoredFields))){
             $this->significantChanges = true;
             $modifiedFields[$field]['monitored'] = true;
           }else{

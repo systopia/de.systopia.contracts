@@ -20,14 +20,16 @@ class CRM_Contract_Modify_BAOWrapper{
 
   function pre($id, &$params){
 
-    // ensure is_overide is always on
-    $params['is_override'] = true;
-
-    if($params['status_id'] == civicrm_api3('MembershipStatus', 'getsingle', array('name' => "pending"))['id']){
-      $params['status_id'] = civicrm_api3('MembershipStatus', 'getsingle', array('name' => "current"))['id'];
-    }
-
+    // retreive a snapshot of the membership before any changes are made
     $this->contractHandler->setStartMembership($id);
+
+    // Params come in in weird formats - we need to santize them before handling
+    // them
+    $this->contractHandler->sanitizeParams($params);
+
+    // Do various things (like force field values, set calculated fields, etc.)
+    // bfore the contract is saved.
+    $this->contractHandler->preProcessParams($params);
     $this->contractHandler->addProposedParams($params);
     if(!$this->contractHandler->isValidStatusUpdate()){
       throw new \Exception("Cannot update contract status from {$this->contractHandler->startStatus} to {$this->contractHandler->proposedStatus}.");
@@ -40,6 +42,10 @@ class CRM_Contract_Modify_BAOWrapper{
     if(count($this->contractHandler->action->errors)){
       throw new \Exception(current($this->contractHandler->action->errors));
     }
+
+    // We also need to insanitize the params before we save the object
+    // (yeah, I know!)
+    $this->contractHandler->insanitizeParams($params);
   }
 
   function post($id){
