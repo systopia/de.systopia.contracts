@@ -122,6 +122,7 @@ class CRM_Contract_Handler{
    */
   function setStartMembership($id){
     if($id){
+      $this->id = $id;
       $this->startMembership = civicrm_api3('Membership', 'getsingle', array('id' => $id));
 
       $this->saneifyCustomFieldIds($this->startMembership);
@@ -146,6 +147,7 @@ class CRM_Contract_Handler{
       // Ensure that the start membership status is refered to by the name, not the id.
       $this->startMembership['status_id'] = $this->startStatus;
     }else{
+      $this->id = null;
       $this->startMembership = null;
       $this->startStatus = null;
       $this->startContributionRecur = null;
@@ -199,6 +201,8 @@ class CRM_Contract_Handler{
 
 
   function addProposedParams($params){
+
+    $this->saneifyCustomFieldIds($params);
 
     // TODO ensure that we skip the new status FIXME
     if($params['status_id'] == 1 || $params['status_id'] == 'New'){
@@ -314,13 +318,33 @@ class CRM_Contract_Handler{
   }
 
   function validateFieldUpdate(){
+
+    $this->errors = array();
+
     if(!$this->action){
       throw new Exception('No action defined for this contract update.');
     }
+    // Check to see if the recurring contribution is being used by any other contract
+    if($this->proposedContributionRecur['id']){
+      $memberships = civicrm_api3('Membership', 'get', [$this->contributionRecurField => $this->proposedContributionRecur['id']]);
+      if($memberships['count']){
+        if($this->id){
+          unset($memberships['values'][$this->id]);
+        }
+        if(count($memberships['values'])){
+          foreach($memberships['values'] as $membership){
+            $links[] = "<a href='".CRM_Utils_System::url( 'civicrm/contact/view/membership', "action=view&reset=1&context=membership&selectedChild=member&id={$membership['id']}&cid={$membership['contact_id']}")."'>{$membership['id']}'</a>";
+          }
+          $this->errors[$this->contributionRecurField] = 'This recurring contribution is already linked to one or more contracts: '.implode(', ', $links);
+        }
+      }
+    }
 
+    // Check to see if these fields are allowed to be updated during this state
+    // change
     $modifiedFields = $this->getModifiedFields();
     $this->action->validateFieldUpdate($modifiedFields);
-    $this->errors = $this->action->errors;
+    $this->errors += $this->action->errors;
   }
 
   /**
@@ -386,12 +410,15 @@ class CRM_Contract_Handler{
       }
     }
 
+    $subjectLineMonitoredFields = [];
+
     // Set subject based on modified fields
     foreach($this->getModifiedFields() as $modifiedField){
       if($modifiedField['monitored'] and $modifiedField['id'] != 'status_id'){
         $subjectLineMonitoredFields[] = "[{$modifiedField['title']} {$modifiedField['from']} > {$modifiedField['to']}]";
       }
     }
+
     $this->activityParams['subject'] .= ": ".implode('; ', $subjectLineMonitoredFields).'.';
 
     // Work out the difference in annual membership amount
@@ -409,7 +436,7 @@ class CRM_Contract_Handler{
     // are and store them in the activity.
 
     // We can look up the new recurring contribution from our activity params
-    // (handy!)
+    // (handy!) //TODO Would it be simpler to use $this->proposedContributionRecur?
     $contributionRecurId = $this->activityParams[$this->activityFieldsByFullName['contract_updates.ch_recurring_contribution']['id']];
 
     //If this membership has a recurring contribution
@@ -644,7 +671,8 @@ class CRM_Contract_Handler{
   function saneifyCustomFieldIds(&$array){
     foreach($array as $k => $v){
       if(preg_match("/(custom_\d+)_\-?\d+$/", $k, $matches)){
-        unset($array[$matches[0]]);
+        // TODO Probably safer to leave them in place - no need to unset
+        // unset($array[$matches[0]]);
         $array[$matches[1]] = $v;
       }
     }

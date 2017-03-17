@@ -38,7 +38,7 @@ class CRM_Contract_Modify_BAOWrapper{
     $this->contractHandler->generateActivityParams();
 
     $this->contractHandler->validateFieldUpdate();
-    $this->contractHandler->validateFieldUpdate();
+
     if(count($this->contractHandler->action->errors)){
       throw new \Exception(current($this->contractHandler->action->errors));
     }

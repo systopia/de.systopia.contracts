@@ -197,14 +197,15 @@ function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$e
         $contractHandler = new CRM_Contract_Handler();
         $contractHandler->setStartMembership($id);
         $fields['membership_type_id'] = $fields['membership_type_id'][1];
+        $contractHandler->sanitizeParams($fields);
         $contractHandler->addProposedParams($fields);
         if(!$contractHandler->isValidStatusUpdate()){
           $errors['status_id']=$contractHandler->errors['status_id'];
           return;
         }
         $contractHandler->validateFieldUpdate();
-        if(count($contractHandler->action->errors)){
-          $errors = $contractHandler->action->errors;
+        if(count($contractHandler->errors)){
+          $errors = $contractHandler->errors;
           // We have to add the number back onto the custom field id
           foreach($errors as $key => $message){
             if(!isset($form->_elementIndex[$key])){
