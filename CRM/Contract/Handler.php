@@ -377,6 +377,10 @@ class CRM_Contract_Handler{
       $this->generateActivityCancelParams();
     }
 
+    if($this->action->getAction() == 'sign'){
+      $this->activityParams['activity_date_time'] = $this->proposedParams['join_date'];
+    }
+
     // add campaign params if they have changed
     $this->activityParams['campaign_id'] =
       isset($this->proposedParams['campaign_id']) ?
