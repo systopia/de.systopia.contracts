@@ -10,7 +10,7 @@
 class CRM_Contract_Action_Cancel extends CRM_Contract_Action{
 
   function getValidStartStatuses(){
-    return array('New', 'Current', 'Grace');
+    return array('New', 'Current', 'Grace', 'Cancelled');
   }
 
   function getEndStatus(){
@@ -35,7 +35,7 @@ class CRM_Contract_Action_Cancel extends CRM_Contract_Action{
     // We should also check that the cancellation date is set.
 
     foreach ($fields as $id => $field){
-      if(in_array($field['name'], array( 'status_id', 'is_override','membership_cancellation.membership_cancel_reason', 'membership_cancellation.membership_cancel_date', 'membership_cancellation.membership_resume_date'))){
+      if(in_array($field['name'], array( 'status_id', 'is_override', 'end_date', 'membership_cancellation.membership_cancel_reason', 'membership_cancellation.membership_cancel_date', 'membership_cancellation.membership_resume_date'))){
         unset($fields[$id]);
       }else{
         $this->errors[$id] = "Cannot update {$field['title']} when cancelling a membership";
