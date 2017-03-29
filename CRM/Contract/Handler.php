@@ -181,9 +181,13 @@ class CRM_Contract_Handler{
     // Contract should always have status overrriden
     $params['is_override'] = true;
 
-    // Contracts should not have pending membership statuses - convert to
+    // Contracts should not have pending or expired membership statuses - convert to
     // current
-    if($params['status_id'] == civicrm_api3('MembershipStatus', 'getsingle', array('name' => "pending"))['id']){
+    // TODO Performance optimisation (remove these two seperate API calls)
+    if(
+      $params['status_id'] == civicrm_api3('MembershipStatus', 'getsingle', array('name' => "pending"))['id'] ||
+      $params['status_id'] == civicrm_api3('MembershipStatus', 'getsingle', array('name' => "expired"))['id']
+    ){
       $params['status_id'] = civicrm_api3('MembershipStatus', 'getsingle', array('name' => "current"))['id'];
     }
 
