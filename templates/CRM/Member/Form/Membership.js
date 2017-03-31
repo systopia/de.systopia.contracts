@@ -1,6 +1,5 @@
 CRM.$(function($) {
 
-
   // Hide record membership payment
   $('#contri').hide();
 
@@ -14,13 +13,11 @@ CRM.$(function($) {
   });
 
   // Hide custom fields we don't want to be populated
-  $.mikey = function(){
+  $.hideCustomFields = function(){
     $.each(CRM.vars['de.systopia.contract'].hiddenCustomFields.values, function(key, value) {
       $('[class*=custom_' + value.id + ']').hide();
     });
   };
-
-  $.mikey();
-  $('#membership_type_id_1').change($.mikey);
-
+  $.hideCustomFields();
+  $('#membership_type_id_1').change($.hideCustomFields);
 });
