@@ -11,6 +11,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
   function preProcess(){
     $this->getParams();
+    $this->controller->_destination = CRM_Utils_System::url('civicrm/contact/view', "reset=1&cid={$this->membership['contact_id']}&selectedChild=member");
     $this->validateStartStatus();
     parent::preProcess();
   }
@@ -119,7 +120,6 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
   }
 
   function postProcess(){
-
 
     $this->submitted = $this->exportValues();
 
