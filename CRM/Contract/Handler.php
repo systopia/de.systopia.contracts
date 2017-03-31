@@ -378,11 +378,12 @@ class CRM_Contract_Handler{
       $this->activityParams['activity_date_time'] = $this->proposedParams['join_date'];
     }
 
-    // add campaign params if they have changed
-    $this->activityParams['campaign_id'] =
-      isset($this->proposedParams['campaign_id']) ?
-      $this->proposedParams['campaign_id'] :
-      $this->startMembership['campaign_id'];
+    // add campaign id if it has changed or if it is set in the membership
+    if(isset($this->proposedParams['campaign_id'])){
+      $this->activityParams['campaign_id'] = $this->proposedParams['campaign_id'];
+    }elseif(isset($this->startMembership['campaign_id'])){
+      $this->activityParams['campaign_id'] = $this->startMembership['campaign_id'];
+    }
   }
 
   function generateActivityUpdateParams(){
