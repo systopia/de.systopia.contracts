@@ -274,8 +274,6 @@ class CRM_Contract_Handler{
     if(!$startStatus){
       $startStatus='';
     }
-    // NOTE for initial launch: limit transitions to starting and ending with $validStatuses
-    $validStatuses = array('', 'Current', 'Cancelled');
 
     if(!isset($this->statusChangeIndex)){
       foreach(self::$actions as $name){
@@ -283,18 +281,13 @@ class CRM_Contract_Handler{
         foreach($action->getValidStartStatuses() as $status){
           if(method_exists($action, 'getValidEndStatuses')){
             foreach($action->getValidEndStatuses() as $validEndStatus){
-              // NOTE for initial launch: limit transitions to starting and ending with $validStatuses
-              if(in_array($status, $validStatuses) && in_array($validEndStatus, $validStatuses)){
-                $this->statusChangeIndex[] = array(
-                  'class' => $name,
-                  'startStatus' => $status,
-                  'endStatus' => $validEndStatus
-                );
-              }
+              $this->statusChangeIndex[] = array(
+                'class' => $name,
+                'startStatus' => $status,
+                'endStatus' => $validEndStatus
+              );
             }
           }else{
-            // NOTE for initial launch: limit transitions to starting and ending with $validStatuses
-            if(in_array($status, $validStatuses) && in_array($action->getEndStatus(), $validStatuses))
             $this->statusChangeIndex[] = array(
               'class' => $name,
               'startStatus' => $status,
