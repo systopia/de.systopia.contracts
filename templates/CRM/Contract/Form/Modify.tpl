@@ -29,5 +29,5 @@
     <a href="{crmURL p='civicrm/grant/add' q='reset=1&action=add&context=standalone'}" class="create-mandate">another random other popup</a>
   </div>
   <div>
-    <a class="update-payment-contracts">select newest payment contract</a>
+    <a class="update-payment-contracts">refresh and select newest payment contract</a>
   </div>
