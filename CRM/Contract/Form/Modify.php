@@ -71,6 +71,9 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
   function buildQuickForm(){
 
     CRM_Utils_System::setTitle(ucfirst($this->updateAction->getAction()).' contract');
+    CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/Modify.js');
+    CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('cid' => $this->membership['contact_id']));
+
 
     if(in_array($this->updateAction->getAction(), array('resume', 'update', 'revive'))){
 

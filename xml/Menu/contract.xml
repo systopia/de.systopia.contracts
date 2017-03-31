@@ -5,4 +5,9 @@
     <page_callback>CRM_Contract_Form_Modify</page_callback>
     <access_arguments>edit memberships</access_arguments>
   </item>
+  <item>
+    <path>civicrm/contract/recurringContributions</path>
+    <page_callback>CRM_Contract_Page_RecurringContributions</page_callback>
+    <access_arguments>edit memberships, </access_arguments>
+  </item>
 </menu>

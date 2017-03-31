@@ -36,15 +36,18 @@ class CRM_Contract_FormUtils
 
     public function addPaymentContractSelect2($elementName, $contactId)
     {
-        // Sometimes we call this function with an unknown contact. In these instances, return an empty array or recurring contributions
-        if($contactId){
-          $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $contactId));
-        }else{
-          $contributionRecurs['values']=array();
-        }
-        $contributionRecurOptions = array('' => '- none -') + array_map(array($this, 'writePaymentContractLabel'), $contributionRecurs['values']);
+        $contributionRecurOptions = $this->getPaymentContributionRecurOptions($contactId);
+        $this->form->add('select', $elementName, ts('Payment Contract'), $contributionRecurOptions, false, array('class' => 'crm-select1'));
+    }
 
-        $this->form->add('select', $elementName, ts('Payment Contract'), $contributionRecurOptions, false, array('class' => 'crm-select2'));
+    public function getPaymentContributionRecurOptions($contactId){
+      // Sometimes we call this function with an unknown contact. In these instances, return an empty array or recurring contributions
+      if($contactId){
+        $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $contactId));
+      }else{
+        $contributionRecurs['values']=array();
+      }
+      return array('' => '- none -') + array_map(array($this, 'writePaymentContractLabel'), $contributionRecurs['values']);
     }
 
     public function showPaymentContractDetails()
@@ -121,15 +124,4 @@ class CRM_Contract_FormUtils
      * Replaced with js/membership-edit.js for now as filtering was doing weird
      * things to the status_id
      */
-    public function filterMembershipStatuses($element)
-    {
-      // // var_dump($element->_options);
-      // foreach($element->_options as $key => $option){
-      //   if(!in_array($option['text'], array('Current', 'Cancelled', '- select -'))){
-      //     unset($element->_options[$key]);
-      //   }
-      // }
-      // // unset($element->_options[0]);
-      // // // var_dump($element->_options);
-    }
 }
