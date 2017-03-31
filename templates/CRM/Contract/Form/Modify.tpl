@@ -23,7 +23,7 @@
     {include file="CRM/common/formButtons.tpl" location="bottom"}
   </div>
   <div>
-    <a href="{crmURL p='civicrm/sepa/cmandate' q='cid=24'}" class="create-mandate">create SEPA mandate</a>
+    <a href="{crmURL p='civicrm/sepa/cmandate' q="cid=`$cid`"}" class="create-mandate">create SEPA mandate</a>
   </div>
   <div>
     <a href="{crmURL p='civicrm/grant/add' q='reset=1&action=add&context=standalone'}" class="create-mandate">another random other popup</a>

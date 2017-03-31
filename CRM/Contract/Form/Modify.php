@@ -105,6 +105,8 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     $defaults['contract_history_recurring_contribution'] = $this->membership[$this->contributionRecurField];
     $this->setDefaults($defaults);
 
+    $this->assign('mid', $this->membership['id']);
+    $this->assign('cid', $this->membership['contact_id']);
     $this->assign('historyAction', $this->updateAction->getAction());
     $this->assign('elementNames', $this->getRenderableElementNames());
     parent::buildQuickForm();
