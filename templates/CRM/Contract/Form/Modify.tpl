@@ -28,4 +28,5 @@
   <div class="crm-submit-buttons">
     {include file="CRM/common/formButtons.tpl" location="bottom"}
   </div>
+  <a href="/civicrm/dashboard" class="crm-option-edit-link medium-popup crm-hover-button">create SEPA mandate</a>
 </div>

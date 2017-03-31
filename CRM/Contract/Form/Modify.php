@@ -32,14 +32,6 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     try{
       $this->membership = civicrm_api3('Membership', 'getsingle', array('id' => $this->get('id')));
 
-      // Why TF does the api return contact references as names, not IDs?
-      // (i.e. why does it return something that you cannot pass back to create
-      // for an update?! As a work around, I am going to overwriting custom_#
-      // with the value from custom_#_id.
-      //
-      // I am also unsetting the custom_#_# fields as they are also causing
-      // issues when combined with the contact reference fields
-
       $dialoggerCustomField = 'custom_'.civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_general', 'name' => 'membership_dialoger'))['id'];
       if(isset($this->membership[$dialoggerCustomField])){
         $this->membership[$dialoggerCustomField] = $this->membership[$dialoggerCustomField.'_id'];
@@ -143,10 +135,4 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     }
     civicrm_api3('Membership', 'create', $this->updatedMembership);
   }
-
-  function getTemplateFileName(){
-    return 'CRM/Contract/Form/History.tpl';
-  }
-
-
 }
