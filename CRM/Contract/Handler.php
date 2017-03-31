@@ -406,12 +406,11 @@ class CRM_Contract_Handler{
         if(isset($to[$membershipFieldId])){
           $this->activityParams[$activityFieldId] = $to[$membershipFieldId];
           // Otherwise record the previous value
-        }else{
+        }elseif(isset($from[$membershipFieldId])){
           $this->activityParams[$activityFieldId] = $from[$membershipFieldId];
         }
       }
     }
-
     $subjectLineMonitoredFields = [];
 
     // Set subject based on modified fields
