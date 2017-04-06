@@ -2,7 +2,14 @@
 <menu>
   <item>
     <path>civicrm/contract/modify</path>
+    <title>Modify contract</title>
     <page_callback>CRM_Contract_Form_Modify</page_callback>
+    <access_arguments>edit memberships</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/contract/mandate</path>
+    <title>Create mandate</title>
+    <page_callback>CRM_Contract_Form_Mandate</page_callback>
     <access_arguments>edit memberships</access_arguments>
   </item>
   <item>
