@@ -24,7 +24,7 @@ class CRM_Contract_AlterMembershipLinks
 
         foreach (CRM_Contract_Handler::$actions as $class) {
           $action = new $class;
-            if(in_array($membershipStatus['name'], $action->getValidStartStatuses())){
+            if(in_array($membershipStatus['name'], $action->getValidStartStatuses()) && $action->getAction() != 'resume'){
                 $this->links[] = array(
                     'name' => ucfirst($action->getAction()),
                     'title' => ucfirst("{$action->getAction()} Contract"),
