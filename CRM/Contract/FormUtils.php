@@ -18,6 +18,85 @@ class CRM_Contract_FormUtils
         $this->form = $form;
     }
 
+    public function getRecurringContributions($cid){
+      $contacts = civicrm_api3('Contact', 'get', array('id' => $cid))['values'];
+      $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $cid))['values'];
+      $sepaMandates = civicrm_api3('sepaMandate', 'get', ['contact_id' => $cid,'option.limit' => 100])['values'];
+      $paymentInstrumentOptions = civicrm_api3('OptionValue', 'get', array( 'option_group_id' => "payment_instrument"))['values'];
+      $sepaCreditors = civicrm_api3('SepaCreditor', 'get')['values'];
+      foreach($paymentInstrumentOptions as $paymentInstrumentOption){
+        $paymentInstruments[$paymentInstrumentOption['value']]=$paymentInstrumentOption['name'];
+      }
+      // var_dump($paymentInstruments);
+      foreach($contributionRecurs as $cr){
+        $return[$cr['id']]['fields']=[
+          'display_name' => $contacts[$cr['contact_id']]['display_name'],
+          'payment_instrument' => $paymentInstruments[$cr['payment_instrument_id']],
+          'frequency' => $this->writeFrequency($cr),
+          'amount' => $cr['amount'],
+          'annual_amount' => $this->calcAnnualAmount($cr),
+          'next_debit' => '?',
+        ];
+        $return[$cr['id']]['text_summary'] ="Creditor name: {$return[$cr['id']]['fields']['display_name']}<br />
+Payment method: {$return[$cr['id']]['fields']['payment_instrument']}<br />
+Frequency: {$return[$cr['id']]['fields']['frequency']}<br />
+Annual contract amount: {$return[$cr['id']]['fields']['annual_amount']}<br />
+Frequency contract amount: {$return[$cr['id']]['fields']['amount']}<br />
+";
+        if (in_array($cr['payment_instrument_id'], $this->getSepaPaymentInstruments())) {
+          $sepa = $this->getSepaByRecurringContributionId($cr['id'], $sepaMandates);
+          $return[$cr['id']]['fields']['payment_instrument'] = "SEPA";
+          $return[$cr['id']]['fields']['iban'] = $sepa['iban'];
+          $return[$cr['id']]['fields']['org_iban'] = $sepaCreditors[$sepa['creditor_id']]['iban'];
+          // $return[$cr['id']]['fields']['org_iban'] = $sepa;
+          // $return[$cr['id']]['fields']['org_iban'] = $cr['id'];
+          $return[$cr['id']]['fields']['next_debit'] = '?';
+          $return[$cr['id']]['label'] = "SEPA, {$return[$cr['id']]['fields']['amount']} {$return[$cr['id']]['fields']['frequency']} ({$sepa['reference']})";
+          $return[$cr['id']]['text_summary'] .= "Organisational account: {$return[$cr['id']]['fields']['org_iban']}<br />
+Creditor account: {$return[$cr['id']]['fields']['iban']}<br />
+Next debit: {$return[$cr['id']]['fields']['next_debit']}";
+        }else{
+          $return[$cr['id']]['label'] = "{$return[$cr['id']]['fields']['payment_instrument']}, {$return[$cr['id']]['fields']['amount']} {$return[$cr['id']]['fields']['frequency']}";
+        }
+      }
+      return $return;
+
+    }
+
+    private function getSepaByRecurringContributionId($id, $sepas){
+      foreach($sepas as $sepa){
+        if($sepa['entity_id'] == $id && $sepa['entity_table'] == 'civicrm_contribution_recur'){
+          return $sepa;
+        }
+      }
+    }
+
+    private function calcAnnualAmount($cr){
+      if($cr['frequency_unit']=='month'){
+        $multiplier = 12;
+      }elseif($cr['frequency_unit']=='year'){
+        $multiplier = 1;
+      }
+      return $cr['amount'] * $multiplier / $cr['frequency_interval'];
+    }
+
+    private function writeFrequency($cr){
+      if($cr['frequency_interval']==1){
+        $frequency = "Every {$cr['frequency_unit']}";
+      }else{
+        $frequency = "Every {$cr['frequency_interval']} {$cr['frequency_unit']}s";
+      }
+      $shortHands = [
+        'Every 12 months' => 'Annual',
+        'Every year' => 'Annual',
+        'Every month' => 'Monthly'
+      ];
+      if(array_key_exists($frequency, $shortHands)){
+        return $shortHands[$frequency];
+      }
+      return $frequency;
+    }
+
     public function getSepaPaymentInstruments()
     {
         if (!isset($this->sepaPaymentInstruments)) {
@@ -36,20 +115,14 @@ class CRM_Contract_FormUtils
 
     public function addPaymentContractSelect2($elementName, $contactId, $required = true)
     {
-        $contributionRecurOptions = $this->getPaymentContributionRecurOptions($contactId);
-        $this->form->add('select', $elementName, ts('Mandate / Recurring Contribution'), array('' => '- none -') + $contributionRecurOptions, $required, array('class' => 'crm-select2'));
+        $rc[''] = '- none -';
+        foreach($this->getRecurringContributions($contactId) as $key => $rc){
+          $recurringContributionOptions[$key] = $rc['label'];
+        }
+        $this->form->add('select', $elementName, ts('Mandate / Recurring Contribution'), $recurringContributionOptions, $required, array('class' => 'crm-select2'));
     }
 
-    public function getPaymentContributionRecurOptions($contactId){
-      // Sometimes we call this function with an unknown contact. In these instances, return an empty array or recurring contributions
-      if($contactId){
-        $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $contactId));
-      }else{
-        $contributionRecurs['values']=array();
-      }
-      return array('' => '- none -') + array_map(array($this, 'writePaymentContractLabel'), $contributionRecurs['values']);
-    }
-
+    //TODO refactor to use something nice like something extracted from $this->getRecurringContributions()
     public function showPaymentContractDetails()
     {
         if($this->entity == 'Membership'){
