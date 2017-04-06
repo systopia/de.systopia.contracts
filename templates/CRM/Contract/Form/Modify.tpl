@@ -14,6 +14,7 @@
 </h3>
 
 
+  {if $form.contract_history_recurring_contribution.html}
   <div class="crm-section">
     <div class="label">{$form.contract_history_recurring_contribution.label}</div>
     <div class="content">{$form.contract_history_recurring_contribution.html} <a href="{crmURL p='civicrm/contract/mandate' q="cid=`$cid`"}" class="create-mandate"><i class="crm-i fa-plus-circle">+</i> new mandate</a></div>
@@ -22,9 +23,20 @@
     <div class="content"><p class=payment-summary>[textual summary of the mandate / recurring contribution goes here].</p></div>
     <div class="clear"></div>
   </div>
+  {/if}
   <div class="crm-section">
     <div class="label">{$form.activity_date.label}</div>
     <div class="content">{include file="CRM/common/jcalendar.tpl" elementName=activity_date}</div>
+    <div class="clear"></div>
+  </div>
+  <div class="crm-section">
+    <div class="label">{$form.cancel_date.label}</div>
+    <div class="content">{include file="CRM/common/jcalendar.tpl" elementName=cancel_date}</div>
+    <div class="clear"></div>
+  </div>
+  <div class="crm-section">
+    <div class="label">{$form.cancel_reason.label}</div>
+    <div class="content">{$form.cancel_reason.html}</div>
     <div class="clear"></div>
   </div>
   <div class="crm-section">
