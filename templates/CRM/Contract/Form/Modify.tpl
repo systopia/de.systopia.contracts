@@ -5,29 +5,48 @@
 
   <h3>
   {if $historyAction eq 'cancel'}
-    Please choose a reason for cancelling this contract and click on '{$historyAction|ucfirst}' below
+    Please choose a reason for cancelling this contract and click on '{$historyAction|ucfirst}' below.
   {elseif $isUpdate}
-    Please make required changes to the contract and click on '{$historyAction|ucfirst}' below
+    Please make the required changes to the contract and click on '{$historyAction|ucfirst}' below.
   {else}
-    Please confirm that you want to {$historyAction} this contract by clicking on '{$historyAction|ucfirst}' below
+    Please confirm that you want to {$historyAction} this contract by clicking on '{$historyAction|ucfirst}' below.
   {/if}
-</h3> {foreach from=$elementNames item=elementName}
+</h3>
+
+
   <div class="crm-section">
-    <div class="label">{$form.$elementName.label}</div>
-    <div class="content">{$form.$elementName.html}</div>
+    <div class="label">{$form.contract_history_recurring_contribution.label}</div>
+    <div class="content">{$form.contract_history_recurring_contribution.html} <a href="{crmURL p='civicrm/contract/mandate' q="cid=`$cid`"}" class="create-mandate"><i class="crm-i fa-plus-circle">+</i> new mandate</a></div>
+    <div class="clear"></div>
+    <div class="label"></div>
+    <div class="content"><p class=payment-summary>[textual summary of the mandate / recurring contribution goes here].</p></div>
     <div class="clear"></div>
   </div>
-  {/foreach}
-
+  <div class="crm-section">
+    <div class="label">{$form.activity_date.label}</div>
+    <div class="content">{include file="CRM/common/jcalendar.tpl" elementName=activity_date}</div>
+    <div class="clear"></div>
+  </div>
+  <div class="crm-section">
+    <div class="label">{$form.campaign_id.label}</div>
+    <div class="content">{$form.campaign_id.html}</div>
+    <div class="clear"></div>
+  </div>
+  <div class="crm-section">
+    <div class="label">{$form.activity_medium.label}</div>
+    <div class="content">{$form.activity_medium.html}</div>
+    <div class="clear"></div>
+  </div>
+  <div class="crm-section">
+    <div class="label">{$form.membership_type_id.label}</div>
+    <div class="content">{$form.membership_type_id.html}</div>
+    <div class="clear"></div>
+  </div>
+  <div class="crm-section">
+    <div class="label">{$form.activity_details.label}</div>
+    <div class="content">{$form.activity_details.html}</div>
+    <div class="clear"></div>
+  </div>
   <div class="crm-submit-buttons">
     {include file="CRM/common/formButtons.tpl" location="bottom"}
-  </div>
-  <div>
-    <a href="{crmURL p='civicrm/sepa/cmandate' q="cid=`$cid`"}" class="create-mandate">create SEPA mandate</a>
-  </div>
-  <div>
-    <a href="{crmURL p='civicrm/grant/add' q='reset=1&action=add&context=standalone'}" class="create-mandate">another random other popup</a>
-  </div>
-  <div>
-    <a class="update-payment-contracts">refresh and select newest payment contract</a>
   </div>

@@ -9,7 +9,15 @@
 
 /**
  * This class handles updates to contracts, checking that an update is valid and
- * ensuring that important changes are recorded.
+ * ensuring that important changes are recorded in activities.
+ *
+ * There are two layers at which this handler can be called: the API and the
+ * BAO. If it is called at the API layer, it sets a parameter handledByApi which
+ * will prevent it from being handled again at the BAO.
+ *
+ * We prefer to handle it at the API as then we can pass back information to the
+ * API result, including the ID of the contract that was created as
+ * $result['links']['activity_history_id'].
  */
 class CRM_Contract_Handler{
 
@@ -472,6 +480,7 @@ class CRM_Contract_Handler{
     // This should only be called if significant changes have been made
     if($this->significantChanges){
       $activity = civicrm_api3('Activity', 'create', $this->activityParams);
+      $this->activityHistoryId = $activity['id'];
     }
 
     //if we are changing the recurring contribution associated with this
@@ -496,8 +505,8 @@ class CRM_Contract_Handler{
   }
 
   /**
-   * This is used when we a creating a new membership since we couldn't set
-   * these values until we knew the ID of the membership we created.in_array
+   * This is used when we a creating a new membership. It loads the membership.
+   * We couldn't do this in 'pre' because the membership didn't exist
    */
   function insertMissingParams($id){
     $this->setStartMembership($id);
@@ -614,6 +623,8 @@ class CRM_Contract_Handler{
 
       // Fields can only have been modified if they are defined in the $to array
       if(isset($to[$field])){
+        // var_dump($field);
+
 
         // Dates in CiviCRM are passed in various formats. This is an attempt to
         // convert dates passed as params to the same format that the api produces

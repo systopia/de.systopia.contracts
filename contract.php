@@ -267,7 +267,7 @@ function contract_civicrm_post($op, $objectName, $id, &$objectRef){
 }
 
 function contract_civicrm_apiWrappers(&$wrappers, $apiRequest) {
-  // if($apiRequest['entity'] == 'Membership' & $apiRequest['action'] == 'create'){
-  //   $wrappers[] = CRM_Contract_Modify_APIWrapper::singleton();
-  // }
+  if($apiRequest['entity'] == 'Membership' & $apiRequest['action'] == 'create'){
+    $wrappers[] = CRM_Contract_Modify_APIWrapper::singleton($apiRequest['action']);
+  }
 }

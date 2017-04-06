@@ -74,27 +74,12 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/Modify.js');
     CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('cid' => $this->membership['contact_id']));
 
-
-    if(in_array($this->updateAction->getAction(), array('resume', 'update', 'revive'))){
-
-      // add fields for update (and similar) actions
-      $alter = new CRM_Contract_FormUtils($this, 'Membership');
-      $alter->addPaymentContractSelect2('contract_history_recurring_contribution', $this->membership['contact_id']);
-      $mediums = civicrm_api3('Activity', 'getoptions', array(
-        'sequential' => 1,
-        'field' => "activity_medium_id",
-      ));
-      foreach($mediums['values'] as $medium){
-        $mediumOptions[$medium['key']] = $medium['value'];
-      }
-      $this->add('select', 'contract_history_medium', ts('Medium'), $mediumOptions, false, array('class' => 'crm-select2'));
+    // Add appropriate fields
+    if(in_array($this->updateAction->getAction(), array('update', 'revive'))){
       $this->assign('isUpdate', true);
-    }
-    elseif($this->updateAction->getAction() == 'cancel'){
-
-
-      $this->add('select', 'contract_history_cancel_reason', ts('Cancellation reason'), $mediumOptions, false, array('class' => 'crm-select2'));
-
+      $this->addUpdateFields();
+    }elseif($this->updateAction->getAction() == 'cancel'){
+      $this->addCancelFields();
     }
 
     $this->addButtons(array(
@@ -102,27 +87,73 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
         array('type' => 'submit', 'name' => ucfirst($this->updateAction->getAction()), 'isDefault' => true)
     ));
 
-    $defaults['contract_history_recurring_contribution'] = $this->membership[$this->contributionRecurField];
-    $this->setDefaults($defaults);
+    $this->setDefaults();
 
     $this->assign('mid', $this->membership['id']);
     $this->assign('cid', $this->membership['contact_id']);
     $this->assign('historyAction', $this->updateAction->getAction());
-    $this->assign('elementNames', $this->getRenderableElementNames());
+
     parent::buildQuickForm();
   }
 
-  function getRenderableElementNames() {
-    $elementNames = array();
-    foreach ($this->_elements as $element) {
-      /** @var HTML_QuickForm_Element $element */
-      $label = $element->getLabel();
-      if (!empty($label)) {
-        $elementNames[] = $element->getName();
-      }
+  function setDefaults($defaultValues = null, $filter = null){
+
+    $defaults['contract_history_recurring_contribution'] = $this->membership[$this->contributionRecurField];
+    list($defaults['activity_date'], $defaults['activity_date_time']) = CRM_Utils_Date::setDateDefaults(NULL, 'activityDateTime');
+    $defaults['membership_type_id'] = $this->membership['membership_type_id'];
+    if(isset($this->membership['campaign_id'])){
+      $defaults['campaign_id'] = $this->membership['campaign_id'];
     }
-    return $elementNames;
+
+    parent::setDefaults($defaults);
   }
+
+  /**
+   *  Add fields for update (and similar) actions
+   */
+  function addUpdateFields(){
+
+    // * Recurring contribution / Mandate
+    $formUtils = new CRM_Contract_FormUtils($this, 'Membership');
+    $formUtils->addPaymentContractSelect2('contract_history_recurring_contribution', $this->membership['contact_id'], true);
+
+    // * Activity date (activity)
+    $this->addDateTime('activity_date', ts('Activty Date'), TRUE, array('formatType' => 'activityDateTime'));
+
+    // * Campaign (membership)
+    foreach(civicrm_api3('Campaign', 'get', [])['values'] as $campaign){
+      $campaignOptions[$campaign['id']] = $campaign['name'];
+    };
+    $this->add('select', 'campaign_id', ts('Campaign'), array('' => '- none -') + $campaignOptions, false, array('class' => 'crm-select2'));
+
+
+    // * Membership type (membership)
+    foreach(civicrm_api3('MembershipType', 'get', [])['values'] as $MembershipType){
+      $MembershipTypeOptions[$MembershipType['id']] = $MembershipType['name'];
+    };
+    $this->add('select', 'membership_type_id', ts('Membership type'), array('' => '- none -') + $MembershipTypeOptions, true, array('class' => 'crm-select2'));
+
+    // * Source media (activity)
+    foreach(civicrm_api3('Activity', 'getoptions', ['field' => "activity_medium_id"])['values'] as $key => $value){
+      $mediumOptions[$key] = $value;
+    }
+    $this->add('select', 'activity_medium', ts('Source media'), array('' => '- none -') + $mediumOptions, false, array('class' => 'crm-select2'));
+
+    // * Note (activity)
+    $this->addWysiwyg('activity_details', ts('Notes'), []);
+  }
+
+  /**
+   *  Add fields for cancel (and similar) actions
+   */
+  function addCancelFields(){
+
+    $this->add('select', 'contract_history_cancel_reason', ts('Cancellation reason'), array('' => '- none -') + $mediumOptions, false, array('class' => 'crm-select2'));
+
+  }
+
+
+
 
   function postProcess(){
 
@@ -131,13 +162,26 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     // copy the original membership before it was updated and call it
     // updatedMembership (even though it hasn't been updated yet) since we are
     // about to update it (and the save it)
-    $this->updatedMembership = $this->membership;
+    $membershipParams = $this->membership;
 
-    $this->updatedMembership['status_id'] = $this->updateAction->getEndStatus();
-    $this->updatedMembership['is_override'] = $this->membership['status_id'] == 'Current' ? 0 : 1;
-    if(isset($this->submitted['contract_history_recurring_contribution'])){
-      $this->updatedMembership[$this->contributionRecurField] = $this->submitted['contract_history_recurring_contribution'];
+    $membershipParams['status_id'] = $this->updateAction->getEndStatus();
+    $membershipParams['membership_type_id'] = $this->submitted['membership_type_id'];
+    $membershipParams['campaign_id'] = $this->submitted['campaign_id'];
+
+    $membershipParams[$this->contributionRecurField] = $this->submitted['contract_history_recurring_contribution'];
+
+    $updatedMembership = civicrm_api3('Membership', 'create', $membershipParams);
+
+    // If we created a contract history activity
+    if(isset($updatedMembership['links']['activity_history_id'])){
+      $activityParams['id'] = $updatedMembership['links']['activity_history_id'];
+      $activityParams['details'] = $this->submitted['activity_details'];
+      $activityParams['medium'] = $this->submitted['activity_medium'];
+      $activityParams['campaign_id'] = $this->submitted['campaign_id'];
+      $activityParams['activity_date_time'] = "{$this->submitted['activity_date']} {$this->submitted['activity_date_time']}";
+      civicrm_api3('Activity', 'create', $activityParams);
     }
-    civicrm_api3('Membership', 'create', $this->updatedMembership);
+
+    // Find the most recent contract activity for this contact of the appropriate type
   }
 }

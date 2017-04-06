@@ -1,8 +1,7 @@
 CRM.$(function($) {
 
-  $('.update-payment-contracts').click(updateRecurringContributions);
   $('.create-mandate').click(CRM.popup);
-  $('.create-mandate' ).on('crmPopupClose', updateRecurringContributions);
+  $('.create-mandate' ).on('crmPopupFormSuccess', updateRecurringContributions);
 
   function updateRecurringContributions(){
     $.getJSON('/civicrm/contract/recurringContributions?cid=' + CRM.vars['de.systopia.contract'].cid).done(function(data) {

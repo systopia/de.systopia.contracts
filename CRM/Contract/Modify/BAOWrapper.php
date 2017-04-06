@@ -19,39 +19,48 @@ class CRM_Contract_Modify_BAOWrapper{
   }
 
   function pre($id, &$params){
+    if(!$params['handledByApi']){
+      $this->doPost = true;
 
-    // retreive a snapshot of the membership before any changes are made
-    $this->contractHandler->setStartMembership($id);
+      // retreive a snapshot of the membership before any changes are made
+      $this->contractHandler->setStartMembership($id);
 
-    // Params come in in weird formats - we need to santize them before handling
-    // them
-    $this->contractHandler->sanitizeParams($params);
+      // Params come in in weird formats - we need to santize them before handling
+      // them
+      $this->contractHandler->sanitizeParams($params);
 
-    // Do various things (like force field values, set calculated fields, etc.)
-    // bfore the contract is saved.
-    $this->contractHandler->preProcessParams($params);
-    $this->contractHandler->addProposedParams($params);
-    if(!$this->contractHandler->isValidStatusUpdate()){
-      throw new \Exception("Cannot update contract status from {$this->contractHandler->startStatus} to {$this->contractHandler->proposedStatus}.");
+      // Do various things (like force field values, set calculated fields, etc.)
+      // bfore the contract is saved.
+      $this->contractHandler->preProcessParams($params);
+      $this->contractHandler->addProposedParams($params);
+      if(!$this->contractHandler->isValidStatusUpdate()){
+        throw new \Exception("Cannot update contract status from {$this->contractHandler->startStatus} to {$this->contractHandler->proposedStatus}.");
+      }
+
+      $this->contractHandler->generateActivityParams();
+
+      $this->contractHandler->validateFieldUpdate();
+
+      if(count($this->contractHandler->action->errors)){
+        throw new \Exception(current($this->contractHandler->action->errors));
+      }
+
+      // We also need to insanitize (yeah, I know!) the params before we save the
+      // object
+      $this->contractHandler->insanitizeParams($params);
+
+    }else{
+      $this->doPost = false;
     }
 
-    $this->contractHandler->generateActivityParams();
-
-    $this->contractHandler->validateFieldUpdate();
-
-    if(count($this->contractHandler->action->errors)){
-      throw new \Exception(current($this->contractHandler->action->errors));
-    }
-
-    // We also need to insanitize the params before we save the object
-    // (yeah, I know!)
-    $this->contractHandler->insanitizeParams($params);
   }
 
   function post($id){
-    if($this->op == 'create'){
-      $this->contractHandler->insertMissingParams($id);
+    if($this->doPost){
+      if($this->op == 'create'){
+        $this->contractHandler->insertMissingParams($id);
+      }
+      $this->contractHandler->saveEntities();
     }
-    $this->contractHandler->saveEntities();
   }
 }

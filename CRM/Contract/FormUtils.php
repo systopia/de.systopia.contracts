@@ -34,10 +34,10 @@ class CRM_Contract_FormUtils
         return $this->sepaPaymentInstruments;
     }
 
-    public function addPaymentContractSelect2($elementName, $contactId)
+    public function addPaymentContractSelect2($elementName, $contactId, $required = true)
     {
         $contributionRecurOptions = $this->getPaymentContributionRecurOptions($contactId);
-        $this->form->add('select', $elementName, ts('Payment Contract'), $contributionRecurOptions, false, array('class' => 'crm-select1'));
+        $this->form->add('select', $elementName, ts('Mandate / Recurring Contribution'), array('' => '- none -') + $contributionRecurOptions, $required, array('class' => 'crm-select2'));
     }
 
     public function getPaymentContributionRecurOptions($contactId){
