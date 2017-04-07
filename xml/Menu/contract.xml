@@ -8,13 +8,13 @@
   </item>
   <item>
     <path>civicrm/contract/create</path>
-    <title>Modify contract</title>
+    <title>Create contract</title>
     <page_callback>CRM_Contract_Form_Create</page_callback>
     <access_arguments>edit memberships</access_arguments>
   </item>
   <item>
     <path>civicrm/contract/rapidcreate</path>
-    <title>Modify contract</title>
+    <title>Rapid Create contract</title>
     <page_callback>CRM_Contract_Form_RapidCreate</page_callback>
     <access_arguments>edit memberships</access_arguments>
   </item>
