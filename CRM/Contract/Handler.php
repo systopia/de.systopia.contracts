@@ -248,7 +248,7 @@ class CRM_Contract_Handler{
         $this->proposedContributionRecur = null;
       }
     }else{
-      // If it hasn't been pased, then presume that is the same as it was at the
+      // If it hasn't been passed, then presume that is the same as it was at the
       // beginning.
       $this->proposedContributionRecur = $this->startContributionRecur;
     }
@@ -639,7 +639,9 @@ class CRM_Contract_Handler{
           ])
         ){
           $to[$field] = date('Y-m-d', strtotime($to[$field]));
-          $from[$field] = date('Y-m-d', strtotime($from[$field]));
+          if(isset($from[$field])){
+            $from[$field] = date('Y-m-d', strtotime($from[$field]));
+          }
         }
 
         // Check if the field has been modified.

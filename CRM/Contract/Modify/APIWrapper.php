@@ -28,12 +28,18 @@ class CRM_Contract_Modify_APIWrapper{
     }else{
       $id = null;
 
-      // This is used in toApiOutput to insert missing params (we didn't know them at this point)
+      // Setting this here is convenient as it helps distinguish between new
+      // memberships and existing membership updates where we aren't changing
+      // the status
+      $apiRequest['params']['status_id'] = 'Current';
+
+      // We set this to remind toApiOutput to insert missing params (that we
+      // don't know at this point)
       $this->newMembership = true;
     }
 
     // retreive a snapshot of the membership before any changes are made
-    $this->contractHandler->setStartMembership($apiRequest['params']['id']);
+    $this->contractHandler->setStartMembership($id);
 
     // Do various things (like force field values, set calculated fields, etc.)
     // bfore the contract is saved.
