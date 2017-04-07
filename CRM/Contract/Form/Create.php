@@ -18,6 +18,7 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     }
     $this->controller->_destination = CRM_Utils_System::url('civicrm/contact/view', "reset=1&cid={$this->get('cid')}&selectedChild=member");
 
+    $this->assign('cid', $this->get('cid'));
     $this->assign('contact', civicrm_api3('Contact', 'getsingle', ['id' => $this->get('cid')]));
 
     $formUtils = new CRM_Contract_FormUtils($this, 'Membership');

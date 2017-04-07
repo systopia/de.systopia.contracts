@@ -3,7 +3,6 @@ CRM.$(function($) {
   // Register listeners
   $('[name=contract_history_recurring_contribution]').change(updatePaymentSummaryText);
   $('.create-mandate').click(CRM.popup);
-  $('.test').click(updateRecurringContributions);
   $('.create-mandate' ).on('crmPopupFormSuccess', updateRecurringContributions);
 
   // Get getRecurringContributions data for the first time

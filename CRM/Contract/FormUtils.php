@@ -20,8 +20,8 @@ class CRM_Contract_FormUtils
 
     public function getRecurringContributions($cid){
       $contacts = civicrm_api3('Contact', 'get', array('id' => $cid))['values'];
-      $contributionRecurs = civicrm_api3('ContributionRecur', 'get', array('contact_id' => $cid))['values'];
-      $sepaMandates = civicrm_api3('sepaMandate', 'get', ['contact_id' => $cid,'option.limit' => 100])['values'];
+      $contributionRecurs = civicrm_api3('ContributionRecur', 'get', ['contact_id' => $cid,'option.limit' => 1000])['values'];
+      $sepaMandates = civicrm_api3('sepaMandate', 'get', ['contact_id' => $cid,'option.limit' => 1000])['values'];
       $paymentInstrumentOptions = civicrm_api3('OptionValue', 'get', array( 'option_group_id' => "payment_instrument"))['values'];
       $sepaCreditors = civicrm_api3('SepaCreditor', 'get')['values'];
       foreach($paymentInstrumentOptions as $paymentInstrumentOption){
