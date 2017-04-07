@@ -129,6 +129,15 @@ function contract_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
   _contract_civix_civicrm_alterSettingsFolders($metaDataFolders);
 }
 
+
+function contract_civicrm_pageRun( &$page ){
+  if($page->getVar('_name') == 'CRM_Member_Page_Tab'){
+    CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('cid' => $page->_contactId));
+    CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Member/Page/Tab.js');
+  }
+}
+
+
 function contract_civicrm_buildForm($formName, &$form) {
 
 
@@ -143,12 +152,19 @@ function contract_civicrm_buildForm($formName, &$form) {
 
     // Membership form in add or edit mode
     case 'CRM_Member_Form_Membership':
+    if($form->getAction() ===CRM_Core_Action::ADD){
+      if($cid = CRM_Utils_Request::retrieve('cid', 'Integer')){
+        // CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/contract/create', 'cid='.$cid, true));
+      }else{
+        // CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/contract/rapidcreate', true));
+
+      }
+    }
       $contactId = CRM_Utils_Request::retrieve('cid', 'Positive', $form);
       if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
 
         // Use JS to hide form elements
         CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Member/Form/Membership.js');
-
         CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('filteredMembershipStatuses' => civicrm_api3('MembershipStatus', 'get', ['name' => ['IN' => ['Current', 'Cancelled']]])));
         CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('hiddenCustomFields' => civicrm_api3('CustomField', 'get', ['name' => ['IN' => ['membership_annual', 'membership_frequency']]])));
 
