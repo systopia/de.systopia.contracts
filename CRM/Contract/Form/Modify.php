@@ -71,8 +71,8 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
   function buildQuickForm(){
 
     CRM_Utils_System::setTitle(ucfirst($this->updateAction->getAction()).' contract');
-    CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/Modify.js');
     CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('cid' => $this->membership['contact_id']));
+    CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/MandateBlock.js');
 
     // Add fields that are present on all contact history forms
 
@@ -88,12 +88,14 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     // * Note (activity)
     $this->addWysiwyg('activity_details', ts('Notes'), []);
 
-    // Add appropriate fields
+    // Add other appropriate fields
     if(in_array($this->updateAction->getAction(), array('update', 'revive'))){
       $this->assign('isUpdate', true);
       $this->addUpdateFields();
     }elseif($this->updateAction->getAction() == 'cancel'){
       $this->addCancelFields();
+    }elseif($this->updateAction->getAction() == 'pause'){
+      $this->addPauseFields();
     }
 
     $this->addButtons(array(
@@ -154,7 +156,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
   function addCancelFields(){
 
     // Cancel date
-    $this->addDateTime('cancel_date', ts('Cancel Date'), TRUE, array('formatType' => 'activityDateTime'));
+    $this->addDate('cancel_date', ts('Cancel Date'), TRUE, array('formatType' => 'activityDateTime'));
 
     // Cancel reason
     foreach(civicrm_api3('OptionValue', 'get', ['option_group_id' => "contract_cancel_reason"])['values'] as $cancelReason){
@@ -162,6 +164,17 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     };
     $this->add('select', 'cancel_reason', ts('Cancellation reason'), array('' => '- none -') + $cancelOptions, true, array('class' => 'crm-select2'));
 
+  }
+  /**
+   *  Add fields for cancel (and similar) actions
+   */
+  function addPauseFields(){
+
+    // Pause date (replaces activity date)
+    $this->addDateTime('activity_date', ts('Pause Date'), TRUE, array('formatType' => 'activityDateTime'));
+
+    // Resume date
+    $this->addDate('resume_date', ts('Resume Date'), TRUE, array('formatType' => 'activityDate'));
 
   }
 
@@ -173,7 +186,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
   function postProcess(){
 
-    $this->submitted = $this->exportValues();
+    $submitted = $this->exportValues();
 
     // copy the original membership before it was updated and call it
     // updatedMembership (even though it hasn't been updated yet) since we are
@@ -181,14 +194,20 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     $membershipParams = $this->membership;
 
     $membershipParams['status_id'] = $this->updateAction->getEndStatus();
-    $membershipParams['membership_type_id'] = $this->submitted['membership_type_id'];
-    $membershipParams['campaign_id'] = $this->submitted['campaign_id'];
+    $membershipParams['membership_type_id'] = $submitted['membership_type_id'];
+    $membershipParams['campaign_id'] = $submitted['campaign_id'];
+
     if(in_array($this->updateAction->getAction(), ['cancel'])){
-      $membershipParams[$this->getFieldId('membership_cancellation', 'membership_cancel_date')] = "{$this->submitted['cancel_date']} {$this->submitted['cancel_date_time']}";
-      $membershipParams[$this->getFieldId('membership_cancellation', 'membership_cancel_reason')] = $this->submitted['cancel_reason'];
+      $membershipParams[$this->getFieldId('membership_cancellation', 'membership_cancel_date')] = "{$submitted['cancel_date']}";
+      $membershipParams[$this->getFieldId('membership_cancellation', 'membership_cancel_reason')] = $submitted['cancel_reason'];
     }
 
-    $membershipParams[$this->contributionRecurField] = $this->submitted['contract_history_recurring_contribution'];
+    if(in_array($this->updateAction->getAction(), ['pause'])){
+      // TODO: add the resume date
+      // $membershipParams[$this->getFieldId('membership_cancellation', 'membership_resume_date')] = "{$submitted['resume_date']}";
+    }
+
+    $membershipParams[$this->contributionRecurField] = $submitted['contract_history_recurring_contribution'];
 
     $updatedMembership = civicrm_api3('Membership', 'create', $membershipParams);
 
@@ -197,22 +216,24 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
       // Global fields
       $activityParams['id'] = $updatedMembership['links']['activity_history_id'];
-      $activityParams['details'] = $this->submitted['activity_details'];
-      $activityParams['activity_date_time'] = "{$this->submitted['activity_date']} {$this->submitted['activity_date_time']}";
-      $activityParams['medium'] = $this->submitted['activity_medium'];
+      $activityParams['details'] = $submitted['activity_details'];
+      $activityParams['activity_date_time'] = "{$submitted['activity_date']} {$submitted['activity_date_time']}";
+      $activityParams['medium'] = $submitted['activity_medium'];
 
       // Update and revive fields
       if(in_array($this->updateAction->getAction(), ['update', 'revive'])){
-        $activityParams['campaign_id'] = $this->submitted['campaign_id'];
+        $activityParams['campaign_id'] = $submitted['campaign_id'];
       }
 
       // Pause fields
       if(in_array($this->updateAction->getAction(), ['pause'])){
+        // TODO: add the resume date
+        // $membershipParams[$this->getFieldId('contract_cancellation', 'membership_resume_date')] = "{$submitted['resume_date']} {$submitted['resume_date_time']}";
 
       }
       // Cancel fields
       if(in_array($this->updateAction->getAction(), ['cancel'])){
-        $activityParams[$this->getFieldId('contract_cancellation', 'contact_history_cancel_reason')] = $this->submitted['cancel_reason'];
+        $activityParams[$this->getFieldId('contract_cancellation', 'contact_history_cancel_reason')] = $submitted['cancel_reason'];
       }
 
       civicrm_api3('Activity', 'create', $activityParams);
