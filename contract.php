@@ -154,9 +154,9 @@ function contract_civicrm_buildForm($formName, &$form) {
     case 'CRM_Member_Form_Membership':
     if($form->getAction() ===CRM_Core_Action::ADD){
       if($cid = CRM_Utils_Request::retrieve('cid', 'Integer')){
-        // CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/contract/create', 'cid='.$cid, true));
+        CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/contract/create', 'cid='.$cid, true));
       }else{
-        // CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/contract/rapidcreate', true));
+        CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/contract/rapidcreate', true));
 
       }
     }
