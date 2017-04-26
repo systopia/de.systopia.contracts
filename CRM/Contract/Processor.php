@@ -206,4 +206,18 @@ class CRM_Contract_Processor {
     // TODO: implement
     $this->completeActivity($activity['id']);
   }
+
+
+  /****************************************************
+   *            CREATE CONTRACT CODE                  *
+   ***************************************************/
+
+  /**
+   * Create a new membership
+   * @todo does this make sense? It would be really important
+   *       one have a central method for this...
+   */
+  public function createContract($params) {
+    // TODO: implement
+  }
 }
