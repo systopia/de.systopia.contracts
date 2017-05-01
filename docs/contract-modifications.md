@@ -33,20 +33,9 @@ If the activity date time is set to a date in the past or is not set, the corres
 
 If the activity date time is set to a date in the future, the modification will be scheduled for that date in the future.
 
-
-
-Codepath
-
-Build form
-Are there any other updates scheduled? If so, warn user.
-
-Post process
-Check that it is valid
-If the update is to be applied in the future, allow the validation to be overwritten.
-
 ## Modifying a contract directly
 
-Contracts can also be modified by updating the contract directly (for example, via the Contract API or via the contract edit form). When an attempt is made to modified a contract directly, the contract extension checks to ensure that the modification is allowed by the contract extension. If it is valid, the update is made and a *completed* contract modification activity will be recorded.
+Contracts can also be modified by updating the contract directly (for example, via the Contract API or via the contract edit form). When an attempt is made to modified a contract directly, the contract extension checks to ensure that the modification is allowed by the contract extension. If it is valid, the update is made and a *completed* contract modification activity is 'reverse engineered' for the contract.
 
 Note that if a contract is updated and no signifincant changes are made, then no contract modification actitivities will be recorded.
 
@@ -60,13 +49,18 @@ If multiple modifications have been created and a user has not had the chance to
 
 Note that one cannot create a failed modification via the UI as it will be caught by the form validation.
 
-One can schedule multiple modifications, one of which may fail (such as two pauses). The best way to deal with this is up for discussion (should be allow scheduling more than 1 pause, for example?)
+One can schedule multiple modifications. one of which may fail.
 
+In the event that a scheduled contract update fails (i.e. it does not pass validation) we set the activity status to 'Failed' and alert the user (how?)
 
 ## Implementation notes
 
-There are two pathways for updating contracts. 1) modifiying contracts based on information in scheduled contract activities and 2) 'listening' for updates on the contract entity recording activities after the update has been carried out that record what the update was.
+There are two pathways for updating contracts. 1) modifying contracts based on information in scheduled contract activities and 2) 'listening' for updates on the contract entity recording activities after the update has been carried out that record what the update was.
 
 We need to allow pathway 1) to ignore and not listen any contract updates that originate via pathway 2). If we don't then pathway 1) will create duplicate contract modification activities when pathway 2) updates the contract.
 
 We do this by passing a setting create_modification_activity to false in the contract API.
+
+## Processing scheduled contract updates
+
+We implement a membership API method, runScheduledModifications, which takes an optional limit parameter and allows processing of scheduld contract updates.
