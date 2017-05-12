@@ -7,29 +7,15 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-class CRM_Contract_Action_Resume extends CRM_Contract_Action{
+class CRM_Contract_ModificationActivity{
 
-  function getValidStartStatuses(){
-    return array('Paused');
-  }
+  var $errors = array();
 
-  function getEndStatus(){
-    return 'Current';
+  function getActivityTypeId(){
+    return $result = civicrm_api3('OptionValue', 'getvalue', [
+      'return' => "value",
+      'option_group_id' => "activity_type",
+      'name' => $this->getActivityType()
+    ]);
   }
-
-  function getActivityType(){
-    return 'Contract_Resumed';
-  }
-
-  function getAction(){
-    return 'resume';
-  }
-  function getResult(){
-    return 'resumed';
-  }
-
-  function validateFieldUpdate($fields){
-    return true;
-  }
-
 }

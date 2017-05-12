@@ -7,34 +7,28 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-class CRM_Contract_Action_Pause extends CRM_Contract_Action{
+class CRM_Contract_ModificationActivity_Revive extends CRM_Contract_ModificationActivity{
 
-  function getValidStartStatuses(){
-    return array('New', 'Current', 'Grace');
+  function getStartStatuses(){
+    return array('Cancelled');
   }
 
   function getEndStatus(){
-    return 'Paused';
+    return 'Current';
   }
 
   function getActivityType(){
-    return 'Contract_Paused';
+    return 'Contract_Revived';
   }
 
   function getAction(){
-    return 'pause';
+    return 'revive';
   }
   function getResult(){
-    return 'paused';
+    return 'revived';
   }
 
   function validateFieldUpdate($fields){
-    if(count($fields)){
-      $this->errorMessage = 'You cannot update fields when pausing a contract';
-      return false;
-    }else{
-      return true;
-    }
+    return true;
   }
-
 }

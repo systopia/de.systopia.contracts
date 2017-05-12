@@ -7,32 +7,34 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-class CRM_Contract_Action_Update extends CRM_Contract_Action{
+class CRM_Contract_ModificationActivity_Pause extends CRM_Contract_ModificationActivity{
 
-  function getValidStartStatuses(){
-    return array('New', 'Current', 'Grace');
-  }
-
-  function getValidEndStatuses(){
+  function getStartStatuses(){
     return array('New', 'Current', 'Grace');
   }
 
   function getEndStatus(){
-    return 'Current'; // TODO maybe we don't update the status for an update?
+    return 'Paused';
   }
 
   function getActivityType(){
-    return 'Contract_Updated';
+    return 'Contract_Paused';
   }
 
   function getAction(){
-    return 'update';
+    return 'pause';
   }
   function getResult(){
-    return 'updated';
+    return 'paused';
   }
 
   function validateFieldUpdate($fields){
-    return true;
+    if(count($fields)){
+      $this->errorMessage = 'You cannot update fields when pausing a contract';
+      return false;
+    }else{
+      return true;
+    }
   }
+
 }

@@ -1,7 +1,7 @@
 CRM.$(function($) {
 
   // Register listeners
-  $('[name=contract_history_recurring_contribution]').change(updatePaymentSummaryText);
+  $('[name=recurring_contribution]').change(updatePaymentSummaryText);
   $('.create-mandate').click(CRM.popup);
   $('.create-mandate' ).on('crmPopupFormSuccess', updateRecurringContributions);
 
@@ -17,14 +17,14 @@ CRM.$(function($) {
 
 
   function updatePaymentSummaryText(){
-    key = $('[name=contract_history_recurring_contribution]').val();
+    key = $('[name=recurring_contribution]').val();
     $('.recurring-contribution-summary-text').html($.recurringContributions[key].text_summary);
   };
 
   function updateRecurringContributions(){
     $.getJSON('/civicrm/contract/recurringContributions?cid=' + CRM.vars['de.systopia.contract'].cid).done(function(data) {
       $.recurringContributions = data;
-      select = CRM.$('[name=contract_history_recurring_contribution]');
+      select = CRM.$('[name=recurring_contribution]');
       select.find('option').remove();
       maxIndex = 0;
       $.each($.recurringContributions, function(index, value){
@@ -41,7 +41,7 @@ CRM.$(function($) {
   };
 
 
-  // CRM.$('[name=contract_history_recurring_contribution]').change(
+  // CRM.$('[name=recurring_contribution]').change(
   //   function(){
   //     CRM.$('.recurring-contribution-summary-text').html('Michael');
   //   }

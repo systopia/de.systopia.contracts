@@ -7,25 +7,25 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-class CRM_Contract_Action_Revive extends CRM_Contract_Action{
+class CRM_Contract_ModificationActivity_Sign extends CRM_Contract_ModificationActivity{
 
-  function getValidStartStatuses(){
-    return array('Cancelled');
+  function getStartStatuses(){
+    return array('');
   }
 
   function getEndStatus(){
-    return 'Current';
+    return 'Current'; // TODO Will need to change to Current if we remove New
   }
 
   function getActivityType(){
-    return 'Contract_Revived';
+    return 'Contract_Signed';
   }
 
   function getAction(){
-    return 'revive';
+    return 'sign';
   }
   function getResult(){
-    return 'revived';
+    return 'signed';
   }
 
   function validateFieldUpdate($fields){

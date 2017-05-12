@@ -23,7 +23,10 @@ The edit membership form is left in place though extra validation occurs on this
 
 ## Significant changes
 
-***TODO***
+Significant changes those in which one of the following contract fields is updated
+
+* status
+* ***
 
 ## Modifying contracts with modification activities
 
@@ -35,9 +38,9 @@ If the activity date time is set to a date in the future, the modification will 
 
 ## Modifying a contract directly
 
-Contracts can also be modified by updating the contract directly (for example, via the Contract API or via the contract edit form). When an attempt is made to modified a contract directly, the contract extension checks to ensure that the modification is allowed by the contract extension. If it is valid, the update is made and a *completed* contract modification activity is 'reverse engineered' for the contract.
+Contracts can also be modified by updating the contract directly (for example, via the Contract API or via the contract edit form). When an attempt is made to modified a contract directly, the contract extension checks to ensure that the modification is allowed by the contract extension. If it is valid, the update is made and a *completed* contract modification activity is recorded for the contract.
 
-Note that if a contract is updated and no signifincant changes are made, then no contract modification actitivities will be recorded.
+Note that if a contract is updated and no significant changes are made, then no contract modification activity will be recorded.
 
 ## Multiple scheduled modifications
 
@@ -63,4 +66,4 @@ We do this by passing a setting create_modification_activity to false in the con
 
 ## Processing scheduled contract updates
 
-We implement a membership API method, runScheduledModifications, which takes an optional limit parameter and allows processing of scheduld contract updates.
+We implement a membership API method, runScheduledModifications, which takes an optional limit parameter and allows processing of scheduled contract updates.

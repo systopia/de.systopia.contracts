@@ -37,14 +37,6 @@ class CRM_Contract_Handler{
   /**
    * The various actions that can happen to contracts
    */
-  static $actions = [
-    'CRM_Contract_Action_Cancel',
-    'CRM_Contract_Action_Pause',
-    'CRM_Contract_Action_Resume',
-    'CRM_Contract_Action_Revive',
-    'CRM_Contract_Action_Sign',
-    'CRM_Contract_Action_Update'
-  ];
 
   function __construct(){
 
@@ -286,7 +278,7 @@ class CRM_Contract_Handler{
     if(!isset($this->statusChangeIndex)){
       foreach(self::$actions as $name){
         $action = new $name;
-        foreach($action->getValidStartStatuses() as $status){
+        foreach($action->getStartStatuses() as $status){
           if(method_exists($action, 'getValidEndStatuses')){
             foreach($action->getValidEndStatuses() as $validEndStatus){
               $this->statusChangeIndex[] = array(

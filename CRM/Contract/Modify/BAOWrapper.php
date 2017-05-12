@@ -60,7 +60,25 @@ class CRM_Contract_Modify_BAOWrapper{
       if($this->op == 'create'){
         $this->contractHandler->insertMissingParams($id);
       }
-      $this->contractHandler->saveEntities();
+      // $this->contractHandler->saveEntities();
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//

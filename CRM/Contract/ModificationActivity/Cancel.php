@@ -7,10 +7,10 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-class CRM_Contract_Action_Cancel extends CRM_Contract_Action{
+class CRM_Contract_ModificationActivity_Cancel extends CRM_Contract_ModificationActivity{
 
-  function getValidStartStatuses(){
-    return array('New', 'Current', 'Grace', 'Cancelled');
+  function getStartStatuses(){
+    return array('New', 'Current', 'Grace');
   }
 
   function getEndStatus(){

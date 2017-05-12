@@ -1,5 +1,4 @@
 <?php
-
 class CRM_Contract_Modify_APIWrapper{
 
   private static $_singleton;
@@ -17,6 +16,7 @@ class CRM_Contract_Modify_APIWrapper{
 
   function fromApiInput($apiRequest){
 
+    $this->skipCreateModificationActivity = isset($apiRequest['params']['skip_create_modification_activity']) && $apiRequest['params']['skip_create_modification_activity'];
     // We set this to let the BAO wrapper know that we've handled it at the API
     // layer and there is no need to handle it again
     $apiRequest['params']['handledByApi'] = true;
@@ -64,7 +64,9 @@ class CRM_Contract_Modify_APIWrapper{
     if($this->newMembership){
       $this->contractHandler->insertMissingParams($result['id']); //TODO - check this is being set
     }
-    $this->contractHandler->saveEntities();
+    if(!$this->skipCreateModificationActivity){
+      // $this->contractHandler->saveEntities();
+    }
     if(isset($this->contractHandler->activityHistoryId)){
       $result['links']['activity_history_id'] = $this->contractHandler->activityHistoryId;
     };

@@ -22,15 +22,15 @@ class CRM_Contract_AlterMembershipLinks
         $membership = civicrm_api3('Membership', 'getsingle', array('id' => $this->membershipId));
         $membershipStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $membership['status_id']));
 
-        foreach (CRM_Contract_Handler::$actions as $class) {
+        foreach (CRM_Contract_Utils::$modificationActivityClasses as $class) {
           $action = new $class;
-            if(in_array($membershipStatus['name'], $action->getValidStartStatuses()) && $action->getAction() != 'resume'){
+            if(in_array($membershipStatus['name'], $action->getStartStatuses()) && $action->getAction() != 'resume'){
                 $this->links[] = array(
                     'name' => ucfirst($action->getAction()),
                     'title' => ucfirst("{$action->getAction()} Contract"),
                     'url' => "civicrm/contract/modify",
                     'bit' => CRM_Core_Action::UPDATE,
-                    'qs' => "update_action={$action->getAction()}&id=%%id%%",
+                    'qs' => "modify_action={$action->getAction()}&id=%%id%%",
                 );
             }
         }

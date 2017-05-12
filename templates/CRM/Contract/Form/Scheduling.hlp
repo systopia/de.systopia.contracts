@@ -1,0 +1,5 @@
+{htxt id="scheduling"}
+<h1>Scheduling updates</h1>
+<p>Fill in this field to schedule the change into the future.</p>
+<p>Leave it blank to make the change immediately.</p>
+{/htxt}

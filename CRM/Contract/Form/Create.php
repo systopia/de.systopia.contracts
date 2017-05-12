@@ -22,7 +22,7 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     $this->assign('contact', civicrm_api3('Contact', 'getsingle', ['id' => $this->get('cid')]));
 
     $formUtils = new CRM_Contract_FormUtils($this, 'Membership');
-    $formUtils->addPaymentContractSelect2('contract_history_recurring_contribution', $this->get('cid'), true);
+    $formUtils->addPaymentContractSelect2('recurring_contribution', $this->get('cid'), true);
     CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('cid' => $this->get('cid')));
     CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/MandateBlock.js');
 
@@ -95,7 +95,7 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     $membershipParams['join_date'] = $submitted['join_date'];
     $membershipParams['end_date'] = $submitted['end_date'];
     $membershipParams['campaign_id'] = $submitted['campaign_id'];
-    $membershipParams[$this->getFieldId('membership_payment', 'membership_recurring_contribution')] = $submitted['contract_history_recurring_contribution']; // Recurring contribution
+    $membershipParams[$this->getFieldId('membership_payment', 'membership_recurring_contribution')] = $submitted['recurring_contribution']; // Recurring contribution
     $membershipParams[$this->getFieldId('membership_general', 'membership_reference')] = $submitted['membership_reference']; // Reference number
     $membershipParams[$this->getFieldId('membership_general', 'membership_contract')] = $submitted['membership_contract']; // Contract number
     $membershipParams[$this->getFieldId('membership_general', 'membership_dialoger')] = $submitted['membership_dialoger']; // DD fundraiser

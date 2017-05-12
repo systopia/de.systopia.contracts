@@ -7,28 +7,29 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-class CRM_Contract_Action_Sign extends CRM_Contract_Action{
+class CRM_Contract_ModificationActivity_Resume extends CRM_Contract_ModificationActivity{
 
-  function getValidStartStatuses(){
-    return array('');
+  function getStartStatuses(){
+    return array('Paused');
   }
 
   function getEndStatus(){
-    return 'Current'; // TODO Will need to change to Current if we remove New
+    return 'Current';
   }
 
   function getActivityType(){
-    return 'Contract_Signed';
+    return 'Contract_Resumed';
   }
 
   function getAction(){
-    return 'sign';
+    return 'resume';
   }
   function getResult(){
-    return 'signed';
+    return 'resumed';
   }
 
   function validateFieldUpdate($fields){
     return true;
   }
+
 }
