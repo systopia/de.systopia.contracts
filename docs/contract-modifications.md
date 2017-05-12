@@ -1,10 +1,8 @@
 # Contract modifications
 
-The contract extension limits modifications that can be made to contracts to those and provides a UI to facilitate these modifications.
+The contract extension limits modifications that can be made to contracts to those and provides a UI and API to facilitate these modifications.
 
-It keeps a history of significant changes (or modifications) made to contracts.
-
-It provides the ability for modifications can be scheduled into the future.
+It keeps a history of significant changes (or modifications) made to contracts and allows for modifications to be scheduled into the future.
 
 The extension specifies 6 different types of modification:
 
@@ -13,11 +11,11 @@ The extension specifies 6 different types of modification:
 * Pause - when a contract status changes from current to paused
 * Resume - when a contract status changes from paused to current.
 * Cancel - when a contract status changes from current to cancelled
-* Revive - when a contract status changes from cancelled to current. This change may be accompanied by other significant updates as defined in the update modification
+* Revive - when a contract status changes from cancelled to current. This change may be accompanied by the same significant updates that are defined in the update modification
 
 The extension replaces the default create membership form with a Create contract form.
 
-It provides Update, Pause, Cancel and Revive forms to that can be used to modify contracts.
+It provides additional Update, Pause, Cancel and Revive forms to that can be used to modify contracts.
 
 The edit membership form is left in place though extra validation occurs on this form to ensure that modifications made using this form fit the contract model.
 
@@ -26,15 +24,42 @@ The edit membership form is left in place though extra validation occurs on this
 Significant changes those in which one of the following contract fields is updated
 
 * status
-* ***
+* membership type
+* recurring membership payment
 
-## Modifying contracts with modification activities
+## Modifying contracts with the API
 
-Contracts can be modified by creating an appropriate contract modification activity with status set to scheduled.
+The contract.modify is designed for contract modifications. These modifications can happen immediately or be scheduled into the future.
 
-If the activity date time is set to a date in the past or is not set, the corresponding contract will be modified immediately and the activity date time of the activity will be updated to now (regardless of whether it is set or not).
+The contract.modify API is a wrapper around the activity.create API. It creates scheduled contract modification activities which, depending on the activity date will either be executed now or in the future.
 
-If the activity date time is set to a date in the future, the modification will be scheduled for that date in the future.
+Contract.modify takes the following parameters (* = required).
+
+* id* (of the contract)
+* action* - the type of action
+* date - when you want the action to be carried out
+* note - to store notes about the update
+* medium_id - the contact medium for this update
+
+Then depending on what action you are calling, you can pass other parameters.
+
+If you are calling update or revive, you can pass
+
+* membership_type_id
+* membership_payment.membership_recurring_contribution
+* campaign id
+
+If you are calling cancel, you must pass
+* membership_cancellation.membership_cancel_reason (a cancel reason)
+
+If you are calling pause, you must pass
+* resume_data - this will schedule a contract resume activity for that date.
+
+A note on passing dates to the contract API
+
+* a call to contract modify without a date is processed immediately
+* a call to contract.modify with a date in the future will be scheduled
+* a call to contract.modify with a date in the past will raise an exception
 
 ## Modifying a contract directly
 
@@ -66,4 +91,4 @@ We do this by passing a setting create_modification_activity to false in the con
 
 ## Processing scheduled contract updates
 
-We implement a membership API method, runScheduledModifications, which takes an optional limit parameter and allows processing of scheduled contract updates.
+A Job.process_contract_updates process all scheduled updates.
