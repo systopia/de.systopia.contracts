@@ -4,9 +4,25 @@ function _civicrm_api3_Contract_modify_spec(&$params){
   $params['action']['api.required'] = 1;
 }
 
+
+// A wrapper around Membership.create with appropriate fields passed.
+
+function civicrm_api3_Contract_create($params){
+
+    // Any parameters with a period in will be converted to the custom_N format
+    // Other fields will be passed directly to the membership.create API
+    foreach ($params as $key => $value){
+
+      if(strpos($key, '.')){
+        unset($params[$key]);
+        $params[CRM_Contract_Utils::getCustomFieldId($key)] = $value;
+      }
+    }
+    return civicrm_api3('Membership', 'create', $params);
+}
+
+// A wrapper around Activity.create of an contract modification activity.
 // Contract.modify enables the updating of contracts either now or in the future
-// It is a wrapper around Activity.create calling it, with appropriate
-// parameters
 
 function civicrm_api3_Contract_modify($params){
 
