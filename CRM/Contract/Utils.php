@@ -75,7 +75,8 @@ class CRM_Contract_Utils{
 
 
   static function getCustomFieldId($customField){
-    // Warm cache if necesary
+
+    // Warm cache on first invocation
     if(!self::$customFieldCache){
       $customGroupNames = ['membership_general', 'membership_payment', 'membership_cancellation', 'contract_cancellation', 'contract_updates'];
       $customGroups = civicrm_api3('CustomGroup', 'get', [ 'name' => ['IN' => $customGroupNames], 'return' => 'name'])['values'];
@@ -84,12 +85,23 @@ class CRM_Contract_Utils{
         self::$customFieldCache["{$customGroups[$c['custom_group_id']]['name']}.{$c['name']}"] = "custom_{$c['id']}";
       }
     }
+
     // Look up if not in cache
     if(!isset(self::$customFieldCache[$customField])){
       $parts = explode('.', $customField);
-      self::$customFieldCache[$customField] = 'custom_'.civicrm_api3('CustomField', 'getvalue', [ 'return' => "id", 'custom_group_id' => $parts[0], 'name' => $parts[1]]);
+      try{
+        self::$customFieldCache[$customField] = 'custom_'.civicrm_api3('CustomField', 'getvalue', [ 'return' => "id", 'custom_group_id' => $parts[0], 'name' => $parts[1]]);
+      }catch (Exception $e){
+        throw new Exception("Could not find custom field '{$parts[0]}' in custom field set '{$parts[1]}'");
+      }
     }
-    return self::$customFieldCache[$customField];
+
+    // Return result or return an error if it does not exist.
+    if(isset(self::$customFieldCache[$customField])){
+      return self::$customFieldCache[$customField];
+    }else{
+
+    }
   }
 
   function isValidStatusChange($startStatus, $endStatus){
