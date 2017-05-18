@@ -145,6 +145,27 @@ Next debit: {$return[$cr['id']]['fields']['next_debit']}";
             $this->form->assign('viewCustomData', $details);
         }
     }
+    public function showMembershipTypeLabel()
+    {
+        $result = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'contract_updates', 'name' => 'ch_membership_type'));
+        // Get the custom data that was sent to the template
+        $details = $this->form->get_template_vars('viewCustomData');
+
+        // We need to know the id for the row of the custom group table that
+        // this custom data is stored in
+        $customGroupTableId = key($details[$result['custom_group_id']]);
+
+        $membershipTypeId = $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'];
+        if($membershipTypeId){
+            $membershipType = civicrm_api3('MembershipType', 'getsingle', ['id' => $membershipTypeId]);
+
+            // Write nice text and return this to the template
+            $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = $membershipType['name'];
+            $this->form->assign('viewCustomData', $details);
+        }
+    }
+
+
 
     public function writePaymentContractLabel($contributionRecur)
     {
