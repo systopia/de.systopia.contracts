@@ -48,6 +48,9 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     // Set the destination for the form
     $this->controller->_destination = CRM_Utils_System::url('civicrm/contact/view', "reset=1&cid={$this->membership['contact_id']}&selectedChild=member");
 
+    // Assign the contact id (necessary for the mandate popup)
+    $this->assign('cid', $this->membership['contact_id']);
+
     // Validate that the contract has a valid start status
     $this->membershipStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->membership['status_id']));
     if(!in_array($this->membershipStatus['name'], $this->modificationActivity->getStartStatuses())){
@@ -152,7 +155,6 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
   function postProcess(){
 
     // Construct a call to contract.modify
-
     // The following fields to be submitted in all cases
     $submitted = $this->exportValues();
     $params['id'] = $this->get('id');
@@ -163,13 +165,13 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     // If this is an update or a revival
     if(in_array($this->modificationActivity->getAction(), array('update', 'revive'))){
-      $params[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')] = $submitted['recurring_contribution'];
+      $params['membership_payment.membership_recurring_contribution'] = $submitted['recurring_contribution'];
       $params['membership_type_id'] = $submitted['membership_type_id'];
       $params['campaign_id'] = $submitted['campaign_id'];
 
     // If this is a cancellation
     }elseif($this->modificationActivity->getAction() == 'cancel'){
-      $params[CRM_Contract_Utils::getCustomFieldId('membership_cancellation.membership_cancel_reason')] = $submitted['cancel_reason'];
+      $params['membership_cancellation.membership_cancel_reason'] = $submitted['cancel_reason'];
 
     // If this is a pause
     }elseif($this->modificationActivity->getAction() == 'pause'){
