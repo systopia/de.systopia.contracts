@@ -197,9 +197,14 @@ function contract_civicrm_buildForm($formName, &$form) {
     //Activity form in view mode
     case 'CRM_Activity_Form_Activity':
       if($form->getAction() == CRM_Core_Action::VIEW){
+
+        // Show recurring contribution details
         $id =  CRM_Utils_Request::retrieve('id', 'Positive', $form);
         $modifyForm = new CRM_Contract_FormUtils($form, 'Activity');
         $modifyForm->showPaymentContractDetails();
+        $modifyForm->showMembershipTypeLabel();
+
+        // Show membership label, not id
       }
       break;
 
