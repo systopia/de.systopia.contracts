@@ -24,7 +24,10 @@ class CRM_Contract_Handler_Contract{
     }else{
       $this->startStatus = '';
     }
+  }
 
+  function isNewContract(){
+    $this->isNewContract = true;
   }
 
   function setParams($params){
@@ -43,7 +46,12 @@ class CRM_Contract_Handler_Contract{
 
   }
 
-  function validateModification(){
+  function setModificationActivity($activity){
+    $this->modificationActivity = $activity;
+  }
+
+
+  function isValid(){
 
     // First, establish whether the status change is valid by checking whether
     // the start status and proposed end status matches those that are defined
@@ -59,6 +67,46 @@ class CRM_Contract_Handler_Contract{
     }else{
       $this->errors[] = "You cannot update contract status from {$this->startStatus} to {$this->proposedStatus}.";
     }
+  }
+
+  function getErrors(){
+    return $this->errors;
+  }
+
+  function modify(){
+
+    // Call the API to modify contract
+    civicrm_api3('Membership', 'create', $this->params);
+
+    // Various tasks need to be carried out once the is necessary afterwards
+    $this->postModify();
+  }
+
+  function postModify(){
+
+    if(!$this->modificationActivity){
+      // reverse engineer modification activity if none is present
+      $this->modificationActivity = '???';
+    }
+
+    $this->calculateDeltas();
+    $this->populateDerivedFields();
+    $this->updateSubjectLine();
 
   }
+
+  private function calculateDeltas(){
+
+  }
+  private function populateDerivedFields(){
+
+  }
+  private function updateSubjectLine(){
+
+  }
+
+  function getModificationActivity(){
+    return $this->modificationActivity;
+  }
+
 }
