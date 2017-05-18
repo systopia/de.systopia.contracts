@@ -89,32 +89,22 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
   function postProcess(){
     $submitted = $this->exportValues();
 
-    // Create membership
-    $membershipParams['contact_id'] = $this->get('cid');
-    $membershipParams['membership_type_id'] = $submitted['membership_type_id'];
-    $membershipParams['join_date'] = $submitted['join_date'];
-    $membershipParams['end_date'] = $submitted['end_date'];
-    $membershipParams['campaign_id'] = $submitted['campaign_id'];
-    $membershipParams[$this->getFieldId('membership_payment', 'membership_recurring_contribution')] = $submitted['recurring_contribution']; // Recurring contribution
-    $membershipParams[$this->getFieldId('membership_general', 'membership_reference')] = $submitted['membership_reference']; // Reference number
-    $membershipParams[$this->getFieldId('membership_general', 'membership_contract')] = $submitted['membership_contract']; // Contract number
-    $membershipParams[$this->getFieldId('membership_general', 'membership_dialoger')] = $submitted['membership_dialoger']; // DD fundraiser
-    $membershipParams[$this->getFieldId('membership_general', 'membership_channel')] = $submitted['membership_channel']; // Membership channel
-    $membershipResult = civicrm_api3('Membership', 'create', $membershipParams);
+    // Create the contract (the membership)
 
-    // Add extra params to the Contract signed activity
-    $activityParams['id'] = $membershipResult['links']['activity_history_id'];
-    $activityParams['activity_date_time'] = "{$submitted['activity_date']} {$submitted['activity_date_time']}";
-    $activityParams['details'] = $submitted['activity_details'];
-    $activityParams['medium'] = $submitted['activity_medium'];
-    $activityParams['campaign_id'] = $submitted['campaign_id'];
-    civicrm_api3('Activity', 'create', $activityParams);
+    // Core fields
+    $params['contact_id'] = $this->get('cid');
+    $params['membership_type_id'] = $submitted['membership_type_id'];
+    $params['join_date'] = $submitted['join_date'];
+    $params['end_date'] = $submitted['end_date'];
+    $params['campaign_id'] = $submitted['campaign_id'];
 
+    // 'Custom' fields
+    $params['membership_payment.membership_recurring_contribution'] = $submitted['recurring_contribution']; // Recurring contribution
+    $params['membership_general.membership_reference'] = $submitted['membership_reference']; // Reference number
+    $params['membership_general.membership_contract'] = $submitted['membership_contract']; // Contract number
+    $params['membership_general.membership_dialoger'] = $submitted['membership_dialoger']; // DD fundraiser
+    $params['membership_general.membership_channel'] = $submitted['membership_channel']; // Membership channel
+
+    $membershipResult = civicrm_api3('Contract', 'create', $params);
   }
-
-  function getFieldId($group, $field){
-    $id = civicrm_api3('CustomField', 'getvalue', ['return' => "id", 'custom_group_id' => $group, 'name' => $field]);
-    return 'custom_'.$id;
-  }
-
 }
