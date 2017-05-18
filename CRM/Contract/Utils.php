@@ -46,7 +46,7 @@ class CRM_Contract_Utils{
     return $activityTypeIds;
   }
 
-  static function getModificationActivityFromId($id){
+  static function getModificationClassFromActivityTypeId($id){
     $name = civicrm_api3('OptionValue', 'getsingle', ['option_group_id' => 'activity_type', 'value' => $id, 'return' => 'name'])['name'];
     foreach (self::$modificationActivityClasses as $class) {
       $activityClass = new $class;
