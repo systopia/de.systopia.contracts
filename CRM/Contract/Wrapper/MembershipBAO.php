@@ -30,34 +30,40 @@ class CRM_Contract_Wrapper_ContractAPI{
     return self::$_singleton;
   }
 
-  public function fromApiInput($apiRequest){
+  public function pre($op, $id, $params){
 
-    // Set the start state
-    if(isset($apiRequest['params']['id'])){
-      $this->handler->setStartState($apiRequest['params']['id']);
+    // Initialise handler as appropriate
+    if($op == 'create'){
+      $this->handler->isNewContract();
+    }elseif($op == 'edit'){
+      $this->handler->setStartState($id);
+    }else{
+      return;
     }
+    $this->handler->setParams($this->normaliseParams($params));
 
-    // // If this is contract update originates from a contract history activity
-    // // then we don't need to do anything else before the contract is updated,
-    // // so we return.
-    // if(isset($apiRequest['params']['contract_history_activity_id'])){
-    //   var_dump('via contract history activity');
-    //   return $apiRequest;
-    // }
-
-    // If we are still here, we assume that the contract has been edited
-    // directly. Hence we need to check that this is a valid update and abort if
-    // not.
-    $this->handler->setParams($apiRequest['params']);
-
-    // Validate the modification
-    $this->handler->validateModification();
-
-
-    return $apiRequest;
+    if(!$this->handler->isValid){
+      throw new Exception('Invalid contract modification: '.implode(';', $this->handler->getErrors()));
+    }
   }
 
-  public function toApiOutput($apiRequest, $result){
-    return $result;
+  public function post(){
+
+    // At this point the change has happened, so we skip the modify and go
+    // straight to postModify();
+    $this->handler->postModify();
+  }
+
+  // Custom data can be passed in different ways. This function tries to
+  // normalise the structure.
+  private function normaliseParams($params){
+    if(isset($params['custom'])){
+      foreach($params['custom'] as $key => $fieldToAdd){
+        if(!isset($params['custom_'.$key])){
+          $params['custom_'.$key] = current($fieldToAdd)['value'];
+        }
+      }
+    }
+    return $params;
   }
 }
