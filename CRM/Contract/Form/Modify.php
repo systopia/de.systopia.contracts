@@ -89,8 +89,8 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     }
 
     $this->addButtons(array(
-        array('type' => 'cancel', 'name' => 'Back'), // since Cancel looks bad when viewed next to the Cancel action
-        array('type' => 'submit', 'name' => ucfirst($this->modificationActivity->getAction()), 'isDefault' => true)
+        array('type' => 'cancel', 'name' => 'Discard changes'), // since Cancel looks bad when viewed next to the Cancel action
+        array('type' => 'submit', 'name' => ucfirst($this->modificationActivity->getAction().' contract'), 'isDefault' => true)
     ));
 
     $this->setDefaults();
