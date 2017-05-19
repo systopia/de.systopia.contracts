@@ -11,6 +11,10 @@ class CRM_Contract_Handler_Contract{
 
   public $errors = [];
 
+  function __construct($source){
+    $this->source = $source;
+  }
+
   function setStartState($id = null){
     if(isset($id)){
       $this->startState = civicrm_api3('Membership', 'getsingle', ['id' => $id]);
@@ -31,18 +35,20 @@ class CRM_Contract_Handler_Contract{
   }
 
   function setParams($params){
-    $this->params = $params;
 
     // Set proposed status
-    if(isset($this->params['status_id'])){
-      if(is_numeric($this->params['status_id'])){
-        $this->proposedStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->params['status_id']))['name'];
+    if(isset($params['status_id'])){
+      if(is_numeric($params['status_id'])){
+        $this->proposedStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $params['status_id']))['name'];
       }else{
-        $this->proposedStatus = $this->params['status_id'];
+        $this->proposedStatus = $params['status_id'];
       }
     }else{
       $this->proposedStatus =  $this->startStatus;
     }
+
+    $this->params = $params;
+
 
   }
 
@@ -53,20 +59,22 @@ class CRM_Contract_Handler_Contract{
 
   function isValid(){
 
-    // First, establish whether the status change is valid by checking whether
-    // the start status and proposed end status matches those that are defined
-    // in the CRM_Contract_ModificationActivity_* classes
 
-    // If the start status is set then get the status name
+    // First, find a modification class to handle this update based on the
+    // status change.
+    $this->modificationClass = CRM_Contract_ModificationActivity::getModificationClassFromStatusChange($this->startStatus, $this->proposedStatus);
 
-    // If the a status_id param has been passed, then ensure it is the string,
-    // not the id.
+    // If you can't find a modification class, then the status change must be
+    // invalid. Report this as an error.
+    if($this->modificationClass){
+      $this->modificationClass->validateParams($this->params);
 
-
-    if(!CRM_Contract_Utils::isValidStatusChange($this->startStatus, $this->proposedStatus)){
+      $this->errors += $this->modificationClass->getErrors();
     }else{
-      $this->errors[] = "You cannot update contract status from {$this->startStatus} to {$this->proposedStatus}.";
+      $this->errors['status_id'] = "You cannot update contract status from {$this->startStatus} to {$this->proposedStatus}.";
     }
+
+    return !count($this->errors);
   }
 
   function getErrors(){
@@ -76,15 +84,21 @@ class CRM_Contract_Handler_Contract{
   function modify(){
 
     // Call the API to modify contract
+    $this->params['skip_stuff'] = true;
     civicrm_api3('Membership', 'create', $this->params);
 
-    // Various tasks need to be carried out once the is necessary afterwards
+    // Various tasks need to be carried out once the contract has been modified
     $this->postModify();
   }
 
+  // Called by modify
+  // Can be called directly for those times when the modification has been done
+  // and you just want to create / update the activity.
   function postModify(){
-
+    var_dump($this->source.' is calling post modify');
     if(!$this->modificationActivity){
+
+      var_dump($this->source.' needs to create a modification activity');
       // reverse engineer modification activity if none is present
       $this->modificationActivity = '???';
     }
