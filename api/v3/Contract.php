@@ -33,14 +33,19 @@ function civicrm_api3_Contract_create($params){
 }
 
 function _civicrm_api3_Contract_modify_spec(&$params){
+  $params['action']['api.required'] = 1; // TODO For some reason, this is not getting picked up - I wonder why
   $params['id']['api.required'] = 1;
-  $params['action']['api.required'] = 1;
 }
 
 // A wrapper around Activity.create of an contract modification activity (which
 // in turn wraps Membership.create). Contract.modify enables the updating of
 // contracts either now or in the future.
 function civicrm_api3_Contract_modify($params){
+
+  //Throw an exception is $params['action'] is not set
+  if(!isset($params['action'])){
+    throw new Exception('Please include an action parameter with this API call');
+  }
 
   // Throw an exception if the date is in the past. Rational:
   // This model requires being able to compare the pre and post state of the
