@@ -20,7 +20,7 @@ class CRM_Contract_Wrapper_MembershipBAO{
   private static $_singleton;
 
   private function __construct(){
-    $this->handler = new CRM_Contract_Handler_Contract('CRM_Contract_Wrapper_MembershipBAO');
+    $this->handler = new CRM_Contract_Handler_Contract;
   }
 
   public static function singleton() {
@@ -31,6 +31,11 @@ class CRM_Contract_Wrapper_MembershipBAO{
   }
 
   public function pre($op, $id, $params){
+    $this->skip = $params['skip_handler'];
+    if($this->skip){
+      return;
+    }
+
     // Initialise handler as appropriate
     if($op == 'create'){
       $this->handler->isNewContract();
@@ -48,6 +53,9 @@ class CRM_Contract_Wrapper_MembershipBAO{
   }
 
   public function post(){
+    if($this->skip){
+      return;
+    }
 
     // At this point the change has happened, so we skip the modify and go
     // straight to postModify();

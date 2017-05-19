@@ -28,8 +28,8 @@ class CRM_Contract_Wrapper_MembershipEditForm{
   }
 
   public function validate($form, $id, $params){
-    $this->form = new CRM_Contract_Handler_Contract();
-    $this->handler = new CRM_Contract_Handler_Contract();
+    $this->form = $form;
+    $this->handler = new CRM_Contract_Handler_Contract;
     $this->handler->setStartState($id);
     $params['membership_type_id'] = $params['membership_type_id'][1]; //TODO Is this always 1?!
     $this->handler->setParams($this->normaliseParams($params));

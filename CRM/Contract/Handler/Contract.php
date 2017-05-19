@@ -11,9 +11,6 @@ class CRM_Contract_Handler_Contract{
 
   public $errors = [];
 
-  function __construct($source){
-    $this->source = $source;
-  }
 
   function setStartState($id = null){
     if(isset($id)){
@@ -84,7 +81,9 @@ class CRM_Contract_Handler_Contract{
   function modify(){
 
     // Call the API to modify contract
-    $this->params['skip_stuff'] = true;
+    // Passing skip_handler avoids us handling this 'already handled' call to the
+    // membership API
+    $this->params['skip_handler'] = true;
     civicrm_api3('Membership', 'create', $this->params);
 
     // Various tasks need to be carried out once the contract has been modified

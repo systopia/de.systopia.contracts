@@ -26,7 +26,7 @@ class CRM_Contract_Wrapper_ModificationActivity{
       // Then modify the contract based on the activity
 
       // Get a handler to do the heavy lifting
-      $handler = new CRM_Contract_Handler_Contract('CRM_Contract_Wrapper_MembershipBAO');
+      $handler = new CRM_Contract_Handler_Contract;
 
       // Set the initial state of the handler
       $handler->setStartState($this->activity['source_record_id']);
@@ -34,7 +34,6 @@ class CRM_Contract_Wrapper_ModificationActivity{
       // Pass the parameters of the change
       $handler->setParams($this->getContractParams());
       $handler->setModificationActivity($this->activity);
-
       if($handler->isValid()){
         $handler->modify();
 
