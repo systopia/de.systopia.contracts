@@ -9,6 +9,9 @@
 
 class CRM_Contract_ModificationActivity_Pause extends CRM_Contract_ModificationActivity{
 
+  protected $whitelist = ['resume_date'];
+  protected $required = ['resume_date'];
+
   function getStartStatuses(){
     return array('New', 'Current', 'Grace');
   }
@@ -28,13 +31,5 @@ class CRM_Contract_ModificationActivity_Pause extends CRM_Contract_ModificationA
     return 'paused';
   }
 
-  function validateFieldUpdate($fields){
-    if(count($fields)){
-      $this->errorMessage = 'You cannot update fields when pausing a contract';
-      return false;
-    }else{
-      return true;
-    }
-  }
 
 }
