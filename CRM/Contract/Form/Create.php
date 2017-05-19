@@ -28,8 +28,8 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
 
 
     // Contract dates
-    $this->addDateTime('activity_date', ts('Activity date'), TRUE, array('formatType' => 'activityDateTime'));
     $this->addDate('join_date', ts('Member since'), TRUE, array('formatType' => 'activityDate'));
+    $this->addDate('start_date', ts('Membership start date'), TRUE, array('formatType' => 'activityDate'));
     $this->addDate('end_date', ts('End date'), FALSE, array('formatType' => 'activityDate'));
 
     // Campaign (membership)
@@ -80,8 +80,8 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
 
   function setDefaults($defaultValues = null, $filter = null){
 
-    list($defaults['activity_date'], $defaults['activity_date_time']) = CRM_Utils_Date::setDateDefaults(NULL, 'activityDateTime');
     list($defaults['join_date'], $defaults['cancel_date_time']) = CRM_Utils_Date::setDateDefaults(NULL, 'activityDateTime');
+    list($defaults['start_date'], $defaults['start_date']) = CRM_Utils_Date::setDateDefaults(NULL, 'activityDateTime');
 
     parent::setDefaults($defaults);
   }
@@ -94,6 +94,7 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     // Core fields
     $params['contact_id'] = $this->get('cid');
     $params['membership_type_id'] = $submitted['membership_type_id'];
+    $params['start_date'] = $submitted['start_date'];
     $params['join_date'] = $submitted['join_date'];
     $params['end_date'] = $submitted['end_date'];
     $params['campaign_id'] = $submitted['campaign_id'];

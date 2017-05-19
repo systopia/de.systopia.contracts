@@ -5,13 +5,13 @@
   {include file="CRM/Contract/Form/MandateBlock.tpl"}
   <hr />
   <div class="crm-section">
-    <div class="label">{$form.activity_date.label}</div>
-    <div class="content">{include file="CRM/common/jcalendar.tpl" elementName=activity_date}</div>
+    <div class="label">{$form.join_date.label}</div>
+    <div class="content">{include file="CRM/common/jcalendar.tpl" elementName=join_date}</div>
     <div class="clear"></div>
   </div>
   <div class="crm-section">
-    <div class="label">{$form.join_date.label}</div>
-    <div class="content">{include file="CRM/common/jcalendar.tpl" elementName=join_date}</div>
+    <div class="label">{$form.start_date.label}</div>
+    <div class="content">{include file="CRM/common/jcalendar.tpl" elementName=start_date}</div>
     <div class="clear"></div>
   </div>
   <div class="crm-section">
