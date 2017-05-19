@@ -18,4 +18,52 @@ class CRM_Contract_ModificationActivity{
       'name' => $this->getActivityType()
     ]);
   }
+
+  function getModificationClassFromStatusChange($startStatus, $endStatus){
+    foreach (CRM_Contract_Utils::$modificationActivityClasses as $class) {
+      $activityClass = new $class;
+      if(
+        in_array($startStatus, $activityClass->getStartStatuses()) &&
+        $endStatus == $activityClass->getEndStatus()
+      ){
+        return $activityClass;
+      }
+    }
+    return false;
+  }
+
+  function validateParams($params){
+    $this->params = $params;
+    unset($this->params['status_id']);
+    unset($this->params['id']);
+    if($this->allowed){
+      $this->checkAllowed();
+    }
+    $this->checkRequired();
+    // The only fields that should be allowed to be updated when cancelling a
+    // contract are
+    return !count($this->errors);
+
+  }
+
+  function checkAllowed(){
+
+    foreach($this->params as $key => $param){
+      if(!in_array($key, $this->allowed)){
+        $this->errors[$key] = "Cannot update '{$key}' when a contract is {$this->getResult()}";
+      }
+    }
+  }
+  function checkRequired(){
+    foreach($this->required as $required){
+      if(!isset($this->params[$required])){
+        $this->errors[$required] = "'{$required}' is required when a contract is {$this->getResult()}";
+      }
+    }
+  }
+
+  function getErrors(){
+    return $this->errors;
+  }
+
 }
