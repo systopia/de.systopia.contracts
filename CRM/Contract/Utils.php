@@ -76,15 +76,7 @@ class CRM_Contract_Utils{
 
   static function getCustomFieldId($customField){
 
-    // Warm cache on first invocation
-    if(!self::$customFieldCache){
-      $customGroupNames = ['membership_general', 'membership_payment', 'membership_cancellation', 'contract_cancellation', 'contract_updates'];
-      $customGroups = civicrm_api3('CustomGroup', 'get', [ 'name' => ['IN' => $customGroupNames], 'return' => 'name'])['values'];
-      $customFields = civicrm_api3('CustomField', 'get', [ 'custom_group_id' => ['IN' => $customGroupNames]]);
-      foreach($customFields['values'] as $c){
-        self::$customFieldCache["{$customGroups[$c['custom_group_id']]['name']}.{$c['name']}"] = "custom_{$c['id']}";
-      }
-    }
+    self::warmCustomFieldCache();
 
     // Look up if not in cache
     if(!isset(self::$customFieldCache[$customField])){
@@ -100,11 +92,41 @@ class CRM_Contract_Utils{
     if(isset(self::$customFieldCache[$customField])){
       return self::$customFieldCache[$customField];
     }else{
-
+      throw new Exception('Could not find custom field id for '.$customField);
     }
   }
 
-  function isValidStatusChange($startStatus, $endStatus){
+  static function getCustomFieldName($customFieldId){
+
+    // self::warmCustomFieldCache();
+    $name = array_search($customFieldId, self::$customFieldCache);
+    if(!$name){
+      $customField = civicrm_api3('CustomField', 'getsingle', [ 'id' => substr($customFieldId, 7)]);
+      $customGroup = civicrm_api3('CustomGroup', 'getsingle', [ 'id' => $customField['custom_group_id']]);
+      self::$customFieldCache["{$customGroup['name']}.{$customField['name']}"] = $customFieldId;
+    }
+    // Return result or return an error if it does not exist.
+    if($name = array_search($customFieldId, self::$customFieldCache)){
+      return $name;
+    }else{
+      throw new Exception('Could not find custom field for id'.$customFieldId);
+    }
+  }
+
+  function warmCustomFieldCache(){
+    if(!self::$customFieldCache){
+      $customGroupNames = ['membership_general', 'membership_payment', 'membership_cancellation', 'contract_cancellation', 'contract_updates'];
+      $customGroups = civicrm_api3('CustomGroup', 'get', [ 'name' => ['IN' => $customGroupNames], 'return' => 'name'])['values'];
+      $customFields = civicrm_api3('CustomField', 'get', [ 'custom_group_id' => ['IN' => $customGroupNames]]);
+      foreach($customFields['values'] as $c){
+        self::$customFieldCache["{$customGroups[$c['custom_group_id']]['name']}.{$c['name']}"] = "custom_{$c['id']}";
+      }
+    }
+  }
+
+  function getModificationClassFromStatusChange($startStatus, $endStatus){
+    var_dump($startStatus);
+    var_dump($endStatus);
     foreach (self::$modificationActivityClasses as $class) {
       $activityClass = new $class;
       if(
