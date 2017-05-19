@@ -186,11 +186,12 @@ function contract_civicrm_buildForm($formName, &$form) {
 }
 
 function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors){
-  if($formName == 'CRM_Member_Form_Membership' && in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD)))
+  if($formName == 'CRM_Member_Form_Membership' && in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
     $wrapper = new CRM_Contract_Wrapper_ValidateMembershipEditForm();
     $wrapper->validate($form, CRM_Utils_Request::retrieve('id', 'Positive', $form), $fields);
     $errors = $wrapper->getErrors();
   }
+}
 
 function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &$values ){
   switch ($objectName) {
