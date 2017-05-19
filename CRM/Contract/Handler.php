@@ -21,18 +21,6 @@
  */
 class CRM_Contract_Handler{
 
-  /**
-   * Whether this contract has had any significant changes, i.e. whether any
-   * $monitoredFields have changed.
-   * @var Boolean
-   */
-  var $significantChanges = 0;
-
-  /**
-   * When one or more of these fields have changed, we should record a
-   * Contract_Update activity (set when constructed)
-   */
-  var $monitoredFields = [];
 
   /**
    * The various actions that can happen to contracts
@@ -41,68 +29,7 @@ class CRM_Contract_Handler{
   function __construct(){
 
 
-    // Get a definitive list of all core fields and all custom fields indexed by
-    // the name and that they are referenced by in forms
-    foreach(civicrm_api3('CustomGroup', 'get', ['extends' => 'membership'])['values'] as $group){
-      foreach(civicrm_api3('CustomField', 'get', ['custom_group_id' => $group['name']])['values'] as $key => $field){
-        $id = 'custom_'.$field['id'];
-        $membershipCustomFields[$id] = $field;
-        $membershipCustomFields[$id]['id'] = $id;
-        // Adding the 'full name' makes custom fields easier to work with
-        $membershipCustomFields[$id]['full_name'] = $group['name'].'.'.$field['name'];
-        $membershipCustomFields[$id]['title'] = $field['label'];
-      };
-    }
-    // This will return custom fields as well but is missing the group name and
-    // field name, hence we retrieived the custom fields seperatley.
-    foreach(civicrm_api3('Membership', 'getfields', array( 'api_action' => 'get'))['values'] as $key=> $field){
-      $membershipCoreFields[$field['name']] = $field;
-      $membershipCoreFields[$field['name']]['id'] = $key;
-      // We do this so we can use the full name across both core and custom
-      // fields.
-      $membershipCoreFields[$field['name']]['full_name'] = $field['name'];
-    }
-
-    // Order is important. We prefer the data in $membershipCustomFields
-    // so add this first.
-    $this->membershipFields = $membershipCustomFields + $membershipCoreFields;
-
-    foreach($this->membershipFields as $field){
-      $this->membershipFieldsByFullName[$field['full_name']] = $field;
-    }
-
-    // Do the same for activities. This is a cut and paste, search and replace
-    // job from above at the moment :( Refactor when you have time.
-    foreach(civicrm_api3('CustomGroup', 'get', ['extends' => 'activity'])['values'] as $group){
-      foreach(civicrm_api3('CustomField', 'get', ['custom_group_id' => $group['name']])['values'] as $key => $field){
-        $id = 'custom_'.$field['id'];
-        $activityCustomFields[$id] = $field;
-        $activityCustomFields[$id]['id'] = $id;
-        // Adding the 'full name' makes custom fields easier to work with
-        $activityCustomFields[$id]['full_name'] = $group['name'].'.'.$field['name'];
-        $activityCustomFields[$id]['title'] = $field['label'];
-      };
-    }
-    // This will return custom fields as well but is missing the group name and
-    // field name, hence we retrieived the custom fields seperatley.
-    foreach(civicrm_api3('Activity', 'getfields', array( 'api_action' => 'get'))['values'] as $key=> $field){
-      $activityCoreFields[$field['name']] = $field;
-      $activityCoreFields[$field['name']]['id'] = $key;
-      // We do this so we can use the full name across both core and custom
-      // fields.
-      $activityCoreFields[$field['name']]['full_name'] = $field['name'];
-    }
-
-    // Order is important. We prefer the data in $activityCustomFields
-    // so add this first.
-    $this->activityFields = $activityCustomFields + $activityCoreFields;
-
-    foreach($this->activityFields as $field){
-      $this->activityFieldsByFullName[$field['full_name']] = $field;
-    }
-
-
-    // Define monitored (using the above defined 'full_name' for activity and membership)
+    // Define monitored fields
     $this->monitoredFields=[
       'membership_type_id' => array('activity_field'=>'contract_updates.ch_membership_type'),
       'status_id' => array(),
@@ -111,9 +38,6 @@ class CRM_Contract_Handler{
       'membership_payment.membership_frequency' => array('activity_field'=>'contract_updates.ch_frequency'),
       // 'membership_payment.membership_customer_id' => array('activity_field'=>'xxx') // TODO sounds like this needs to be added
     ];
-
-    // A shorthand as we reference this a fair amount
-    $this->contributionRecurField = $this->membershipFieldsByFullName['membership_payment.membership_recurring_contribution']['id'];
   }
 
   /**
@@ -155,7 +79,6 @@ class CRM_Contract_Handler{
   }
 
   function sanitizeParams(&$params){
-    // var_dump($params['custom'][16]);exit;
     // Deal with the fact that custom data can be presented in different ways depending on the object
     if(isset($params['custom']) && is_array($params['custom'])){
       foreach($params['custom'] as $key => $fieldToAdd){
