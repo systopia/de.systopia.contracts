@@ -26,7 +26,7 @@ class CRM_Contract_Wrapper_ModificationActivity{
       // Then modify the contract based on the activity
 
       // Get a handler to do the heavy lifting
-      $handler = new CRM_Contract_Handler_Contract;
+      $handler = new CRM_Contract_Handler_Contract('CRM_Contract_Wrapper_MembershipBAO');
 
       // Set the initial state of the handler
       $handler->setStartState($this->activity['source_record_id']);
@@ -39,7 +39,7 @@ class CRM_Contract_Wrapper_ModificationActivity{
         $handler->modify();
 
         // Set activity as complete and return
-        $this->activity['status'] = 'complete';
+        $this->activity['status_id'] = 'Completed';
         return civicrm_api3('Activity', 'create', $this->activity);
       }else{
         throw new exception(implode($handler->getErrors(), ';'));
