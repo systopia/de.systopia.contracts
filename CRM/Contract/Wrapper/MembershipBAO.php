@@ -15,23 +15,22 @@
 * CRM_Contract_Handler_Contract::usingActivityData method as otherwise we
 * would create duplicate modify contract activities.
 */
-class CRM_Contract_Wrapper_ContractAPI{
+class CRM_Contract_Wrapper_MembershipBAO{
 
   private static $_singleton;
 
   private function __construct(){
-    $this->handler = new CRM_Contract_Handler_Contract();
+    $this->handler = new CRM_Contract_Handler_Contract('CRM_Contract_Wrapper_MembershipBAO');
   }
 
   public static function singleton() {
     if (!self::$_singleton) {
-      self::$_singleton = new CRM_Contract_Wrapper_ContractAPI();
+      self::$_singleton = new CRM_Contract_Wrapper_MembershipBAO();
     }
     return self::$_singleton;
   }
 
   public function pre($op, $id, $params){
-
     // Initialise handler as appropriate
     if($op == 'create'){
       $this->handler->isNewContract();
@@ -42,8 +41,9 @@ class CRM_Contract_Wrapper_ContractAPI{
     }
     $this->handler->setParams($this->normaliseParams($params));
 
-    if(!$this->handler->isValid){
-      throw new Exception('Invalid contract modification: '.implode(';', $this->handler->getErrors()));
+
+    if(!$this->handler->isValid()){
+      throw new Exception('Invalid contract modification: '.implode(', ', $this->handler->getErrors()));
     }
   }
 
@@ -57,13 +57,42 @@ class CRM_Contract_Wrapper_ContractAPI{
   // Custom data can be passed in different ways. This function tries to
   // normalise the structure.
   private function normaliseParams($params){
+
+    // If a custom data field has been passed in the $params['custom'] element
+    // which is not also in $params move it to params
     if(isset($params['custom'])){
-      foreach($params['custom'] as $key => $fieldToAdd){
+      foreach($params['custom'] as $key => $custom){
         if(!isset($params['custom_'.$key])){
-          $params['custom_'.$key] = current($fieldToAdd)['value'];
+          $params['custom_'.$key] = current($custom)['value'];
         }
       }
     }
+
+    // Get a definitive list of core and custom fields
+    foreach(civicrm_api3('membership', 'getfields')['values'] as $mf){
+      if(isset($mf['where']) || isset($mf['extends'])){
+        $coreAndCustomFields[] = $mf['name'];
+      }
+    }
+    // Allow people to pass a resume date as this is required when pausing a contract
+    $coreAndCustomFields[] = 'resume_date';
+
+
+    // Remove any params that are not core and custom fields
+    foreach($params as $key => $param){
+      if(!in_array($key, $coreAndCustomFields)){
+        unset($params[$key]);
+      }
+    }
+
+    // Convert from custom_N format to custom_group.custom_field format
+    foreach($params as $key => $param){
+      if(substr($key, 0,7) == 'custom_'){
+        $params[CRM_Contract_Utils::getCustomFieldName($key)] = $param;
+        unset($params[$key]);
+      }
+    }
+
     return $params;
   }
 }

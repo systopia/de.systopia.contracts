@@ -232,16 +232,10 @@ function contract_civicrm_post($op, $objectName, $id, &$objectRef){
 // In an effort to keep this file small, we only add simple conditionals to API
 // wrappers here. Further filtering should happen in the API wrapper class.
 function contract_civicrm_apiWrappers(&$wrappers, $apiRequest) {
-  if(
-    $apiRequest['entity'] == 'Membership' &&
-    $apiRequest['action'] == 'create'
-  ){
-    $wrappers[] = CRM_Contract_Wrapper_MembershipAPI::singleton();
-  }
-  if(
-    $apiRequest['entity'] == 'Activity' &&
-    $apiRequest['action'] == 'create' &&
-    in_array($apiRequest['params']['activity_type_id'], CRM_Contract_Utils::getModificationActivityTypeIds())
+  // if( $apiRequest['entity'] == 'Membership' && $apiRequest['action'] == 'create' ){
+  //   $wrappers[] = CRM_Contract_Wrapper_MembershipAPI::singleton();
+  // }
+  if( $apiRequest['entity'] == 'Activity' && $apiRequest['action'] == 'create' && in_array($apiRequest['params']['activity_type_id'], CRM_Contract_Utils::getModificationActivityTypeIds())
   ){
     $wrappers[] = new CRM_Contract_Wrapper_ModificationActivity;
   }
