@@ -31,7 +31,7 @@ class CRM_Contract_Wrapper_MembershipBAO{
   }
 
   public function pre($op, $id, $params){
-    $this->skip = $params['skip_handler'];
+    $this->skip = isset($params['skip_handler']) && $params['skip_handler'];
     if($this->skip){
       return;
     }
@@ -45,7 +45,6 @@ class CRM_Contract_Wrapper_MembershipBAO{
       return;
     }
     $this->handler->setParams($params);
-
 
     if(!$this->handler->isValid()){
       throw new Exception('Invalid contract modification: '.implode(', ', $this->handler->getErrors()));

@@ -70,7 +70,7 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
 
 
     $this->addButtons([
-      array('type' => 'cancel', 'name' => 'Cancel'), // since Cancel looks bad when viewed next to the Cancel action
+      array('type' => 'cancel', 'name' => 'Cancel'),
       array('type' => 'submit', 'name' => 'Create')
     ]);
 
