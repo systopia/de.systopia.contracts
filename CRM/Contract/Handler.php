@@ -36,6 +36,7 @@ class CRM_Contract_Handler{
       'membership_payment.membership_recurring_contribution' => array('activity_field'=>'contract_updates.ch_recurring_contribution'),
       'membership_payment.membership_annual' => array('activity_field'=>'contract_updates.ch_annual'),
       'membership_payment.membership_frequency' => array('activity_field'=>'contract_updates.ch_frequency'),
+      'membership_payment.membership_frequency' => array('activity_field'=>'contract_updates.ch_frequency'),
       // 'membership_payment.membership_customer_id' => array('activity_field'=>'xxx') // TODO sounds like this needs to be added
     ];
   }
@@ -79,6 +80,7 @@ class CRM_Contract_Handler{
   }
 
   function sanitizeParams(&$params){
+    // var_dump($params['custom'][16]);exit;
     // Deal with the fact that custom data can be presented in different ways depending on the object
     if(isset($params['custom']) && is_array($params['custom'])){
       foreach($params['custom'] as $key => $fieldToAdd){
@@ -458,25 +460,7 @@ class CRM_Contract_Handler{
     return $this->medium = 1;
   }
 
-  function calcAnnualAmount($contributionRecur){
-    $frequencyUnitTranslate = array(
-      'day' => 365,
-      'week' => 52,
-      'month' => 12,
-      'year' => 1
-    );
-    return (string) $contributionRecur['amount'] * $frequencyUnitTranslate[$contributionRecur['frequency_unit']] / $contributionRecur['frequency_interval'];
-  }
 
-  function calcPaymentFrequency($contributionRecur){
-    if($contributionRecur['frequency_unit'] == 'month'){
-      return $contributionRecur['frequency_interval'];
-    }
-
-    // Don't guess. Return an empty string if we don't know
-    // TODO Or maybe report an exception here?
-    return '';
-  }
 
   function getBankAccountIdFromIban($iban){
     try{
