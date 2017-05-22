@@ -15,20 +15,6 @@ function civicrm_api3_Contract_create($params){
       }
     }
     $membership = civicrm_api3('Membership', 'create', $params);
-
-    // Add a signed activity once this contract has been created
-    $membershipParams = $membership['values'][$membership['id']];
-    $sign = new CRM_Contract_ModificationActivity_Sign;
-    $activityParams['status_id'] = 'completed';
-    $activityParams['activity_type_id'] = $sign->getActivityType();
-    $activityParams['activity_date_time'] = $membershipParams['join_date'];
-    $activityParams['target_contact_id'] = $membershipParams['id'];
-    $activityParams['medium_id'] = $params['medium_id'];
-    $activityParams['description'] = $params['note'];
-    $activityParams['target_contact_id'] = $membershipParams['contact_id'];
-
-    $activity = civicrm_api3('Activity', 'create', $activityParams);
-
     return $membership;
 }
 
