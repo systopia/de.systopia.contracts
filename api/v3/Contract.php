@@ -22,10 +22,10 @@ function civicrm_api3_Contract_create($params){
     $activityParams['status_id'] = 'completed';
     $activityParams['activity_type_id'] = $sign->getActivityType();
     $activityParams['activity_date_time'] = $membershipParams['join_date'];
-    $activityParams['source_record_id'] = $membershipParams['id'];
+    $activityParams['target_contact_id'] = $membershipParams['id'];
     $activityParams['medium_id'] = $params['medium_id'];
     $activityParams['description'] = $params['note'];
-    $activityParams['source_contact_id'] = $membershipParams['contact_id'];
+    $activityParams['target_contact_id'] = $membershipParams['contact_id'];
 
     $activity = civicrm_api3('Activity', 'create', $activityParams);
 
@@ -57,8 +57,7 @@ function civicrm_api3_Contract_modify($params){
   }
 
   // Find the appropriate activity type
-  $class = CRM_Contract_Utils::getModificationActivityFromAction($params['action']);
-
+  $class = CRM_Contract_ModificationActivity::findByAction($params['action']);
   // Start populating the activity parameters
   $activityParams['status_id'] = 'scheduled';
   $activityParams['activity_type_id'] = $class->getActivityType();
@@ -67,10 +66,17 @@ function civicrm_api3_Contract_modify($params){
   $activityParams['medium_id'] = $params['medium_id'];
   $activityParams['details'] = $params['note'];
 
-  // Find the contact that this membership is associated with so we can
-  // associate the activity
+  // Get the membership that is associated with the contract so we can
+  // associate the activity with the contact.
   $membershipParams = civicrm_api3('membership', 'getsingle', ['id' => $params['id']]);
-  $activityParams['source_contact_id'] = $membershipParams['contact_id'];
+  $activityParams['target_contact_id'] = $membershipParams['contact_id'];
+
+  // TODO is this the best way to get the authorised user?
+  $session = CRM_Core_Session::singleton();
+  if(!$sourceContactId = $session->getLoggedInContactID()){
+    $sourceContactId = 1;
+  }
+
 
   // Depending on the activity type, populate more parameters / do extra
   // processing
@@ -95,16 +101,24 @@ function civicrm_api3_Contract_modify($params){
       break;
     case 'pause':
       if(isset($params['resume_date'])){
+        $resumeDate = DateTime::createFromFormat('Y-m-d', $params['resume_date']);
+        if($resumeDate->getLastErrors()['warning_count']){
+          throw new Exception("Invalid format for resume date. Should be in 'Y-m-d' format, for example, '2012-12-12'");
+        }
         civicrm_api3('Activity', 'create', [
           'status_id' => 'scheduled',
           'source_record_id' => $params['id'],
           'activity_type_id' => 'Contract_Resumed',
-          'source_contact_id' => $membershipParams['contact_id'],
-          'activity_date_time' => (new DateTime($params['resume_date']))->format('Y-m-d H:i:s'),
+          'target_contact_id' => $membershipParams['contact_id'],
+          'source_contact_id' => $sourceContactId,
+          'activity_date_time' => $resumeDate->format('Y-m-d H:i:s')
         ]);
+        $activityParams['resume_date'] = $params['resume_date'];
       }else{
         throw new Exception('You must supply a resume_date when pausing a contract.');
       }
   }
-  return civicrm_api3('Activity', 'create', $activityParams);
+  $activityParams['source_contact_id'] = $sourceContactId;
+  civicrm_api3('Activity', 'create', $activityParams);
+  return civicrm_api3('membership', 'getsingle', ['id' => $params['id']]);
 }
