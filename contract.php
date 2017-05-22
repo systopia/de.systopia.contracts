@@ -236,7 +236,7 @@ function contract_civicrm_apiWrappers(&$wrappers, $apiRequest) {
   // if( $apiRequest['entity'] == 'Membership' && $apiRequest['action'] == 'create' ){
   //   $wrappers[] = CRM_Contract_Wrapper_MembershipAPI::singleton();
   // }
-  if( $apiRequest['entity'] == 'Activity' && $apiRequest['action'] == 'create' && in_array($apiRequest['params']['activity_type_id'], CRM_Contract_Utils::getModificationActivityTypeIds())
+  if( $apiRequest['entity'] == 'Activity' && $apiRequest['action'] == 'create' && in_array($apiRequest['params']['activity_type_id'], CRM_Contract_ModificationActivity::getModificationActivityTypeIds())
   ){
     $wrappers[] = new CRM_Contract_Wrapper_ModificationActivity;
   }

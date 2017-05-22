@@ -15,60 +15,25 @@ class CRM_Contract_Utils{
   }
 
 
-  static $modificationActivityClasses = [
-    'CRM_Contract_ModificationActivity_Cancel',
-    'CRM_Contract_ModificationActivity_Pause',
-    'CRM_Contract_ModificationActivity_Resume',
-    'CRM_Contract_ModificationActivity_Revive',
-    'CRM_Contract_ModificationActivity_Sign',
-    'CRM_Contract_ModificationActivity_Update',
-  ];
 
-  static $ContractToActivityCustomFieldTranslation = [
+  static $ContractToModificationActivityField = [
+    'id' => 'source_record_id',
+    'contact_id' => 'target_contact_id',
+    'campaign_id' => 'campaign_id',
     'membership_type_id' => 'contract_updates.ch_membership_type',
     'membership_payment.membership_recurring_contribution' => 'contract_updates.ch_recurring_contribution',
     'membership_cancellation.membership_cancel_reason' => 'contract_cancellation.contact_history_cancel_reason',
-  ];
+    'membership_payment.membership_annual' => 'contract_updates.ch_annual',
+    'membership_payment.membership_frequency' => 'contract_updates.ch_frequency',
+    'membership_payment.from_ba' => 'contract_updates.ch_to_ba',
+    'membership_payment.to_ba' => 'contract_updates.ch_from_ba',
+    'membership_payment.cycle_day' => 'contract_updates.ch_cycle_day'
+];
 
 
-  static function getModificationActivityTypeIds(){
-    foreach (self::$modificationActivityClasses as $class) {
-      $activityClass = new $class;
-      $activityTypes[] = $activityClass->getActivityType();
-    }
-    foreach(civicrm_api3('OptionValue', 'get', [
-      'option_group_id' => 'activity_type',
-      'name' => ['IN' => $activityTypes],
-      'return' => 'value'
-    ])['values'] as $activityType){
-      $activityTypeIds[] = $activityType['value'];
-    }
-    return $activityTypeIds;
-  }
-
-  static function getModificationClassFromActivityTypeId($id){
-    $name = civicrm_api3('OptionValue', 'getsingle', ['option_group_id' => 'activity_type', 'value' => $id, 'return' => 'name'])['name'];
-    foreach (self::$modificationActivityClasses as $class) {
-      $activityClass = new $class;
-      if($name == $activityClass->getActivityType()){
-        return $activityClass;
-      }
-    }
-  }
-
-  static function getModificationActivityFromAction($action){
-    foreach (self::$modificationActivityClasses as $class) {
-      $activityClass = new $class;
-      if($action == $activityClass->getAction()){
-        return $activityClass;
-      }
-    }
-    throw new Exception("Could not find a valid modification activity for $action");
-
-  }
 
   static function contractToActivityCustomFieldId($contractField){
-    $translation = self::$ContractToActivityCustomFieldTranslation;
+    $translation = self::$ContractToModificationActivityField;
     $activityField = $translation[$contractField];
     return self::getCustomFieldId($activityField);
   }
@@ -113,7 +78,7 @@ class CRM_Contract_Utils{
     }
   }
 
-  function warmCustomFieldCache(){
+  private static function warmCustomFieldCache(){
     if(!self::$customFieldCache){
       $customGroupNames = ['membership_general', 'membership_payment', 'membership_cancellation', 'contract_cancellation', 'contract_updates'];
       $customGroups = civicrm_api3('CustomGroup', 'get', [ 'name' => ['IN' => $customGroupNames], 'return' => 'name'])['values'];
@@ -122,21 +87,6 @@ class CRM_Contract_Utils{
         self::$customFieldCache["{$customGroups[$c['custom_group_id']]['name']}.{$c['name']}"] = "custom_{$c['id']}";
       }
     }
-  }
-
-  function getModificationClassFromStatusChange($startStatus, $endStatus){
-    var_dump($startStatus);
-    var_dump($endStatus);
-    foreach (self::$modificationActivityClasses as $class) {
-      $activityClass = new $class;
-      if(
-        in_array($startStatus, $activityClass->getStartStatuses()) &&
-        $endStatus == $activityClass->getEndStatus()
-      ){
-        return true;
-      }
-    }
-    return false;
   }
 
   static function getCoreMembershipHistoryActivityIds(){
