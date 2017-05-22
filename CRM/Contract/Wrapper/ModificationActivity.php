@@ -15,10 +15,11 @@ class CRM_Contract_Wrapper_ModificationActivity{
 
     // API get the activity again to ensure that we get custom data
     $this->activity = civicrm_api3('Activity', 'getsingle', ['id' => $result['id']]);
+
     $this->params = $apiRequest['params'];
     if(
       // It is scheduled...
-      ($this->activity['status_id'] == civicrm_api3('OptionValue', 'getvalue', ['return' => "value", 'option_group_id' => "activity_status", 'name' => "scheduled"])['result']) &&
+      ($this->activity['status_id'] == civicrm_api3('OptionValue', 'getvalue', ['return' => "value", 'option_group_id' => "activity_status", 'name' => "scheduled"])) &&
 
       // ..and it is not scheduled for the future
       DateTime::createFromFormat('Y-m-d H:i:s', $this->activity['activity_date_time']) <= new DateTime

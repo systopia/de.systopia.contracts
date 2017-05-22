@@ -129,9 +129,11 @@ function contract_civicrm_buildForm($formName, &$form) {
       if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
 
         // Use JS to hide form elements
-        CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Member/Form/Membership.js');
-        CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('filteredMembershipStatuses' => civicrm_api3('MembershipStatus', 'get', ['name' => ['IN' => ['Current', 'Cancelled']]])));
-        CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('hiddenCustomFields' => civicrm_api3('CustomField', 'get', ['name' => ['IN' => ['membership_annual', 'membership_frequency']]])));
+        CRM_Core_Resources::singleton()->addScriptFile( 'de.systopia.contract', 'templates/CRM/Member/Form/Membership.js' );
+        $filteredMembershipStatuses = civicrm_api3('MembershipStatus', 'get', ['name' => ['IN' => ['Current', 'Cancelled']]]);
+        CRM_Core_Resources::singleton()->addVars( 'de.systopia.contract', ['filteredMembershipStatuses' => $filteredMembershipStatuses]);
+        $hiddenCustomFields = civicrm_api3('CustomField', 'get', ['name' => ['IN' => ['membership_annual', 'membership_frequency']]]);
+        CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('hiddenCustomFields' => $hiddenCustomFields));
 
         if($form->getAction() == CRM_Core_Action::ADD){
           $form->setDefaults(array(
@@ -187,7 +189,7 @@ function contract_civicrm_buildForm($formName, &$form) {
 
 function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors){
   if($formName == 'CRM_Member_Form_Membership' && in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
-    $wrapper = new CRM_Contract_Wrapper_ValidateMembershipEditForm();
+    $wrapper = new CRM_Contract_Wrapper_MembershipEditForm();
     $wrapper->validate($form, CRM_Utils_Request::retrieve('id', 'Positive', $form), $fields);
     $errors = $wrapper->getErrors();
   }
@@ -233,9 +235,6 @@ function contract_civicrm_post($op, $objectName, $id, &$objectRef){
 // In an effort to keep this file small, we only add simple conditionals to API
 // wrappers here. Further filtering should happen in the API wrapper class.
 function contract_civicrm_apiWrappers(&$wrappers, $apiRequest) {
-  // if( $apiRequest['entity'] == 'Membership' && $apiRequest['action'] == 'create' ){
-  //   $wrappers[] = CRM_Contract_Wrapper_MembershipAPI::singleton();
-  // }
   if( $apiRequest['entity'] == 'Activity' && $apiRequest['action'] == 'create' && in_array($apiRequest['params']['activity_type_id'], CRM_Contract_ModificationActivity::getModificationActivityTypeIds())
   ){
     $wrappers[] = new CRM_Contract_Wrapper_ModificationActivity;

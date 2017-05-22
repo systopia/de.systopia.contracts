@@ -78,16 +78,15 @@ class CRM_Contract_ModificationActivity{
     return $activityTypeIds;
   }
 
-  function validateParams($params){
+  function validateParams($params, $start){
     $this->params = $params;
+    $this->start = $start;
     unset($this->params['status_id']);
     unset($this->params['id']);
-    if($this->allowed){
+    if(isset($this->allowed)){
       $this->checkAllowed();
     }
     $this->checkRequired();
-    // The only fields that should be allowed to be updated when cancelling a
-    // contract are
     return !count($this->errors);
 
   }
@@ -95,14 +94,18 @@ class CRM_Contract_ModificationActivity{
   function checkAllowed(){
     foreach($this->params as $key => $param){
       if(!in_array($key, $this->allowed)){
-        $this->errors[$key] = "Cannot update '{$key}' when {$this->getGerund()} a contract";
+        if(isset($this->start[$key]) && $this->params[$key] != $this->start[$key]){
+          $this->errors[$key] = "Cannot update '{$key}' when {$this->getGerund()} a contract";
+        }
       }
     }
   }
   function checkRequired(){
-    foreach($this->required as $required){
-      if(!isset($this->params[$required])){
-        $this->errors[$required] = "'{$required}' is required when {$this->getGerund()} a contract";
+    if(isset($this->required)){
+      foreach($this->required as $required){
+        if(!isset($this->params[$required]) || !$this->params[$required]){
+          $this->errors[$required] = "'{$required}' is required when {$this->getGerund()} a contract";
+        }
       }
     }
   }

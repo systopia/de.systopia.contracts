@@ -2,7 +2,6 @@
 
 class CRM_Contract_Utils{
 
-
   private static $_singleton;
   private static $coreMembershipHistoryActivityIds;
   private static $customFieldCache;
@@ -13,8 +12,6 @@ class CRM_Contract_Utils{
     }
     return self::$_singleton;
   }
-
-
 
   static $ContractToModificationActivityField = [
     'id' => 'source_record_id',
@@ -63,7 +60,7 @@ class CRM_Contract_Utils{
 
   static function getCustomFieldName($customFieldId){
 
-    // self::warmCustomFieldCache();
+    self::warmCustomFieldCache();
     $name = array_search($customFieldId, self::$customFieldCache);
     if(!$name){
       $customField = civicrm_api3('CustomField', 'getsingle', [ 'id' => substr($customFieldId, 7)]);

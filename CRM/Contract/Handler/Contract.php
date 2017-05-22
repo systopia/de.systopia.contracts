@@ -7,6 +7,7 @@ class CRM_Contract_Handler_Contract{
 
   // The start state of the contract
   public $startState = [];
+  public $startStatus = '';
 
   // Parameters that are changed
   public $params = [];
@@ -67,7 +68,7 @@ class CRM_Contract_Handler_Contract{
 
     // If the modification class is set already, i.e. it we set it when we set
     // the modification activity, then check that the status change is valid
-    if($this->modificationClass){
+    if(isset($this->modificationClass)){
       if(!in_array($this->startStatus, $this->modificationClass->getStartStatuses())){
         $this->errors['status_id'] = "Cannot {$this->modificationClass->getAction()} a contract with status '{$this->startStatus}'";
       }
@@ -78,7 +79,7 @@ class CRM_Contract_Handler_Contract{
     // If we have a modification class, then validate the parameters that have
     // been passed and set any errors.
     if($this->modificationClass){
-      $this->modificationClass->validateParams($this->params);
+      $this->modificationClass->validateParams($this->params, $this->startState);
       $this->errors += $this->modificationClass->getErrors();
     }else{
       // If by this stage, we have been unable to find a valid modificationClass
@@ -115,10 +116,10 @@ class CRM_Contract_Handler_Contract{
 
     $this->calculateDeltas();
 
-    if(!$this->modificationActivity){
-      $this->createModificationActivity();
-    }else{
+    if(isset($this->modificationActivity)){
       $this->updateModificationActivity();
+    }else{
+      $this->createModificationActivity();
     }
   }
 
@@ -156,8 +157,6 @@ class CRM_Contract_Handler_Contract{
     $params = $this->convertCustomIds($this->params);
     $params['skip_handler'] = true;
     civicrm_api3('Membership', 'create', $params);
-
-
   }
 
   private function calculateDeltas(){
@@ -237,17 +236,17 @@ class CRM_Contract_Handler_Contract{
       unset($deltas['status_id']);
     }
     // Create user friendly delta text
-    if($deltas['membership_type_id']['old']){
-      $deltas['membership_type_id']['old'] = $result = civicrm_api3('MembershipType', 'getvalue', [ 'return' => "name", 'id' => $deltas['membership_type_id']['old']]);
+    if(isset($deltas['membership_type_id']['old']) && $deltas['membership_type_id']['old']){
+      $deltas['membership_type_id']['old'] = civicrm_api3('MembershipType', 'getvalue', [ 'return' => "name", 'id' => $deltas['membership_type_id']['old']]);
     }
-    if($deltas['membership_type_id']['new']){
-      $deltas['membership_type_id']['new'] = $result = civicrm_api3('MembershipType', 'getvalue', [ 'return' => "name", 'id' => $deltas['membership_type_id']['new']]);
+    if(isset($deltas['membership_type_id']['new']) && $deltas['membership_type_id']['new']){
+      $deltas['membership_type_id']['new'] = civicrm_api3('MembershipType', 'getvalue', [ 'return' => "name", 'id' => $deltas['membership_type_id']['new']]);
     }
-    if(isset($deltas['membership_payment.payment_instrument'])){
-      $deltas['membership_payment.payment_instrument']['old'] =
-        $result = civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.payment_instrument']['old'], 'option_group_id' => "payment_instrument" ]);
-      $deltas['membership_payment.payment_instrument']['new'] =
-        $result = civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.payment_instrument']['new'], 'option_group_id' => "payment_instrument" ]);
+    if(isset($deltas['membership_payment.payment_instrument']['old']) && $deltas['membership_payment.payment_instrument']['old']){
+      civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.payment_instrument']['old'], 'option_group_id' => "payment_instrument" ]);
+    }
+    if(isset($deltas['membership_payment.payment_instrument']['new']) && $deltas['membership_payment.payment_instrument']['new']){
+      civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.payment_instrument']['new'], 'option_group_id' => "payment_instrument" ]);
     }
 
     $abbrevations['membership_type_id']='type';
@@ -261,7 +260,7 @@ class CRM_Contract_Handler_Contract{
     switch($this->modificationClass->getAction()){
       case 'update':
       case 'revive':{
-        $subjectLine = "id{$this->endState[id]}: ";
+        $subjectLine = "id{$this->endState['id']}: ";
         foreach($deltas as $key => $delta){
           $changesText[] = "{$abbrevations[$key]} {$delta['old']} to {$delta['new']}";
         }
@@ -269,14 +268,14 @@ class CRM_Contract_Handler_Contract{
         break;
       }
       case 'sign':
-        $subjectLine = "id{$this->endState[id]}: ";
+        $subjectLine = "id{$this->endState['id']}: ";
         foreach($deltas as $key => $delta){
           $additionsText[] = "{$abbrevations[$key]} {$delta['new']}";
         }
         $subjectLine .= implode(', ', $additionsText);
         break;
       case 'cancel':
-        $subjectLine = "id{$this->endState[id]}: ";
+        $subjectLine = "id{$this->endState['id']}: ";
         $cancelDate = new DateTime($this->modificationActivity['activity_date_time']);
         // $cancelText[] = 'cancel date '.$cancelDate->format('d/m/Y');
         $cancelText[] = 'cancel reason '.$this->modificationActivity[CRM_Contract_Utils::getCustomFieldId('contract_cancellation.contact_history_cancel_reason')];
@@ -284,11 +283,11 @@ class CRM_Contract_Handler_Contract{
         break;
       case 'pause':
         $resumeDate = DateTime::createFromFormat('Y-m-d', $this->params['resume_date']);
-        $subjectLine = "id{$this->endState[id]}: resume scheduled {$resumeDate->format('d/m/Y')}";
+        $subjectLine = "id{$this->endState['id']}: resume scheduled {$resumeDate->format('d/m/Y')}";
         break;
       case 'resume':
         // var_dump($this->modificationActivity['activity_date_time']);
-        $subjectLine = "id{$this->endState[id]}";
+        $subjectLine = "id{$this->endState['id']}";
         break;
     }
     return $subjectLine;
@@ -334,6 +333,14 @@ class CRM_Contract_Handler_Contract{
       }
     }
 
+    // If a custom field has two underscores, remove the last underscore
+    foreach($params as $key => $param){
+      if(preg_match("/(custom_\d+)_\d+/", $key, $matches)){
+        unset($params[$key]);
+        $params[$matches[1]] = $param;
+      }
+    }
+
     // Get a definitive list of core and custom fields
     foreach(civicrm_api3('membership', 'getfields')['values'] as $mf){
       if(isset($mf['where']) || isset($mf['extends'])){
@@ -359,6 +366,12 @@ class CRM_Contract_Handler_Contract{
       }
     }
 
+    foreach(['join_date', 'start_date', 'end_date'] as $event){
+      if(is_numeric($params[$event]) && strlen($params[$event]) == 14){
+        $date = DateTime::createFromFormat('Ymdhis', $params[$event]);
+        $params[$event] = $date->format('Y-m-d');
+      }
+    }
     return $params;
   }
 

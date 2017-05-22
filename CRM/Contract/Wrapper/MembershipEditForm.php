@@ -18,6 +18,7 @@
 class CRM_Contract_Wrapper_MembershipEditForm{
 
   private static $_singleton;
+  private $errors = [];
 
 
   public static function singleton() {
@@ -31,8 +32,19 @@ class CRM_Contract_Wrapper_MembershipEditForm{
     $this->form = $form;
     $this->handler = new CRM_Contract_Handler_Contract;
     $this->handler->setStartState($id);
-    $params['membership_type_id'] = $params['membership_type_id'][1]; //TODO Is this always 1?!
-    $this->handler->setParams($this->normaliseParams($params));
+
+    // Date formats are returned in a WEIRD format...
+    $joinDate = DateTime::createFromFormat('m/d/Y', $params['join_date']);
+    $startDate = DateTime::createFromFormat('m/d/Y', $params['start_date']);
+    $endDate = DateTime::createFromFormat('m/d/Y', $params['end_date']);
+    $params['join_date'] = $joinDate->format('Y-m-d');
+    $params['start_date'] = $startDate->format('Y-m-d');
+    $params['end_date'] = $endDate->format('Y-m-d');
+
+    // In theory, the membership form is designed to take more than one
+    // membership. We only ever use it with one.
+    $params['membership_type_id'] = $params['membership_type_id'][1];
+    $this->handler->setParams($params);
     if(!$this->handler->isValid()){
       $this->errors=$this->handler->getErrors();
     }
@@ -40,12 +52,19 @@ class CRM_Contract_Wrapper_MembershipEditForm{
 
   public function getErrors(){
     if(count($this->errors)){
+      foreach($this->errors as $key => $error){
+        if(strpos($key, '.')){
+          unset($this->errors[$key]);
+          $this->errors[CRM_Contract_Utils::getCustomFieldId($key)] = $error;
+        }
+      }
+
       // We have to add the number back onto the custom field id
       foreach($this->errors as $key => $message){
         if(!isset($this->form->_elementIndex[$key])){
           // If it isn't in the element index, presume it is a custom field
           // with the end missing and find the appropriate key for it.
-          foreach($form->_elementIndex as $element => $discard){
+          foreach($this->form->_elementIndex as $element => $discard){
             if(strpos($element, $key) === 0){
               $this->errors[$element] = $message;
               unset($this->errors[$key]);

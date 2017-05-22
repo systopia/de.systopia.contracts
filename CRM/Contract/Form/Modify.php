@@ -166,8 +166,8 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     //If the date was set, convert it to the necessary format
     if($submitted['activity_date']){
       $activityDate = DateTime::createFromFormat('m/d/Y', $submitted['activity_date']);
+      $params['date'] = $activityDate->format('Y-m-d');
     }
-    $params['date'] = $activityDate->format('Y-m-d');
 
 
     // If this is an update or a revival
