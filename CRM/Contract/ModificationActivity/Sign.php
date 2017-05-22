@@ -24,6 +24,11 @@ class CRM_Contract_ModificationActivity_Sign extends CRM_Contract_ModificationAc
   function getAction(){
     return 'sign';
   }
+
+  function getGerund(){
+    return 'siging';
+  }
+
   function getResult(){
     return 'signed';
   }

@@ -24,6 +24,11 @@ class CRM_Contract_ModificationActivity_Revive extends CRM_Contract_Modification
   function getAction(){
     return 'revive';
   }
+
+  function getGerund(){
+    return 'reviving';
+  }
+
   function getResult(){
     return 'revived';
   }

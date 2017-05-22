@@ -24,6 +24,11 @@ class CRM_Contract_ModificationActivity_Resume extends CRM_Contract_Modification
   function getAction(){
     return 'resume';
   }
+
+  function getGerund(){
+    return 'resuming';
+  }
+
   function getResult(){
     return 'resumed';
   }

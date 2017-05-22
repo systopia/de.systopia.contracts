@@ -28,6 +28,11 @@ class CRM_Contract_ModificationActivity_Update extends CRM_Contract_Modification
   function getAction(){
     return 'update';
   }
+
+  function getGerund(){
+    return 'updating';
+  }
+
   function getResult(){
     return 'updated';
   }

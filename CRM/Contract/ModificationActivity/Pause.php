@@ -27,6 +27,11 @@ class CRM_Contract_ModificationActivity_Pause extends CRM_Contract_ModificationA
   function getAction(){
     return 'pause';
   }
+
+function getGerund(){
+  return 'pausing';
+}
+
   function getResult(){
     return 'paused';
   }

@@ -47,17 +47,16 @@ class CRM_Contract_ModificationActivity{
   }
 
   function checkAllowed(){
-
     foreach($this->params as $key => $param){
       if(!in_array($key, $this->allowed)){
-        $this->errors[$key] = "Cannot update '{$key}' when a contract is {$this->getResult()}";
+        $this->errors[$key] = "Cannot update '{$key}' when {$this->getGerund()} a contract";
       }
     }
   }
   function checkRequired(){
     foreach($this->required as $required){
       if(!isset($this->params[$required])){
-        $this->errors[$required] = "'{$required}' is required when a contract is {$this->getResult()}";
+        $this->errors[$required] = "'{$required}' is required when {$this->getGerund()} a contract";
       }
     }
   }

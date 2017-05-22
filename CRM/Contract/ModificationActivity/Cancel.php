@@ -28,6 +28,11 @@ class CRM_Contract_ModificationActivity_Cancel extends CRM_Contract_Modification
   function getAction(){
     return 'cancel';
   }
+
+  function getGerund(){
+    return 'cancelling';
+  }
+
   function getResult(){
     return 'canceled';
   }
