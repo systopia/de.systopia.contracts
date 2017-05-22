@@ -63,6 +63,17 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
   }
 
+
+  function validate(){
+    $submitted = $this->exportValues();
+    $activityDate = DateTime::createFromFormat('m/d/Y', $submitted['activity_date']);
+    $resumeDate = DateTime::createFromFormat('m/d/Y', $submitted['resume_date']);
+    if($activityDate > $resumeDate){
+       HTML_QuickForm::setElementError ( 'resume_date', 'Resume date must be after the scheduled pause date');
+    }
+    parent::validate();
+  }
+
   function buildQuickForm(){
 
     // Add fields that are present on all contact history forms
@@ -126,6 +137,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     foreach(civicrm_api3('OptionValue', 'get', ['option_group_id' => "contract_cancel_reason"])['values'] as $cancelReason){
       $cancelOptions[$cancelReason['value']] = $cancelReason['label'];
     };
+    $this->addRule('activity_date', 'Scheduled date is required for a cancellation', 'required');
     $this->add('select', 'cancel_reason', ts('Cancellation reason'), array('' => '- none -') + $cancelOptions, true, array('class' => 'crm-select2'));
 
   }
