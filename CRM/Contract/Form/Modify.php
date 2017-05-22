@@ -151,6 +151,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
   }
 
   //TODO Validate that the date, if entered, is tomorrow or later
+  //TODO Validate that the resume date, if entered, is after the scheduled date
 
   function postProcess(){
 
@@ -159,9 +160,15 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     $submitted = $this->exportValues();
     $params['id'] = $this->get('id');
     $params['action'] = $this->modificationActivity->getAction();
-    $params['date'] = $submitted['activity_date'];
     $params['medium_id'] = $submitted['activity_medium'];
     $params['note'] = $submitted['activity_details'];
+
+    //If the date was set, convert it to the necessary format
+    if($submitted['activity_date']){
+      $activityDate = DateTime::createFromFormat('m/d/Y', $submitted['activity_date']);
+    }
+    $params['date'] = $activityDate->format('Y-m-d');
+
 
     // If this is an update or a revival
     if(in_array($this->modificationActivity->getAction(), array('update', 'revive'))){
@@ -175,9 +182,9 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     // If this is a pause
     }elseif($this->modificationActivity->getAction() == 'pause'){
-      $params['resume_date'] = $submitted['resume_date'];
+      $resumeDate = DateTime::createFromFormat('m/d/Y', $submitted['resume_date']);
+      $params['resume_date'] = $resumeDate->format('Y-m-d');
     }
-
     civicrm_api3('contract', 'modify', $params);
   }
 }
