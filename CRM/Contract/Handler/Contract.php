@@ -110,7 +110,6 @@ class CRM_Contract_Handler_Contract{
   // modification has been done already and you just want to do the things that need
   // to happen afterwards
   function postModify(){
-
     //update derived fields
     $this->updateDerivedFields();
 
@@ -198,10 +197,16 @@ class CRM_Contract_Handler_Contract{
   }
 
   private function getModificationActivityParams(){
+
     $params['status_id'] = 'Completed';
     $params['activity_type_id'] = $this->modificationClass->getActivityType();
     $params['subject'] = $this->getSubjectLine();
 
+    $session = CRM_Core_Session::singleton();
+    if(!$sourceContactId = $session->getLoggedInContactID()){
+      $sourceContactId = 1;
+    }
+    $params['source_contact_id'] = $sourceContactId;
     // If the annual amount changed, calculate the difference
     if(isset($this->deltas['membership_payment.membership_annual'])){
       $params[CRM_Contract_Utils::getCustomFieldId('contract_updates.ch_annual_diff')] =
@@ -232,11 +237,11 @@ class CRM_Contract_Handler_Contract{
       unset($deltas['status_id']);
     }
     // Create user friendly delta text
-    if(isset($deltas['membership_type_id'])){
-      $deltas['membership_type_id']['old'] =
-        $result = civicrm_api3('MembershipType', 'getvalue', [ 'return' => "name", 'id' => $deltas['membership_type_id']['old']]);
-      $deltas['membership_type_id']['new'] =
-        $result = civicrm_api3('MembershipType', 'getvalue', [ 'return' => "name", 'id' => $deltas['membership_type_id']['new']]);
+    if($deltas['membership_type_id']['old']){
+      $deltas['membership_type_id']['old'] = $result = civicrm_api3('MembershipType', 'getvalue', [ 'return' => "name", 'id' => $deltas['membership_type_id']['old']]);
+    }
+    if($deltas['membership_type_id']['new']){
+      $deltas['membership_type_id']['new'] = $result = civicrm_api3('MembershipType', 'getvalue', [ 'return' => "name", 'id' => $deltas['membership_type_id']['new']]);
     }
     if(isset($deltas['membership_payment.payment_instrument'])){
       $deltas['membership_payment.payment_instrument']['old'] =
