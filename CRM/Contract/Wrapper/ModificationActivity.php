@@ -13,8 +13,8 @@ class CRM_Contract_Wrapper_ModificationActivity{
 
   public function toApiOutput($apiRequest, $result){
 
-    // Extract the activity from the result
-    $this->activity = $result['values'][$result['id']];
+    // API get the activity again to ensure that we get custom data
+    $this->activity = civicrm_api3('Activity', 'getsingle', ['id' => $result['id']]);
     if(
       // It is scheduled...
       ($this->activity['status_id'] == civicrm_api3('OptionValue', 'getvalue', ['return' => "value", 'option_group_id' => "activity_status", 'name' => "scheduled"])['result']) &&
