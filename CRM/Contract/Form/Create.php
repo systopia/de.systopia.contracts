@@ -79,8 +79,8 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
 
   function setDefaults($defaultValues = null, $filter = null){
 
-    list($defaults['join_date'], $defaults['cancel_date_time']) = CRM_Utils_Date::setDateDefaults(NULL, 'activityDateTime');
-    list($defaults['start_date'], $defaults['start_date']) = CRM_Utils_Date::setDateDefaults(NULL, 'activityDateTime');
+    list($defaults['join_date'], $null) = CRM_Utils_Date::setDateDefaults(NULL, 'activityDateTime');
+    list($defaults['start_date'], $null) = CRM_Utils_Date::setDateDefaults(NULL, 'activityDateTime');
 
     parent::setDefaults($defaults);
   }

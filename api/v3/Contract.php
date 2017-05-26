@@ -33,12 +33,14 @@ function civicrm_api3_Contract_modify($params){
     throw new Exception('Please include an action parameter with this API call');
   }
 
-  // Throw an exception if the date is in the past. Rational:
-  // This model requires being able to compare the pre and post state of the
-  // contract to create accurate changes. It would require a lot of logic and
-  // manipulation of existing data to be able add modifications retrospectivley.
+  // Throw an exception if the date is < today, i.e. any time yesterday or
+  // before as this model requires being able to compare the pre and post state
+  // of the contract to create accurate changes. It would require a lot of logic
+  // and manipulation of existing data to be able add modifications
+  // retrospectivley.
+
   $date = new DateTime(isset($params['date']) ? $params['date'] : '');
-  if($date < new DateTime()){
+  if($date < DateTime::createFromFormat('Y-m-d H:i:s', date_format(new DateTime(''), 'Y-m-d 00:00:00'))){
     throw new Exception("'date' must either be in the future, or absent if you want to execute the modification immediatley.");
   }
 

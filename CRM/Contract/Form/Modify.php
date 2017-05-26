@@ -58,29 +58,12 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
   }
 
-
-  function validate(){
-
-    //TODO Validate that the date, if entered, is tomorrow or later
-
-    if($this->modificationActivity->getAction() == 'pause'){
-      $submitted = $this->exportValues();
-      $activityDate = DateTime::createFromFormat('m/d/Y', $submitted['activity_date']);
-      $resumeDate = DateTime::createFromFormat('m/d/Y', $submitted['resume_date']);
-      if($activityDate > $resumeDate){
-        HTML_QuickForm::setElementError ( 'resume_date', 'Resume date must be after the scheduled pause date');
-      }
-    }
-
-    return parent::validate();
-  }
-
   function buildQuickForm(){
 
     // Add fields that are present on all contact history forms
 
     // Add the date that this update should take effect (leave blank for now)
-    $this->addDate('activity_date', ts('Schedule date'), FALSE);
+    $this->addDate('activity_date', ts('Schedule date'), TRUE);
 
     // Add the interaction medium
     foreach(civicrm_api3('Activity', 'getoptions', ['field' => "activity_medium_id"])['values'] as $key => $value){
@@ -159,7 +142,30 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       $defaults['campaign_id'] = $this->membership['campaign_id'];
     }
 
+    list($defaults['activity_date'], $null) = CRM_Utils_Date::setDateDefaults(NULL, 'activityDate');
+
+
     parent::setDefaults($defaults);
+  }
+
+  function validate(){
+
+    $submitted = $this->exportValues();
+
+    $date = DateTime::createFromFormat('m/d/Y', $submitted['activity_date']);
+    if($date < DateTime::createFromFormat('Y-m-d H:i:s', date_format(new DateTime(''), 'Y-m-d 00:00:00'))){
+      HTML_QuickForm::setElementError ( 'activity_date', 'Activity date must be either today (i.e. make the change now) or in the future');
+    }
+
+    if($this->modificationActivity->getAction() == 'pause'){
+      $activityDate = DateTime::createFromFormat('m/d/Y', $submitted['activity_date']);
+      $resumeDate = DateTime::createFromFormat('m/d/Y', $submitted['resume_date']);
+      if($activityDate > $resumeDate){
+        HTML_QuickForm::setElementError ( 'resume_date', 'Resume date must be after the scheduled pause date');
+      }
+    }
+
+    return parent::validate();
   }
 
   function postProcess(){
