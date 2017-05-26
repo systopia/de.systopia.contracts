@@ -60,13 +60,19 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
 
   function validate(){
-    $submitted = $this->exportValues();
-    $activityDate = DateTime::createFromFormat('m/d/Y', $submitted['activity_date']);
-    $resumeDate = DateTime::createFromFormat('m/d/Y', $submitted['resume_date']);
-    if($activityDate > $resumeDate){
-       HTML_QuickForm::setElementError ( 'resume_date', 'Resume date must be after the scheduled pause date');
+
+    //TODO Validate that the date, if entered, is tomorrow or later
+
+    if($this->modificationActivity->getAction() == 'pause'){
+      $submitted = $this->exportValues();
+      $activityDate = DateTime::createFromFormat('m/d/Y', $submitted['activity_date']);
+      $resumeDate = DateTime::createFromFormat('m/d/Y', $submitted['resume_date']);
+      if($activityDate > $resumeDate){
+        HTML_QuickForm::setElementError ( 'resume_date', 'Resume date must be after the scheduled pause date');
+      }
     }
-    parent::validate();
+
+    return parent::validate();
   }
 
   function buildQuickForm(){
@@ -100,7 +106,6 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     ));
 
     $this->setDefaults();
-
   }
 
   // Note: also used for revive
@@ -156,9 +161,6 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     parent::setDefaults($defaults);
   }
-
-  //TODO Validate that the date, if entered, is tomorrow or later
-  //TODO Validate that the resume date, if entered, is after the scheduled date
 
   function postProcess(){
 
