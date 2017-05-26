@@ -144,7 +144,7 @@ class CRM_Contract_Handler_Contract{
         'entity_id' => $contributionRecur['id']
       ));
       if($sepaMandateResult['count'] == 1){
-        $sepaMandate = $sepaMandate['values'][$sepaMandate['id']];
+        $sepaMandate = $sepaMandateResult['values'][$sepaMandateResult['id']];
         $this->params['membership_payment.from_ba'] = $this->getBankAccountIdFromIban($sepaMandate['iban']); // TODO I *THINK* we are waiting on Björn for this functionality - need to confirm
         $this->params['membership_payment.to_ba'] = $this->getBankAccountIdFromIban($this->getCreditorIban($sepaMandate['creditor_id']));
       }
@@ -252,7 +252,8 @@ class CRM_Contract_Handler_Contract{
     $abbrevations['membership_type_id']='type';
     $abbrevations['membership_payment.membership_recurring_contribution']='rc id';
     $abbrevations['membership_payment.membership_annual']='amt.';
-    $abbrevations['membership_payment.membership_freq']='freq.';
+    $abbrevations['membership_payment.membership_frequency']='freq.';
+    $abbrevations['membership_payment.to_ba']='gp iban';
     $abbrevations['membership_payment.from_ba']='member iban';
     $abbrevations['membership_payment.cycle_day']='cycle day';
     $abbrevations['membership_payment.payment_instrument']='payment method';
@@ -367,7 +368,7 @@ class CRM_Contract_Handler_Contract{
     }
 
     foreach(['join_date', 'start_date', 'end_date'] as $event){
-      if(is_numeric($params[$event]) && strlen($params[$event]) == 14){
+      if(isset($params[$event]) && is_numeric($params[$event]) && strlen($params[$event]) == 14){
         $date = DateTime::createFromFormat('Ymdhis', $params[$event]);
         $params[$event] = $date->format('Y-m-d');
       }

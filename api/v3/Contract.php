@@ -37,7 +37,7 @@ function civicrm_api3_Contract_modify($params){
   // This model requires being able to compare the pre and post state of the
   // contract to create accurate changes. It would require a lot of logic and
   // manipulation of existing data to be able add modifications retrospectivley.
-  $date = new DateTime($params['date']);
+  $date = new DateTime(isset($params['date']) ? $params['date'] : '');
   if($date < new DateTime()){
     throw new Exception("'date' must either be in the future, or absent if you want to execute the modification immediatley.");
   }
@@ -47,7 +47,7 @@ function civicrm_api3_Contract_modify($params){
   // Start populating the activity parameters
   $activityParams['status_id'] = 'scheduled';
   $activityParams['activity_type_id'] = $class->getActivityType();
-  $activityParams['activity_date_time'] = (new DateTime($params['date']))->format('Y-m-d H:i:s');
+  $activityParams['activity_date_time'] = $date->format('Y-m-d H:i:s');
   $activityParams['source_record_id'] = $params['id'];
   $activityParams['medium_id'] = $params['medium_id'];
   $activityParams['details'] = $params['note'];
