@@ -124,11 +124,11 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     };
     $this->add('select', 'membership_type_id', ts('Membership type'), array('' => '- none -') + $MembershipTypeOptions, true, array('class' => 'crm-select2'));
 
-    // Campaign (membership)
-    foreach(civicrm_api3('Campaign', 'get', [])['values'] as $campaign){
-      $campaignOptions[$campaign['id']] = $campaign['name'];
-    };
-    $this->add('select', 'campaign_id', ts('Campaign'), array('' => '- none -') + $campaignOptions, false, array('class' => 'crm-select2'));
+    // Campaign
+    $this->addEntityRef('campaign_id', ts('Campaign'), [
+      'entity' => 'campaign',
+      'placeholder' => ts('- none -')
+    ]);
   }
 
   function addCancelFields(){
