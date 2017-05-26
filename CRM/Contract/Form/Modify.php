@@ -24,11 +24,6 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     // Load the the contract to populate default form values
     try{
       $this->membership = civicrm_api3('Membership', 'getsingle', ['id' => $this->get('id')]);
-      // foreach($this->membership as $k => $v){
-      //   if(preg_match("/custom_\d+_\d+/", $k)){
-      //     unset($this->membership[$k]);
-      //   }
-      // }
     }catch(Exception $e){
       CRM_Core_Error::fatal('Not a valid contract ID');
     }
