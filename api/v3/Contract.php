@@ -116,6 +116,8 @@ function civicrm_api3_Contract_modify($params){
       }
   }
   $activityParams['source_contact_id'] = $sourceContactId;
-  civicrm_api3('Activity', 'create', $activityParams);
-  return civicrm_api3('membership', 'getsingle', ['id' => $params['id']]);
+  $activityResult = civicrm_api3('Activity', 'create', $activityParams);
+  $result['modification_activities_to_review'] = $activityResult['values']['modification_activities_to_review'];
+  $result['membership'] = civicrm_api3('membership', 'getsingle', ['id' => $params['id']]);
+  return civicrm_api3_create_success($result);
 }

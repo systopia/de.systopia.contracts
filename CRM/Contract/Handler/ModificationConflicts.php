@@ -27,7 +27,13 @@ class CRM_Contract_Handler_ModificationConflicts{
           'status_id' => 'needs review',
           'assignee_id' => $this->activityReviewerContactId
         ]);
+        $this->activitiesToReview[] = $scheduledModification['id'];
       }
     }
+  }
+
+  function getActivitiesToReview(){
+    //TODO we are missing one activity here, for some reason
+    return $this->activitiesToReview;
   }
 }

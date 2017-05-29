@@ -49,10 +49,14 @@ class CRM_Contract_Wrapper_ModificationActivity{
 
       // Check how many scheduled activities there are in the future for this
       // contract
-      var_dump();
       $handler = new CRM_Contract_Handler_ModificationConflicts;
       $handler->setContract($this->activity['source_record_id']);
       $handler->checkForConflicts($params['ignored_review_activities']);
+      $result['activity'] = $this->activity;
+      $result['modification_activities_to_review'] = $handler->getActivitiesToReview();
+      return civicrm_api3_create_success($result);
+
+
     }
 
     return $result;
