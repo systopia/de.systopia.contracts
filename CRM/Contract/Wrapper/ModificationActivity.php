@@ -15,7 +15,7 @@ class CRM_Contract_Wrapper_ModificationActivity{
 
     // API get the activity again to ensure that we get custom data
     $this->activity = civicrm_api3('Activity', 'getsingle', ['id' => $result['id']]);
-    $this->params = $apiRequest['params'];
+    $params = $apiRequest['params'];
 
     // Get the status to use in conditionals
     $status = civicrm_api3('OptionValue', 'getvalue', [ 'return' => "name", 'option_group_id' => "activity_status", 'value' => $this->activity['status_id']]);
@@ -35,7 +35,7 @@ class CRM_Contract_Wrapper_ModificationActivity{
       // If we are creating pause, we need pass the resume date through to
       // ensure that the resume activity is created as well
       if($handler->modificationClass->getAction() == 'pause'){
-        $contractParams['resume_date'] = $this->params['resume_date'];
+        $contractParams['resume_date'] = $params['resume_date'];
       }
       $handler->setParams($contractParams);
       if($handler->isValid()){
@@ -49,10 +49,10 @@ class CRM_Contract_Wrapper_ModificationActivity{
 
       // Check how many scheduled activities there are in the future for this
       // contract
-
+      var_dump();
       $handler = new CRM_Contract_Handler_ModificationConflicts;
       $handler->setContract($this->activity['source_record_id']);
-      $handler->checkForConflicts();
+      $handler->checkForConflicts($params['ignored_review_activities']);
     }
 
     return $result;

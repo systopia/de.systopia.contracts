@@ -40,13 +40,15 @@ function civicrm_api3_Job_executeScheduledContractModifications($params){
     // Pass the parameters of the change
     $handler->setParams(CRM_Contract_Handler_ModificationActivityHelper::getContractParams($scheduledActivity));
     if($handler->isValid()){
-      var_dump('Do the modification');
-      // $handler->modify();
-      // return $handler->getModificationActivity();
+      //TODO Might need/want to catch more exceptions here
+      $handler->modify();
+      $result['completed'][]=$scheduledActivity['id'];
     }else{
-      var_dump('Report the error');
-      throw new exception(implode($handler->getErrors(), ';'));
+      $scheduledActivity['status_id'] = 'Failed';
+      $scheduledActivity['details'] .= '<p><b>Errors</b></p>'.implode($handler->getErrors(), ';');
+      civicrm_api3('activity', 'create', $scheduledActivity);
+      $result['failed'][]=$scheduledActivity['id'];
     }
   }
-  return civicrm_api3_create_success();
+  return civicrm_api3_create_success($result);
 }
