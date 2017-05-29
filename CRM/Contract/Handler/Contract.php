@@ -64,7 +64,7 @@ class CRM_Contract_Handler_Contract{
 
   }
 
-  function isValid($errorsToIgnore){
+  function isValid($errorsToIgnore = []){
 
     // If the modification class is set already, i.e. it we set it when we set
     // the modification activity, then check that the status change is valid
