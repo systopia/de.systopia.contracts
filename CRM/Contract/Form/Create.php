@@ -95,7 +95,9 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     $params['membership_type_id'] = $submitted['membership_type_id'];
     $params['start_date'] = $submitted['start_date'];
     $params['join_date'] = $submitted['join_date'];
-    $params['end_date'] = $submitted['end_date'];
+    if($submitted['end_date']){
+      $params['end_date'] = $submitted['end_date'];
+    }
     $params['campaign_id'] = $submitted['campaign_id'];
 
     // 'Custom' fields
