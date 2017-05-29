@@ -23,13 +23,17 @@ function civicrm_api3_Job_executeScheduledContractModifications($params){
 
   $counter = 0;
 
-  // Ensure that you execute the scheduled updates in order
-  usort($scheduledActivities['values'], function($a, $b) {
-      return new DateTime($b['activity_date_time']) - new DateTime($a['activity_date_time']);
-  });
+  // Not sure why other sorting methods didn't work so going old school and
+  // sorting by timestamp
+  foreach($scheduledActivities['values'] as $k => $scheduledActivity){
+    unset($scheduledActivities['values'][$k]);
+    $scheduledActivities['values'][strtotime($scheduledActivity['activity_date_time'])] = $scheduledActivity;
+  }
+  ksort($scheduledActivities['values']);
+
 
   foreach($scheduledActivities['values'] as $scheduledActivity){
-
+    $result['order'][]=$scheduledActivity['id'];
     // If the limit parameter has been passed, only process $params['limit']
     $counter++;
     if($counter > $limit){
