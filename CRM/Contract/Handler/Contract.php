@@ -64,7 +64,7 @@ class CRM_Contract_Handler_Contract{
 
   }
 
-  function isValid(){
+  function isValid($errorsToIgnore){
 
     // If the modification class is set already, i.e. it we set it when we set
     // the modification activity, then check that the status change is valid
@@ -85,6 +85,11 @@ class CRM_Contract_Handler_Contract{
       // If by this stage, we have been unable to find a valid modificationClass
       // this status change should not be allowed.
       $this->errors['status_id'] = "You cannot update contract status from {$this->startStatus} to {$this->proposedStatus}.";
+    }
+
+    // Used, for instance, when we want to process a handle a pause without specifying a resume
+    foreach($errorsToIgnore aS $e){
+      unset($this->errors[$e]);
     }
 
     return !count($this->errors);
@@ -283,12 +288,16 @@ class CRM_Contract_Handler_Contract{
         $subjectLine .= implode(', ', $cancelText);
         break;
       case 'pause':
-        $resumeDate = DateTime::createFromFormat('Y-m-d', $this->params['resume_date']);
-        $subjectLine = "id{$this->endState['id']}: resume scheduled {$resumeDate->format('d/m/Y')}";
+        if(isset($this->params['resume_date'])){
+          $resumeDate = DateTime::createFromFormat('Y-m-d', $this->params['resume_date']);
+          $subjectLine = "id{$this->endState['id']}: resume scheduled {$resumeDate->format('d/m/Y')}";
+        }else{
+          $subjectLine = "id{$this->endState['id']}.";
+        }
         break;
       case 'resume':
         // var_dump($this->modificationActivity['activity_date_time']);
-        $subjectLine = "id{$this->endState['id']}";
+        $subjectLine = "id{$this->endState['id']}.";
         break;
     }
     return $subjectLine;
