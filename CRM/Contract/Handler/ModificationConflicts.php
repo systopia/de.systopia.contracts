@@ -20,11 +20,7 @@ class CRM_Contract_Handler_ModificationConflicts{
       unset($this->scheduledModifications['values'][$id]);
     }
 
-    var_dump($ignored_activities);
-    var_dump($this->scheduledModifications);
-
     if(count($this->scheduledModifications['values']) > 1){
-      var_dump('there is something to review...');
       foreach($this->scheduledModifications['values'] as $scheduledModification){
         civicrm_api3('activity', 'create', [
           'id' => $scheduledModification['id'],
