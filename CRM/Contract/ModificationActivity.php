@@ -22,11 +22,12 @@ class CRM_Contract_ModificationActivity{
 
 
   function getActivityTypeId(){
-    return $result = civicrm_api3('OptionValue', 'getvalue', [
+    $result = civicrm_api3('OptionValue', 'getvalue', [
       'return' => "value",
       'option_group_id' => "activity_type",
       'name' => $this->getActivityType()
     ]);
+    return $result;
   }
 
   static function findByAction($action){

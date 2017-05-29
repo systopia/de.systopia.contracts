@@ -30,8 +30,14 @@ class CRM_Contract_Wrapper_ModificationActivity{
       $handler->setStartState($this->activity['source_record_id']);
       $handler->setModificationActivity($this->activity);
 
-      // Pass the parameters of the change
-      $handler->setParams($this->getContractParams());
+      // Get the parameters of the change
+      $contractParams = CRM_Contract_Handler_ModificationActivityHelper::getContractParams($this->activity);
+      // If we are creating pause, we need pass the resume date through to
+      // ensure that the resume activity is created as well
+      if($handler->modificationClass->getAction() == 'pause'){
+        $contractParams['resume_date'] = $this->params['resume_date'];
+      }
+      $handler->setParams($contractParams);
       if($handler->isValid()){
         $handler->modify();
         return $handler->getModificationActivity();
@@ -48,45 +54,7 @@ class CRM_Contract_Wrapper_ModificationActivity{
       $handler->setContract($this->activity['source_record_id']);
       $handler->checkForConflicts();
     }
+
     return $result;
   }
-
-  // Extract the parameters from the modification activities and put them into a
-  // format that the contract handler can understand
-  public function getContractParams(){
-    $params['id'] = $this->activity['source_record_id'];
-    $modificationClass = CRM_Contract_ModificationActivity::findById($this->activity['activity_type_id']);
-    $params['status_id'] = $modificationClass->getEndStatus();
-    switch($modificationClass->getAction()){
-      case 'update':
-      case 'revive':
-        if(isset($this->activity[CRM_Contract_Utils::contractToActivityCustomFieldId('membership_type_id')])){
-          $params['membership_type_id'] = $this->activity[CRM_Contract_Utils::contractToActivityCustomFieldId('membership_type_id')];
-        }
-        if(isset($this->activity['campaign_id'])){
-          $params['campaign_id'] = $this->activity['campaign_id'];
-        }
-        if(isset($this->activity[CRM_Contract_Utils::contractToActivityCustomFieldId('membership_payment.membership_recurring_contribution')])){
-          $params[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')] = $this->activity[CRM_Contract_Utils::contractToActivityCustomFieldId('membership_payment.membership_recurring_contribution')];
-        }
-        break;
-      case 'cancel':
-        if(isset($this->activity[CRM_Contract_Utils::contractToActivityCustomFieldId('membership_cancellation.membership_cancel_reason')])){
-          $params[CRM_Contract_Utils::getCustomFieldId('membership_cancellation.membership_cancel_reason')] = $this->activity[CRM_Contract_Utils::contractToActivityCustomFieldId('membership_cancellation.membership_cancel_reason')];
-        }
-        break;
-      case 'pause':
-      // We need to pass the resume date through
-        $params['resume_date'] = $this->params['resume_date'];
-    }
-
-    return $params;
-  }
 }
-
-
-
-
-
-
-// Load up extra parameters for the change depending on the change

@@ -1,6 +1,11 @@
 <?php
 class CRM_Contract_Handler_ModificationConflicts{
 
+  function __construct(){
+    $this->activityReviewerContactId = 2;
+  }
+
+
   function setContract($id){
     $this->contract = civicrm_api3('membership', 'getsingle', ['id' => $id]);
   }
@@ -14,7 +19,8 @@ class CRM_Contract_Handler_ModificationConflicts{
       foreach($this->scheduledModifications['values'] as $scheduledModification){
         civicrm_api3('activity', 'create', [
           'id' => $scheduledModification['id'],
-          'status_id' => 'needs review'
+          'status_id' => 'needs review',
+          'assignee_id' => $this->activityReviewerContactId
         ]);
       }
     }
