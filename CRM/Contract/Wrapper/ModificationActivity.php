@@ -47,10 +47,9 @@ class CRM_Contract_Wrapper_ModificationActivity{
     // Else if it is scheduled and (given the last if statement) in the future
     }elseif($status == 'Scheduled'){
 
-      // Check how many scheduled activities there are in the future for this
-      // contract
+      // Check if there are any potential conflicts with this modification
       $handler = new CRM_Contract_Handler_ModificationConflicts;
-      $handler->setContract($this->activity['source_record_id']);
+      $handler->setModificationActivity($this->activity);
       $handler->checkForConflicts($params['ignored_review_activities']);
       $result['activity'] = $this->activity;
       $result['modification_activities_to_review'] = $handler->getActivitiesToReview();

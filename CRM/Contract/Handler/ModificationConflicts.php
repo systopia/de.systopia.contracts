@@ -6,21 +6,24 @@ class CRM_Contract_Handler_ModificationConflicts{
   }
 
 
-  function setContract($id){
-    $this->contract = civicrm_api3('membership', 'getsingle', ['id' => $id]);
+  function setModificationActivity($activity){
+    $this->contract = civicrm_api3('membership', 'getsingle', ['id' => $activity['source_record_id']]);
+    $this->ModificationActivityId = $activity['id'];
   }
 
-  function checkForConflicts($ignored_activities){
+  function checkForConflicts($ignoredActivities){
+    $this->ignoredActivities = $ignoredActivities;
     $this->scheduledModifications = civicrm_api3('activity', 'get', [
       'source_record_id' => $this->contract['id'],
       'status_id' => ['IN' => ['scheduled', 'needs review']]
     ]);
 
-    foreach($ignored_activities as $id){
+    foreach($ignoredActivities as $id){
       unset($this->scheduledModifications['values'][$id]);
     }
 
     if(count($this->scheduledModifications['values']) > 1){
+      $this->activitiesToReview = $this->ignoredActivities;
       foreach($this->scheduledModifications['values'] as $scheduledModification){
         civicrm_api3('activity', 'create', [
           'id' => $scheduledModification['id'],
@@ -33,7 +36,6 @@ class CRM_Contract_Handler_ModificationConflicts{
   }
 
   function getActivitiesToReview(){
-    //TODO we are missing one activity here, for some reason
     return $this->activitiesToReview;
   }
 }
