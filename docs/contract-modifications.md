@@ -69,6 +69,10 @@ Note that if a contract is updated and no significant changes are made, then no 
 
 ## Multiple scheduled modifications
 
+Whenever a scheduled modification is created or edited, we check to see how many scheduled modifications are present.
+
+If there is more than one scheduled modification, we set the status of each  activity to needs review.
+
 If a user attempts to modify (or schedule a modification) to a contract via the UI, and one or more modifications are already scheduled, a warning message will appear alerting the user that there are modifications are already scheduled.
 
 If multiple modifications have been created and a user has not had the chance to acknowledge the warning (for example if it is been created via the API), then contract will be marked for review (how we implement the mark this is TBC - could be either with a scheduled review contract modifications activity or with a tag).
@@ -95,4 +99,4 @@ A Job.process_contract_updates process all scheduled updates.
 
 ## TODO creating a contract
 
-create 
+create

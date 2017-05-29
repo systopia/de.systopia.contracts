@@ -15,23 +15,19 @@ class CRM_Contract_Wrapper_ModificationActivity{
 
     // API get the activity again to ensure that we get custom data
     $this->activity = civicrm_api3('Activity', 'getsingle', ['id' => $result['id']]);
-
     $this->params = $apiRequest['params'];
-    if(
-      // It is scheduled...
-      ($this->activity['status_id'] == civicrm_api3('OptionValue', 'getvalue', ['return' => "value", 'option_group_id' => "activity_status", 'name' => "scheduled"])) &&
 
-      // ..and it is not scheduled for the future
-      DateTime::createFromFormat('Y-m-d H:i:s', $this->activity['activity_date_time']) <= new DateTime
-    ){
-      // Then modify the contract based on the activity
+    // Get the status to use in conditionals
+    $status = civicrm_api3('OptionValue', 'getvalue', [ 'return' => "name", 'option_group_id' => "activity_status", 'value' => $this->activity['status_id']]);
 
+    // Check to see whether the modification should be executed now (scheduled
+    // and not in the future), and if so, execute it now
+    if($status == 'Scheduled' && DateTime::createFromFormat('Y-m-d H:i:s', $this->activity['activity_date_time']) <= new DateTime('+5 seconds')){
       // Get a handler to do the heavy lifting
       $handler = new CRM_Contract_Handler_Contract;
 
       // Set the initial state of the handler
       $handler->setStartState($this->activity['source_record_id']);
-
       $handler->setModificationActivity($this->activity);
 
       // Pass the parameters of the change
@@ -42,6 +38,15 @@ class CRM_Contract_Wrapper_ModificationActivity{
       }else{
         throw new exception(implode($handler->getErrors(), ';'));
       }
+    // Else if it is scheduled and (given the last if statement) in the future
+    }elseif($status == 'Scheduled'){
+
+      // Check how many scheduled activities there are in the future for this
+      // contract
+
+      $handler = new CRM_Contract_Handler_ModificationConflicts;
+      $handler->setContract($this->activity['source_record_id']);
+      $handler->checkForConflicts();
     }
     return $result;
   }

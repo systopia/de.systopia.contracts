@@ -39,9 +39,17 @@ function civicrm_api3_Contract_modify($params){
   // and manipulation of existing data to be able add modifications
   // retrospectivley.
 
-  $date = new DateTime(isset($params['date']) ? $params['date'] : '');
-  if($date < DateTime::createFromFormat('Y-m-d H:i:s', date_format(new DateTime(''), 'Y-m-d 00:00:00'))){
-    throw new Exception("'date' must either be in the future, or absent if you want to execute the modification immediatley.");
+
+  if(isset($params['date'])){
+    $date = DateTime::createFromFormat('Y-m-d', $params['date']);
+    if(!$date || $date->getLastErrors()['warning_count']){
+      throw new Exception("Invalid format for date. Should be in 'Y-m-d' format, for example, '2000-12-31'");
+    }
+    if($date < DateTime::createFromFormat('Y-m-d H:i:s', date_format(new DateTime(''), 'Y-m-d 00:00:00'))){
+      throw new Exception("'date' must either be in the future, or absent if you want to execute the modification immediatley.");
+    }
+  }else{
+    $date = new DateTime;
   }
 
   // Find the appropriate activity type
@@ -91,7 +99,7 @@ function civicrm_api3_Contract_modify($params){
       if(isset($params['resume_date'])){
         $resumeDate = DateTime::createFromFormat('Y-m-d', $params['resume_date']);
         if($resumeDate->getLastErrors()['warning_count']){
-          throw new Exception("Invalid format for resume date. Should be in 'Y-m-d' format, for example, '2012-12-12'");
+          throw new Exception("Invalid format for resume date. Should be in 'Y-m-d' format, for example, '2000-12-31'");
         }
         civicrm_api3('Activity', 'create', [
           'status_id' => 'scheduled',
