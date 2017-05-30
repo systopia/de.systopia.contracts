@@ -65,10 +65,3 @@ function civicrm_api3_Job_executeScheduledContractModifications($params){
   }
   return civicrm_api3_create_success($result);
 }
-
-function civicrm_api3_Job_delacs(){
-  $activities = civicrm_api3('activity', 'get', ['option.limit' => 2000]);
-  foreach($activities['values'] as $v){
-    civicrm_api3('activity', 'delete', ['id' => $v['id']]);
-  }
-}

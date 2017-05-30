@@ -89,9 +89,9 @@ function contract_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
  */
-function contract_civicrm_managed(&$entities) {
-  _contract_civix_civicrm_managed($entities);
-}
+// function contract_civicrm_managed(&$entities) {
+//   _contract_civix_civicrm_managed($entities);
+// }
 
 /**
  * Implements hook_civicrm_alterSettingsFolders().
