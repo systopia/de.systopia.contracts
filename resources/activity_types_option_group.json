@@ -6,7 +6,7 @@
       "_lookup": ["name"],
       "_translate": ["label"],
       "name": "Contract_Signed",
-      "label": "Contract Signed",
+      "label": "Sign Contract",
       "filter": "0",
       "is_reserved": "1",
       "is_active": "1"
@@ -15,7 +15,7 @@
       "_lookup": ["name"],
       "_translate": ["label"],
       "name": "Contract_Paused",
-      "label": "Contract Paused",
+      "label": "Pause Contract",
       "filter": "0",
       "is_reserved": "1",
       "is_active": "1"
@@ -24,7 +24,7 @@
       "_lookup": ["name"],
       "_translate": ["label"],
       "name": "Contract_Resumed",
-      "label": "Contract Resumed",
+      "label": "Resume Contract",
       "filter": "0",
       "is_reserved": "1",
       "is_active": "1"
@@ -33,7 +33,7 @@
       "_lookup": ["name"],
       "_translate": ["label"],
       "name": "Contract_Updated",
-      "label": "Contract Updated",
+      "label": "Update Contract",
       "filter": "0",
       "is_reserved": "1",
       "is_active": "1"
@@ -42,7 +42,7 @@
       "_lookup": ["name"],
       "_translate": ["label"],
       "name": "Contract_Cancelled",
-      "label": "Contract Cancelled",
+      "label": "Cancel Contract",
       "filter": "0",
       "is_reserved": "1",
       "is_active": "1"
@@ -51,7 +51,7 @@
       "_lookup": ["name"],
       "_translate": ["label"],
       "name": "Contract_Revived",
-      "label": "Contract Revived",
+      "label": "Revive Contract",
       "filter": "0",
       "is_reserved": "1",
       "is_active": "1"
