@@ -14,7 +14,7 @@
 | written permission from the original author(s).        |
 +--------------------------------------------------------*/
 
-define(CUSTOM_DATA_HELPER_VERSION, '0.3.dev');
+define('CUSTOM_DATA_HELPER_VERSION', '0.3.dev');
 
 class CRM_Contract_CustomData {
 
@@ -27,6 +27,29 @@ class CRM_Contract_CustomData {
    $this->ts_domain = $ts_domain;
   }
 
+  /**
+  * will take a JSON source file and synchronise the
+  * generic entity data with those specs
+  */
+  public function syncEntities($source_file) {
+    $data = json_decode(file_get_contents($source_file), TRUE);
+    if (empty($data)) {
+       throw new Exception("syncOptionGroup::syncOptionGroup: Invalid specs");
+    }
+
+    foreach ($data['_entities'] as $entity_data) {
+       $this->translateStrings($entity_data);
+       $entity = $this->identifyEntity($data['entity'], $entity_data);
+
+       if (empty($entity)) {
+          // create OptionValue
+          $entity = $this->createEntity($data['entity'], $entity_data);
+       } else {
+          // update OptionValue
+          $this->updateEntity($data['entity'], $entity_data, $entity);
+       }
+    }
+  }
 
   /**
   * will take a JSON source file and synchronise the
@@ -128,7 +151,7 @@ class CRM_Contract_CustomData {
           return $lookup_result['values'][0];
        default:
           // more than one found
-          CRM_Core_Error::debug_log_message("bad lookup selector!");
+          CRM_Core_Error::debug_log_message("CustomDataHelper ({$this->ts_domain}): bad lookup selector!");
        case 0:
           // not found
           return NULL;
@@ -149,7 +172,7 @@ class CRM_Contract_CustomData {
        $lookup_query[$lookup_key] = $data[$lookup_key];
     }
 
-    CRM_Core_Error::debug_log_message("LOOKUP {$entity_type}: " . json_encode($lookup_query));
+    // CRM_Core_Error::debug_log_message("CustomDataHelper ({$this->ts_domain}): LOOKUP {$entity_type}: " . json_encode($lookup_query));
     $lookup_result = civicrm_api3($entity_type, 'get', $lookup_query);
     switch ($lookup_result['count']) {
        case 0:
@@ -162,7 +185,7 @@ class CRM_Contract_CustomData {
 
        default:
           // bad lookup selector
-          CRM_Core_Error::debug_log_message("bad lookup selector!");
+          CRM_Core_Error::debug_log_message("CustomDataHelper ({$this->ts_domain}): bad lookup selector!");
           return NULL;
     }
   }
@@ -179,7 +202,7 @@ class CRM_Contract_CustomData {
     }
 
     // then run query
-    CRM_Core_Error::debug_log_message("CREATE {$entity_type}: " . json_encode($data));
+    CRM_Core_Error::debug_log_message("CustomDataHelper ({$this->ts_domain}): CREATE {$entity_type}: " . json_encode($data));
     return civicrm_api3($entity_type, 'create', $data);
   }
 
@@ -214,7 +237,7 @@ class CRM_Contract_CustomData {
           }
        }
 
-       CRM_Core_Error::debug_log_message("UPDATE {$entity_type}: " . json_encode($update_query));
+       CRM_Core_Error::debug_log_message("CustomDataHelper ({$this->ts_domain}): UPDATE {$entity_type}: " . json_encode($update_query));
        return civicrm_api3($entity_type, 'create', $update_query);
     } else {
        return NULL;
@@ -225,6 +248,7 @@ class CRM_Contract_CustomData {
   * translate all fields that are listed in the _translate list
   */
   protected function translateStrings(&$data) {
+    if (empty($data['_translate'])) return;
     foreach ($data['_translate'] as $translate_key) {
        $value = $data[$translate_key];
        if (is_string($value)) {
