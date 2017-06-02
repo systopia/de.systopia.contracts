@@ -5,11 +5,9 @@
     {
       "_lookup": ["name"],
       "_translate": ["label"],
-      "name": "Needs_Review",
+      "name": "Needs Review",
       "label": "Needs Review",
       "filter": "0",
-      "value": "100",
-      "weight": "10",
       "is_reserved": "1",
       "is_active": "1"
     },
@@ -18,9 +16,7 @@
       "_translate": ["label"],
       "name": "Failed",
       "label": "Failed",
-      "value": "101",
       "filter": "0",
-      "weight": "11",
       "is_reserved": "1",
       "is_active": "1"
     }
