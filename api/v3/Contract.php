@@ -120,7 +120,6 @@ function civicrm_api3_Contract_modify($params){
       'activity_date_time' => $resumeDate->format('Y-m-d H:i:s')
     ]);
   }
-  $result['modification_activities_to_review'] = $activityResult['values']['modification_activities_to_review'];
   $result['membership'] = civicrm_api3('membership', 'getsingle', ['id' => $params['id']]);
   return civicrm_api3_create_success($result);
 }

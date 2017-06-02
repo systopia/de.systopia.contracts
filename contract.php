@@ -208,20 +208,41 @@ function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &
 }
 
 function contract_civicrm_pre($op, $objectName, $id, &$params){
-  // Wrap calls to the Membership BAO
+
+  // Using elseif would save *some* resources but make the code more brittle
+  // since the comparisons are a little involved and may change over time.
+  // Lets keep them independent by just using ifs
+
+  // Wrap calls to the Membership BAO so we can reverse engineer modification
+  // activities if necessary
   if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
-    $wrapper = CRM_Contract_Wrapper_MembershipBAO::singleton();
-    $wrapper->pre($op, $id, $params);
+    $wrapperMembership = CRM_Contract_Wrapper_Membership::singleton();
+    $wrapperMembership->pre($op, $id, $params);
+  }
+
+  // Wrap calles to the Activity BAO so we can execute contract modifications
+  // and check for potential conflicts as appropriate
+
+  if($objectName == 'Activity'){
+    $wrapperModificationActivity = CRM_Contract_Wrapper_ModificationActivity::singleton();
+    $wrapperModificationActivity->pre($op, $params);
   }
 }
 
 function contract_civicrm_post($op, $objectName, $id, &$objectRef){
 
-  // Wrap calls to the Membership BAO
-  if($objectName == 'Membership')
-    if(in_array($op, array('create', 'edit'))){
-      $wrapper = CRM_Contract_Wrapper_MembershipBAO::singleton();
-      $wrapper->post();
+  // Wrap calls to the Membership BAO so we can reverse engineer modification
+  // activities if necessary
+  if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
+    $wrapperMembership = CRM_Contract_Wrapper_Membership::singleton();
+    $wrapperMembership->post();
+  }
+
+  // Wrap calles to the Activity BAO to execute contract
+  // modifications and check when appropriate
+  if($objectName == 'Activity'){
+    $wrapperModificationActivity = CRM_Contract_Wrapper_ModificationActivity::singleton();
+    $wrapperModificationActivity->post($id, $objectRef);
   }
 
   // Delete build in membership log activities
@@ -229,14 +250,5 @@ function contract_civicrm_post($op, $objectName, $id, &$objectRef){
     if($op == 'create' && in_array($objectRef->activity_type_id, CRM_Contract_Utils::getCoreMembershipHistoryActivityIds())){
       civicrm_api3('Activity', 'delete', array('id' => $id));
     }
-  }
-}
-
-// In an effort to keep this file small, we only add simple conditionals to API
-// wrappers here. Further filtering should happen in the API wrapper class.
-function contract_civicrm_apiWrappers(&$wrappers, $apiRequest) {
-  if( $apiRequest['entity'] == 'Activity' && $apiRequest['action'] == 'create' && in_array($apiRequest['params']['activity_type_id'], CRM_Contract_ModificationActivity::getModificationActivityTypeIds())
-  ){
-    $wrappers[] = new CRM_Contract_Wrapper_ModificationActivity;
   }
 }

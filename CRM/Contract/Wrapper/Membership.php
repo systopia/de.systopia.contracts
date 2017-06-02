@@ -15,7 +15,7 @@
 * CRM_Contract_Handler_Contract::usingActivityData method as otherwise we
 * would create duplicate modify contract activities.
 */
-class CRM_Contract_Wrapper_MembershipBAO{
+class CRM_Contract_Wrapper_Membership{
 
   private static $_singleton;
 
@@ -25,7 +25,7 @@ class CRM_Contract_Wrapper_MembershipBAO{
 
   public static function singleton() {
     if (!self::$_singleton) {
-      self::$_singleton = new CRM_Contract_Wrapper_MembershipBAO();
+      self::$_singleton = new CRM_Contract_Wrapper_Membership();
     }
     return self::$_singleton;
   }

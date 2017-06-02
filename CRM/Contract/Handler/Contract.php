@@ -70,7 +70,7 @@ class CRM_Contract_Handler_Contract{
     // the modification activity, then check that the status change is valid
     if(isset($this->modificationClass)){
       if(!in_array($this->startStatus, $this->modificationClass->getStartStatuses())){
-        $this->errors['status_id'] = "Cannot {$this->modificationClass->getAction()} a contract with status '{$this->startStatus}'";
+        $this->errors['status_id'] = "Cannot {$this->modificationClass->getAction()} a contract when its status is {$this->startStatus}";
       }
     }else{
       $this->modificationClass = CRM_Contract_ModificationActivity::findByStatusChange($this->startStatus, $this->proposedStatus);
@@ -100,7 +100,6 @@ class CRM_Contract_Handler_Contract{
   }
 
   function modify(){
-
     // calculate derived fields
     // Setting skip_handler to true  avoids us 'handling the already handled' call
     $params = $this->params;
