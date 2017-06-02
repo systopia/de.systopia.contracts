@@ -1,0 +1,74 @@
+{
+  "_lookup": ["name"],
+  "name": "payment_frequency",
+  "_translate": ["title", "description"],
+  "title": "Payment Intervals",
+  "description": "The value describes the payment interval in months",
+  "is_reserved": "0",
+  "is_active": "1",
+  "_values": [
+    {
+      "_lookup": ["value"],
+      "_translate": ["label"],
+      "label": "one-off",
+      "filter": "0",
+      "value": "0",
+      "is_reserved": "0",
+      "is_active": "1"
+    },
+    {
+      "_lookup": ["value"],
+      "_translate": ["label"],
+      "label": "annually",
+      "filter": "0",
+      "value": "1",
+      "is_reserved": "0",
+      "is_active": "1"
+    },
+    {
+      "_lookup": ["value"],
+      "_translate": ["label"],
+      "label": "semi-annually",
+      "filter": "0",
+      "value": "2",
+      "is_reserved": "0",
+      "is_active": "1"
+    },
+    {
+      "_lookup": ["value"],
+      "_translate": ["label"],
+      "label": "trimestral",
+      "filter": "0",
+      "value": "3",
+      "is_reserved": "0",
+      "is_active": "0"
+    },
+    {
+      "_lookup": ["value"],
+      "_translate": ["label"],
+      "label": "quarterly",
+      "filter": "0",
+      "value": "4",
+      "is_reserved": "0",
+      "is_active": "1"
+    },
+    {
+      "_lookup": ["value"],
+      "_translate": ["label"],
+      "label": "bi-monthly",
+      "filter": "0",
+      "value": "6",
+      "is_reserved": "0",
+      "is_active": "1"
+    },
+    {
+      "_lookup": ["value"],
+      "_translate": ["label"],
+      "label": "monthly",
+      "filter": "0",
+      "value": "12",
+      "is_reserved": "0",
+      "is_active": "1"
+    }
+  ]
+}
