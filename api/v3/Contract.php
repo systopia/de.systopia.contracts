@@ -102,14 +102,6 @@ function civicrm_api3_Contract_modify($params){
         if($resumeDate->getLastErrors()['warning_count']){
           throw new Exception("Invalid format for resume date. Should be in 'Y-m-d' format, for example, '2000-12-31'");
         }
-        $resumeActivity = civicrm_api3('Activity', 'create', [
-          'status_id' => 'scheduled',
-          'source_record_id' => $params['id'],
-          'activity_type_id' => 'Contract_Resumed',
-          'target_contact_id' => $membershipParams['contact_id'],
-          'source_contact_id' => $sourceContactId,
-          'activity_date_time' => $resumeDate->format('Y-m-d H:i:s')
-        ]);
         $activityParams['resume_date'] = $params['resume_date'];
         $activityParams['ignored_review_activities'][] = $resumeActivity['id'];
       }else{
@@ -118,6 +110,16 @@ function civicrm_api3_Contract_modify($params){
   }
   $activityParams['source_contact_id'] = $sourceContactId;
   $activityResult = civicrm_api3('Activity', 'create', $activityParams);
+  if($class->getAction() == 'pause'){
+    $resumeActivity = civicrm_api3('Activity', 'create', [
+      'status_id' => 'scheduled',
+      'source_record_id' => $params['id'],
+      'activity_type_id' => 'Contract_Resumed',
+      'target_contact_id' => $membershipParams['contact_id'],
+      'source_contact_id' => $sourceContactId,
+      'activity_date_time' => $resumeDate->format('Y-m-d H:i:s')
+    ]);
+  }
   $result['modification_activities_to_review'] = $activityResult['values']['modification_activities_to_review'];
   $result['membership'] = civicrm_api3('membership', 'getsingle', ['id' => $params['id']]);
   return civicrm_api3_create_success($result);
