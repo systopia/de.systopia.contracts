@@ -26,10 +26,13 @@ function civicrm_api3_Job_executeScheduledContractModifications($params){
   // Not sure why other sorting methods didn't work so going old school and
   // sorting by timestamp
   foreach($scheduledActivities['values'] as $k => $scheduledActivity){
-    unset($scheduledActivities['values'][$k]);
-    $scheduledActivities['values'][strtotime($scheduledActivity['activity_date_time'])] = $scheduledActivity;
+    $scheduledActivities['values'][$k]['activity_date_unixtime'] = strtotime($scheduledModification['activity_date_time']);
   }
-  ksort($scheduledActivities['values']);
+  usort($scheduledActivities['values'], function($a, $b){
+    return $a['activity_date_unixtime'] - $b['activity_date_unixtime'];
+  });
+
+
 
 
   foreach($scheduledActivities['values'] as $scheduledActivity){
