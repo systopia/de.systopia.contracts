@@ -125,6 +125,11 @@ class CRM_Contract_Handler_Contract{
     }else{
       $this->createModificationActivity();
     }
+
+    // Check for conflicts in the scheduled contract modifications
+    $conflictHandler = new CRM_Contract_Handler_ModificationConflicts;
+    $conflictHandler->checkForConflicts($this->endState['id']);
+
   }
 
   // Some fields in the contract are derived from other fields. This function

@@ -134,13 +134,6 @@ class CRM_Contract_Wrapper_ModificationActivity{
       $this->reset();
       return;
     }
-    // ACTION: If the status changed from needs review to scheduled or cancelled
-    // presume that this was done intentionally and do not trigger any further
-    // checks for conflicts
-    if($this->startStatus == 'Needs Review' && ($this->endStatus == 'Scheduled' || $this->endStatus == 'Cancelled')){
-      $this->reset();
-      return;
-    }
 
     $conflictHandler = new CRM_Contract_Handler_ModificationConflicts;
     $conflictHandler->checkForConflicts($this->contractId);

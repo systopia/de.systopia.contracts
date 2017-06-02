@@ -82,7 +82,7 @@ class CRM_Contract_Handler_ModificationConflicts{
     $pauseActivity = current($this->scheduledModifications);
     $resumeActivityClass = CRM_Contract_ModificationActivity::findByAction('resume');
     $resumeActivity = next($this->scheduledModifications);
-    
+
     if(
       $pauseActivity['activity_type_id'] == $pauseActivityClass->getActivityTypeId() &&
       $resumeActivity['activity_type_id'] == $resumeActivityClass->getActivityTypeId()
