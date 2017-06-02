@@ -60,6 +60,16 @@ function contract_civicrm_uninstall() {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_enable
  */
 function contract_civicrm_enable() {
+  require_once 'CRM/Contract/CustomData.php';
+  $customData = new CRM_Contract_CustomData('de.systopia.contract');
+  $customData->syncOptionGroup(__DIR__ . '/resources/contract_cancel_reason_option_group.json');
+  $customData->syncOptionGroup(__DIR__ . '/resources/payment_frequency_option_group.json');
+  $customData->syncOptionGroup(__DIR__ . '/resources/activity_types_option_group.json');
+  $customData->syncOptionGroup(__DIR__ . '/resources/activity_status_option_group.json');
+  $customData->syncCustomGroup(__DIR__ . '/resources/contract_cancellation_custom_group.json');
+  $customData->syncCustomGroup(__DIR__ . '/resources/contract_updates_custom_group.json');
+  $customData->syncEntities(__DIR__ . '/resources/membership_status_entities.json');
+
   _contract_civix_civicrm_enable();
 }
 
