@@ -31,6 +31,7 @@ class CRM_Contract_Wrapper_Membership{
   }
 
   public function pre($op, $id, $params){
+
     $this->op = $op;
     $this->skip = isset($params['skip_handler']) && $params['skip_handler'];
     if($this->skip){
@@ -53,18 +54,11 @@ class CRM_Contract_Wrapper_Membership{
   }
 
   public function post($id){
+
     if($this->skip){
       return;
     }
-
-    // When a contract is created, we need to get the membership again in order
-    // to get all fields (during an update we backfill the start state with
-    // the parameters of the change but since there is no start state for a
-    // create, we set it now, once it has been created.
-    if($this->op == 'create'){
-      $this->handler->endState = $this->handler->normalise(civicrm_api3('Membership', 'getsingle', ['id' => $id]));
-    }
-
+    $this->handler->setEndState($id);
     // The contract wrapper skips actually making the change (as the membership
     // BAO call handles this). However, it still does the necessary postModify
     // tasks.

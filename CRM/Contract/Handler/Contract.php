@@ -55,7 +55,17 @@ class CRM_Contract_Handler_Contract{
   }
 
   function setEndState($id){
-    $this->endState = $this->normalise(civicrm_api3('Membership', 'getsingle', ['id' => $id]));
+
+    // Unfortunatley the custom data has not been saved by this point, so we
+    // update the $endState data with $params to catch any custom data that
+    // is scheduled to change
+    $this->endState = $this->normalise(civicrm_api3('Membership', 'getsingle', ['id' => $id])) + $this->params;
+
+    // We also set the id in the params array as this is used for calculating
+    // field updates. Without this, we would create a new contract instead of
+    // updating an existing one when updating the derived fields of a new
+    // contract
+    $this->params['id'] = $id;
   }
 
   function setModificationActivity($activity){
@@ -118,8 +128,6 @@ class CRM_Contract_Handler_Contract{
     //update derived fields
     $this->updateDerivedFields();
 
-    $this->calculateDeltas();
-
     if(isset($this->modificationActivity)){
       $this->updateModificationActivity();
     }else{
@@ -137,15 +145,15 @@ class CRM_Contract_Handler_Contract{
   private function updateDerivedFields(){
 
     // We use end state rather than parameters, because if the value of
-    // membership_payment.membership_recurring_contribution, then it won't be
-    // available in the params
-
+    // membership_payment.membership_recurring_contribution has stayed the same
+    // then it won't be available in the params
+    $params = $this->endState;
     // If the contract has a contribution,
     if($this->endState['membership_payment.membership_recurring_contribution']){
       $contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->endState['membership_payment.membership_recurring_contribution']));
-      $this->params['membership_payment.membership_annual'] = $this->calcAnnualAmount($contributionRecur);
-      $this->params['membership_payment.membership_frequency'] = $this->calcPaymentFrequency($contributionRecur);
-      $this->params['membership_payment.cycle_day'] = $contributionRecur['cycle_day'];
+      $params['membership_payment.membership_annual'] = $this->calcAnnualAmount($contributionRecur);
+      $params['membership_payment.membership_frequency'] = $this->calcPaymentFrequency($contributionRecur);
+      $params['membership_payment.cycle_day'] = $contributionRecur['cycle_day'];
 
       //If this is a sepa payment, get the 'to' and 'from' bank account
       $sepaMandateResult = civicrm_api3('SepaMandate', 'get', array(
@@ -154,31 +162,19 @@ class CRM_Contract_Handler_Contract{
       ));
       if($sepaMandateResult['count'] == 1){
         $sepaMandate = $sepaMandateResult['values'][$sepaMandateResult['id']];
-        $this->params['membership_payment.from_ba'] = $this->getBankAccountIdFromIban($sepaMandate['iban']); // TODO I *THINK* we are waiting on Björn for this functionality - need to confirm
-        $this->params['membership_payment.to_ba'] = $this->getBankAccountIdFromIban($this->getCreditorIban($sepaMandate['creditor_id']));
+        $params['membership_payment.from_ba'] = $this->getBankAccountIdFromIban($sepaMandate['iban']); // TODO I *THINK* we are waiting on Björn for this functionality - need to confirm
+        $params['membership_payment.to_ba'] = $this->getBankAccountIdFromIban($this->getCreditorIban($sepaMandate['creditor_id']));
       }
     }
+    $params = $this->convertCustomIds($params);
 
-
-    $params = $this->convertCustomIds($this->params);
     $params['skip_handler'] = true;
-    $contract = civicrm_api3('Membership', 'create', $params);
-    // Since we have updated the membership, get the update the endState
-    $this->endState = $contract['values'][$contract['id']];
-  }
 
-  private function calculateDeltas(){
-    foreach($this->endState as $key => $param){
-      if(isset($this->startState[$key])){
-        if($this->startState[$key] != $this->endState[$key]){
-          $this->deltas[$key]['old']=$this->startState[$key];
-          $this->deltas[$key]['new']=$this->endState[$key];
-        }
-      }else{
-        $this->deltas[$key]['old']='';
-        $this->deltas[$key]['new']=$this->endState[$key];
-      }
-    }
+    $contract = civicrm_api3('Membership', 'create', $params);
+
+    // We reload the contract to update the end state.
+    $contract = civicrm_api3('Membership', 'getsingle', ['id' => $params['id']]);
+    $this->endState = $this->normalise($contract);
   }
 
   private function createModificationActivity(){
@@ -207,6 +203,8 @@ class CRM_Contract_Handler_Contract{
 
     $params['status_id'] = 'Completed';
     $params['activity_type_id'] = $this->modificationClass->getActivityType();
+
+    $this->calculateDeltas();
     $params['subject'] = $this->getSubjectLine();
 
     $session = CRM_Core_Session::singleton();
@@ -239,6 +237,20 @@ class CRM_Contract_Handler_Contract{
     return $params;
   }
 
+  private function calculateDeltas(){
+    foreach($this->endState as $key => $value){
+      if(isset($this->startState[$key])){
+        if($this->startState[$key] != $this->endState[$key]){
+          $this->deltas[$key]['old']=$this->startState[$key];
+          $this->deltas[$key]['new']=$this->endState[$key];
+        }
+      }else{
+        $this->deltas[$key]['old']='';
+        $this->deltas[$key]['new']=$this->endState[$key];
+      }
+    }
+  }
+
   private function getSubjectLine(){
 
     $deltas = array_intersect_key($this->deltas, array_flip($this->getMonitoredFields()));
@@ -247,6 +259,11 @@ class CRM_Contract_Handler_Contract{
     // in the activity type
     if(isset($deltas['status_id'])){
       unset($deltas['status_id']);
+    }
+
+    // Not interested in showing the recurring contribution ID
+    if(isset($deltas['membership_payment.membership_recurring_contribution'])){
+      unset($deltas['membership_payment.membership_recurring_contribution']);
     }
     // Create user friendly delta text
     if(isset($deltas['membership_type_id']['old']) && $deltas['membership_type_id']['old']){
@@ -263,7 +280,6 @@ class CRM_Contract_Handler_Contract{
     }
 
     $abbrevations['membership_type_id']='type';
-    $abbrevations['membership_payment.membership_recurring_contribution']='rc id';
     $abbrevations['membership_payment.membership_annual']='amt.';
     $abbrevations['membership_payment.membership_frequency']='freq.';
     $abbrevations['membership_payment.to_ba']='gp iban';
