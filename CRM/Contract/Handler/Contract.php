@@ -52,10 +52,10 @@ class CRM_Contract_Handler_Contract{
     }
 
     $this->params = $params;
+  }
 
-    // Back fill parameters with the start state to create an end state, which comes
-    // in handy in a few different places
-    $this->endState = $this->params + $this->startState;
+  function setEndState($id){
+    $this->endState = $this->normalise(civicrm_api3('Membership', 'getsingle', ['id' => $id]));
   }
 
   function setModificationActivity($activity){
@@ -159,12 +159,12 @@ class CRM_Contract_Handler_Contract{
       }
     }
 
-    // Since we have updated some parameters, we recalculate the end state
-    $this->endState = $this->params + $this->startState;
 
     $params = $this->convertCustomIds($this->params);
     $params['skip_handler'] = true;
-    civicrm_api3('Membership', 'create', $params);
+    $contract = civicrm_api3('Membership', 'create', $params);
+    // Since we have updated the membership, get the update the endState
+    $this->endState = $contract['values'][$contract['id']];
   }
 
   private function calculateDeltas(){
@@ -231,6 +231,11 @@ class CRM_Contract_Handler_Contract{
         $params[$activityKey] = $value;
       }
     }
+
+    // We need to skip the modification activity handler, otherwise, it will
+    // create another membership.
+    $params['skip_handler'] = true;
+
     return $params;
   }
 
