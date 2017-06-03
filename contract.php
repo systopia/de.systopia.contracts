@@ -234,6 +234,13 @@ function contract_civicrm_pre($op, $objectName, $id, &$params){
   // and check for potential conflicts as appropriate
 
   if($objectName == 'Activity'){
+
+    // TODO address weird CiviCRM where this hook is fired when deleting a
+    // membership via the UI. It gets called with $op == 'delete', a null $id
+    // and some odd params. This solves the issue for now.
+    if($op == 'delete' && is_null($id)){
+      return;
+    }
     $wrapperModificationActivity = CRM_Contract_Wrapper_ModificationActivity::singleton();
     $wrapperModificationActivity->pre($op, $params);
   }
