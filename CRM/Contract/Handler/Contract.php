@@ -111,9 +111,9 @@ class CRM_Contract_Handler_Contract{
 
   function modify(){
     // Setting skip_handler to true  avoids us 'handling the already handled' call
-    $params = $this->params;
+    $params = $this->convertCustomIds($this->params);
     $params['skip_handler'] = true;
-    civicrm_api3('Membership', 'create', $this->convertCustomIds($this->params));
+    civicrm_api3('Membership', 'create', $params);
     $this->setEndState($params['id']);
 
     // Various tasks need to be carried out once the contract has been modified
@@ -136,7 +136,6 @@ class CRM_Contract_Handler_Contract{
     // Check for conflicts in the scheduled contract modifications
     $conflictHandler = new CRM_Contract_Handler_ModificationConflicts;
     $conflictHandler->checkForConflicts($this->endState['id']);
-
   }
 
   // Some fields in the contract are derived from other fields. This function
