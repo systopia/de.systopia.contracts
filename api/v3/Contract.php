@@ -14,7 +14,6 @@ function civicrm_api3_Contract_create($params){
         $params[CRM_Contract_Utils::getCustomFieldId($key)] = $value;
       }
     }
-    $params['skip_handler'] = true;
     $membership = civicrm_api3('Membership', 'create', $params);
     return $membership;
 }

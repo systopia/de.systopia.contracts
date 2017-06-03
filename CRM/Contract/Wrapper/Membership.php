@@ -31,6 +31,7 @@ class CRM_Contract_Wrapper_Membership{
   }
 
   public function pre($op, $id, $params){
+
     $this->skip = isset($params['skip_handler']) && $params['skip_handler'];
     if($this->skip){
       return;
@@ -56,7 +57,9 @@ class CRM_Contract_Wrapper_Membership{
       return;
     }
 
-    // At this point the change has happened, so we skip the modify and go
+    // The contract wrapper skips actually making the change (as the membership
+    // BAO call handles this). However, it still does the necessary postModify
+    // tasks.
     // straight to postModify();
     $this->handler->postModify();
   }

@@ -105,7 +105,7 @@ class CRM_Contract_Handler_Contract{
     $params = $this->params;
     $params['skip_handler'] = true;
     civicrm_api3('Membership', 'create', $params);
-    // civicrm_api3('Membership', 'create', $this->convertCustomIds($this->params));
+
 
     // Various tasks need to be carried out once the contract has been modified
     $this->postModify();
@@ -159,8 +159,7 @@ class CRM_Contract_Handler_Contract{
       }
     }
 
-    // Since we have updated some parameters, we need to recalculate the end
-    // state
+    // Since we have updated some parameters, we recalculate the end state
     $this->endState = $this->params + $this->startState;
 
     $params = $this->convertCustomIds($this->params);
@@ -378,6 +377,12 @@ class CRM_Contract_Handler_Contract{
         $params[CRM_Contract_Utils::getCustomFieldName($key)] = $param;
         unset($params[$key]);
       }
+    }
+
+    // For some reason, when the end date is null, it is passed as the string
+    // 'null'. TODO: File an issue in core.
+    if(isset($params['end_date']) && $params['end_date'] == 'null'){
+      $params['end_date'] = null;
     }
 
     foreach(['join_date', 'start_date', 'end_date'] as $event){
