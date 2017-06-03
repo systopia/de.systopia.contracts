@@ -245,7 +245,7 @@ function contract_civicrm_post($op, $objectName, $id, &$objectRef){
   // activities if necessary
   if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
     $wrapperMembership = CRM_Contract_Wrapper_Membership::singleton();
-    $wrapperMembership->post();
+    $wrapperMembership->post($id);
   }
 
   // Wrap calles to the Activity BAO to execute contract
