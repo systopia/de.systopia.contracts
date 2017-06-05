@@ -53,11 +53,6 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     }
   }
 
-  function loadEntities(){
-
-
-  }
-
   function buildQuickForm(){
 
     // Add fields that are present on all contact history forms
