@@ -108,7 +108,6 @@ class CRM_Contract_Utils{
   static function downloadContractFile($file)
   {
     if (!CRM_Contract_Utils::contractFileExists($file)) {
-      CRM_Core_Error::statusBounce('Contract file does not exist!');
       return false;
     }
     $fullPath = CRM_Contract_Utils::contractFilePath($file);
@@ -142,7 +141,7 @@ class CRM_Contract_Utils{
     $fullPath = CRM_Contract_Utils::contractFilePath($file);
     if ($fullPath) {
       if (file_exists($fullPath)) {
-        return true;
+        return $fullPath;
       }
     }
     return false;
