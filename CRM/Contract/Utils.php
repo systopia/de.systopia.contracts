@@ -150,6 +150,7 @@ class CRM_Contract_Utils{
 
   /**
    * This is hardcoded so contract files must be stored in customFileUploadDir/contracts/
+   * Extension hardcoded to .tif
    * FIXME: This could be improved to use a setting to configure this.
    *
    * @param $file
@@ -165,7 +166,7 @@ class CRM_Contract_Utils{
     // Use the custom file upload dir as it's protected by a Deny from All in htaccess
     $config = CRM_Core_Config::singleton();
     if (!empty($config->customFileUploadDir)) {
-      $fullPath = $config->customFileUploadDir . "/contracts/$file";
+      $fullPath = $config->customFileUploadDir . "/contracts/$file.tif";
       return $fullPath;
     }
     else {
