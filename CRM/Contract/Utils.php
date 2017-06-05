@@ -98,4 +98,80 @@ class CRM_Contract_Utils{
     }
     return self::$coreMembershipHistoryActivityIds;
   }
+
+  /**
+   * Download contract file
+   * @param $file
+   *
+   * @return bool
+   */
+  static function downloadContractFile($file)
+  {
+    if (!CRM_Contract_Utils::contractFileExists($file)) {
+      CRM_Core_Error::statusBounce('Contract file does not exist!');
+      return false;
+    }
+    $fullPath = CRM_Contract_Utils::contractFilePath($file);
+
+    ignore_user_abort(true);
+    set_time_limit(0); // disable the time limit for this script
+
+    if ($fd = fopen($fullPath, "r")) {
+      $fsize = filesize($fullPath);
+      $path_parts = pathinfo($fullPath);
+      $ext = strtolower($path_parts["extension"]);
+      header("Content-type: application/octet-stream");
+      header("Content-Disposition: filename=\"" . $path_parts["basename"] . "\"");
+      header("Content-length: $fsize");
+      header("Cache-control: private"); //use this to open files directly
+      while (!feof($fd)) {
+        $buffer = fread($fd, 2048);
+        echo $buffer;
+      }
+    }
+    fclose($fd);
+    exit;
+  }
+
+  /**
+   * Check if contract file exists, return false if not
+   * @param $logFile
+   * @return boolean
+   */
+  static function contractFileExists($file) {
+    $fullPath = CRM_Contract_Utils::contractFilePath($file);
+    if ($fullPath) {
+      if (file_exists($fullPath)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * This is hardcoded so contract files must be stored in customFileUploadDir/contracts/
+   * Extension hardcoded to .tif
+   * FIXME: This could be improved to use a setting to configure this.
+   *
+   * @param $file
+   *
+   * @return bool|string
+   */
+  static function contractFilePath($file) {
+    // We need a valid filename
+    if (empty($file)) {
+      return FALSE;
+    }
+
+    // Use the custom file upload dir as it's protected by a Deny from All in htaccess
+    $config = CRM_Core_Config::singleton();
+    if (!empty($config->customFileUploadDir)) {
+      $fullPath = $config->customFileUploadDir . "/contracts/$file.tif";
+      return $fullPath;
+    }
+    else {
+      CRM_Core_Error::debug_log_message('Warning: Contract file path undefined! Did you set customFileUploadDir?');
+      return FALSE;
+    }
+  }
 }
