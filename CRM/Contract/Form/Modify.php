@@ -14,8 +14,13 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     // If we requested a contract file download
     $download = CRM_Utils_Request::retrieve('ct_dl', 'String', CRM_Core_DAO::$_nullObject, FALSE, '', 'GET');
     if (!empty($download)) {
-      CRM_Contract_Utils::downloadContractFile($download);
-      return;
+      // FIXME: Could use CRM_Utils_System::download if it didn't use the full path as filename
+      if (CRM_Contract_Utils::downloadContractFile($download)) {
+        CRM_Utils_System::civiExit();
+      }
+      // If the file didn't exist
+      echo "File does not exist";
+      CRM_Utils_System::civiExit();
     }
 
     // Not sure why this isn't simpler but here is my way of ensuring that the
