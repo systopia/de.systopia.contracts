@@ -277,3 +277,52 @@ function contract_civicrm_post($op, $objectName, $id, &$objectRef){
     }
   }
 }
+
+/**
+ * Adjust output of membership custom data for contract file download
+ * @param $content
+ * @param $context
+ * @param $tplName
+ * @param $object
+ */
+function contract_civicrm_alterContent(  &$content, $context, $tplName, &$object ) {
+  if ($object instanceof CRM_Member_Page_Tab) {
+    /* This is what we are looking for!
+     *     <
+        td class="label" > membership_contract</td >
+                                                                        <td class="html-adjust" >
+
+                                                                                      </td >
+    */
+    // Replace contract with link to file if we have one
+    // There may be a better way to do this but as it is custom data it is very difficult to uniquely locate the field using js etc.
+    $tdStart = strpos($content, 'membership_contract</td');
+    $tmpContent = substr($content, $tdStart);
+    $offset=$tdStart;
+    $tdStart = strpos($tmpContent, '<td class="html-adjust"');
+    $tmpContent = substr($tmpContent, $tdStart);
+    $offset+=$tdStart;
+    $tdStart = strpos($tmpContent, '>') + 1;
+    $tmpContent = substr($tmpContent, $tdStart);
+    $tdEnd = strpos($tmpContent, '</td>');
+    $contractId = trim(substr($tmpContent, $tdStart, $tdEnd-$tdStart));
+    $offset+=$tdStart;
+    // $contract holds the contact number if any
+    // $offset holds the start position for the contract number
+    // $tdEnd holds the end position for the contract number
+
+    $contractId = 1234; // FIXME: TMP
+
+    if (CRM_Contract_Utils::contractFileExists($contractId)) {
+      $url = CRM_Utils_System::url('civicrm/contract/modify', "ct_dl=".urlencode($contractId));
+      $contract = "<a href=\"$url\" target='_blank'>$contractId</a>";
+    }
+    else {
+      $contract = $contractId;
+    }
+    // Now replace the contract number with a link to the file
+    $content = substr_replace($content, $contract, $offset, $tdEnd);
+    }
+}
+
+
