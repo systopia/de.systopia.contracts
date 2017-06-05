@@ -41,11 +41,11 @@ function civicrm_api3_Contract_modify($params){
 
 
   if(isset($params['date'])){
-    $date = DateTime::createFromFormat('Y-m-d', $params['date']);
+    $date = DateTime::createFromFormat('Y-m-d H:i:s', $params['date']);
     if(!$date || $date->getLastErrors()['warning_count']){
-      throw new Exception("Invalid format for date. Should be in 'Y-m-d' format, for example, '2000-12-31'");
+      throw new Exception("Invalid format for date. Should be in 'Y-m-d H:i:s' format, for example, '".date_format(new DateTime(),'Y-m-d H:i:s')."'");
     }
-    if($date < DateTime::createFromFormat('Y-m-d H:i:s', date_format(new DateTime(''), 'Y-m-d 00:00:00'))){
+    if($date < DateTime::createFromFormat('Y-m-d H:i:s', date_format(new DateTime(), 'Y-m-d 00:00:00'))){
       throw new Exception("'date' must either be in the future, or absent if you want to execute the modification immediatley.");
     }
   }else{

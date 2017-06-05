@@ -58,7 +58,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     // Add fields that are present on all contact history forms
 
     // Add the date that this update should take effect (leave blank for now)
-    $this->addDate('activity_date', ts('Schedule date'), TRUE);
+    $this->addDateTime('activity_date', ts('Schedule date'), TRUE);
 
     // Add the interaction medium
     foreach(civicrm_api3('Activity', 'getoptions', ['field' => "activity_medium_id"])['values'] as $key => $value){
@@ -137,7 +137,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       $defaults['campaign_id'] = $this->membership['campaign_id'];
     }
 
-    list($defaults['activity_date'], $null) = CRM_Utils_Date::setDateDefaults(NULL, 'activityDate');
+    list($defaults['activity_date'], $defaults['activity_date_time']) = CRM_Utils_Date::setDateDefaults(date('Y-m-d 00:00:00'), 'activityDateTime');
 
 
     parent::setDefaults($defaults);
@@ -149,7 +149,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     $date = DateTime::createFromFormat('m/d/Y', $submitted['activity_date']);
     if($date < DateTime::createFromFormat('Y-m-d H:i:s', date_format(new DateTime(''), 'Y-m-d 00:00:00'))){
-      HTML_QuickForm::setElementError ( 'activity_date', 'Activity date must be either today (i.e. make the change now) or in the future');
+      HTML_QuickForm::setElementError ( 'activity_date', 'Activity date must be either today (which will execute the change now) or in the future');
     }
 
     if($this->modificationActivity->getAction() == 'pause'){
@@ -175,10 +175,9 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     //If the date was set, convert it to the necessary format
     if($submitted['activity_date']){
-      $activityDate = DateTime::createFromFormat('m/d/Y', $submitted['activity_date']);
-      $params['date'] = $activityDate->format('Y-m-d');
+      $activityDate = DateTime::createFromFormat('m/d/YH:i', $submitted['activity_date'] . $submitted['activity_date_time']);
+      $params['date'] = $activityDate->format('Y-m-d H:i:s');
     }
-
 
     // If this is an update or a revival
     if(in_array($this->modificationActivity->getAction(), array('update', 'revive'))){
