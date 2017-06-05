@@ -18,6 +18,7 @@ class CRM_Contract_Handler_Contract{
 
   public $errors = [];
 
+  public $deltas = [];
 
   function setStartState($id = null){
     if(isset($id)){
@@ -72,6 +73,10 @@ class CRM_Contract_Handler_Contract{
     $this->modificationActivity = $activity;
     $this->modificationClass = CRM_Contract_ModificationActivity::findById($activity['activity_type_id']);
 
+  }
+
+  function getModificationActivity(){
+    return $this->modificationActivity;
   }
 
   function isValid($errorsToIgnore = []){
@@ -350,10 +355,6 @@ class CRM_Contract_Handler_Contract{
     return $params;
   }
 
-  function getModificationActivity(){
-    return $this->modificationActivity;
-  }
-
   private function normalise($params){
     // If a custom data field has been passed in the $params['custom'] element
     // which is not also in $params move it to params
@@ -423,7 +424,7 @@ class CRM_Contract_Handler_Contract{
     return number_format($contributionRecur['amount'] * $frequencyUnitTranslate[$contributionRecur['frequency_unit']] / $contributionRecur['frequency_interval'], 2, '.', '');
   }
 
-  function calcPaymentFrequency($contributionRecur){
+  private function calcPaymentFrequency($contributionRecur){
     if($contributionRecur['frequency_unit'] == 'month' && $contributionRecur['frequency_interval'] == 1){
       return 12;
     }
