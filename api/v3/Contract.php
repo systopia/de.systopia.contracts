@@ -77,6 +77,20 @@ function civicrm_api3_Contract_modify($params){
   // Depending on the activity type, populate more parameters / do extra
   // processing
 
+  // Convert fields that are passed in custom_N format to . format for
+  // converting to activity fields
+  $expectedCustomFieldIds = [
+    CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution'),
+    CRM_Contract_Utils::getCustomFieldId('membership_cancellation.membership_cancel_reason')
+  ];
+
+  foreach($params as $key => $value){
+    if(in_array($key, $expectedCustomFieldIds)){
+      $params[CRM_Contract_Utils::getCustomFieldName($key)]=$value;
+      unset($params['key']);
+    }
+  }
+
   switch($class->getAction()){
     case 'update':
     case 'revive':
