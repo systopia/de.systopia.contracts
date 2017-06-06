@@ -154,3 +154,15 @@ function civicrm_api3_Contract_modify($params){
   $result['membership'] = civicrm_api3('membership', 'getsingle', ['id' => $params['id']]);
   return civicrm_api3_create_success($result);
 }
+
+function _civicrm_api3_Contract_getstatus_spec(&$params){
+  $params['id']['api.required'] = 1;
+}
+
+function civicrm_api3_Contract_getstatus($params){
+  $activitiesForReview = civicrm_api3('Activity', 'getcount', [
+    'source_record_id' => $params['id'],
+    'status_id' => 'Needs Review'
+  ]);
+  return ['needs_review' => $activitiesForReview];
+}
