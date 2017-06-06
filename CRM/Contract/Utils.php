@@ -29,10 +29,13 @@ class CRM_Contract_Utils{
 
 
 
-  static function contractToActivityCustomFieldId($contractField){
+  static function contractToActivityFieldId($contractField){
     $translation = self::$ContractToModificationActivityField;
     $activityField = $translation[$contractField];
-    return self::getCustomFieldId($activityField);
+    if(strpos($activityField, '.')){
+      return self::getCustomFieldId($activityField);
+    }
+    return $activityField;
   }
 
 

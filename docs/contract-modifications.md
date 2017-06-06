@@ -100,3 +100,5 @@ A Job.process_contract_updates process all scheduled updates.
 ## TODO creating a contract
 
 create
+
+# Mandate related changes

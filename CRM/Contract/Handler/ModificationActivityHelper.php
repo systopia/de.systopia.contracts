@@ -12,19 +12,19 @@ class CRM_Contract_Handler_ModificationActivityHelper{
     switch($modificationClass->getAction()){
       case 'update':
       case 'revive':
-        if(isset($activity[CRM_Contract_Utils::contractToActivityCustomFieldId('membership_type_id')])){
-          $params['membership_type_id'] = $activity[CRM_Contract_Utils::contractToActivityCustomFieldId('membership_type_id')];
+        if(isset($activity[CRM_Contract_Utils::contractToActivityFieldId('membership_type_id')])){
+          $params['membership_type_id'] = $activity[CRM_Contract_Utils::contractToActivityFieldId('membership_type_id')];
         }
         if(isset($activity['campaign_id'])){
           $params['campaign_id'] = $activity['campaign_id'];
         }
-        if(isset($activity[CRM_Contract_Utils::contractToActivityCustomFieldId('membership_payment.membership_recurring_contribution')])){
-          $params[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')] = $activity[CRM_Contract_Utils::contractToActivityCustomFieldId('membership_payment.membership_recurring_contribution')];
+        if(isset($activity[CRM_Contract_Utils::contractToActivityFieldId('membership_payment.membership_recurring_contribution')])){
+          $params[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')] = $activity[CRM_Contract_Utils::contractToActivityFieldId('membership_payment.membership_recurring_contribution')];
         }
         break;
       case 'cancel':
-        if(isset($activity[CRM_Contract_Utils::contractToActivityCustomFieldId('membership_cancellation.membership_cancel_reason')])){
-          $params[CRM_Contract_Utils::getCustomFieldId('membership_cancellation.membership_cancel_reason')] = $activity[CRM_Contract_Utils::contractToActivityCustomFieldId('membership_cancellation.membership_cancel_reason')];
+        if(isset($activity[CRM_Contract_Utils::contractToActivityFieldId('membership_cancellation.membership_cancel_reason')])){
+          $params[CRM_Contract_Utils::getCustomFieldId('membership_cancellation.membership_cancel_reason')] = $activity[CRM_Contract_Utils::contractToActivityFieldId('membership_cancellation.membership_cancel_reason')];
         }
         break;
     }
