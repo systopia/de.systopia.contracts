@@ -116,7 +116,7 @@ function civicrm_api3_Contract_modify($params){
       ];
       foreach($updateFields as $updateField){
         if(isset($params[$updateField])){
-          echo $updateField;
+          $updateField;
           $activityParams[CRM_Contract_Utils::contractToActivityFieldId($updateField)] = $params[$updateField];
         }
       }
