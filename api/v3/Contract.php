@@ -79,29 +79,45 @@ function civicrm_api3_Contract_modify($params){
 
   // Convert fields that are passed in custom_N format to . format for
   // converting to activity fields
-  $expectedCustomFieldIds = [
-    CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution'),
-    CRM_Contract_Utils::getCustomFieldId('membership_cancellation.membership_cancel_reason')
+
+  $expectedCustomFields = [
+    'membership_payment.membership_recurring_contribution',
+    'membership_cancellation.membership_cancel_reason',
+    'membership_payment.membership_annual',
+    'membership_payment.membership_frequency',
+    'membership_payment.cycle_day',
+    'membership_payment.to_ba'
   ];
+
+  foreach($expectedCustomFields as $expectedCustomField){
+    $expectedCustomFieldsIds[]=CRM_Contract_Utils::getCustomFieldId($expectedCustomField);
+  }
 
   foreach($params as $key => $value){
     if(in_array($key, $expectedCustomFieldIds)){
-      $params[CRM_Contract_Utils::getCustomFieldName($key)]=$value;
-      unset($params['key']);
+      unset($params[$key]);
+      $key = CRM_Contract_Utils::getCustomFieldName($key);
+      $params[$key]=$value;
     }
   }
 
   switch($class->getAction()){
     case 'update':
     case 'revive':
-      if(isset($params['membership_type_id'])){
-        $activityParams[CRM_Contract_Utils::contractToActivityCustomFieldId('membership_type_id')] = $params['membership_type_id'];
-      }
-      if(isset($params['campaign_id'])){
-        $activityParams['campaign_id'] = $params['campaign_id'];
-      }
-      if(isset($params['membership_payment.membership_recurring_contribution'])){
-        $activityParams[CRM_Contract_Utils::contractToActivityCustomFieldId('membership_payment.membership_recurring_contribution')] = $params['membership_payment.membership_recurring_contribution'];
+
+      $updateCustomFields = [
+        'membership_type_id',
+        'campaign_id',
+        'membership_payment.membership_recurring_contribution',
+        'membership_payment.membership_annual',
+        'membership_payment.membership_frequency',
+        'membership_payment.cycle_day',
+        'membership_payment.to_ba'
+      ];
+      foreach($updateCustomFields as $updateCustomField){
+        if(isset($params[$updateCustomField])){
+          $activityParams[CRM_Contract_Utils::contractToActivityCustomFieldId($updateCustomField)] = $params[$updateCustomField];
+        }
       }
       break;
     case 'cancel':
@@ -122,6 +138,7 @@ function civicrm_api3_Contract_modify($params){
       }
   }
   $activityParams['source_contact_id'] = $sourceContactId;
+
   $activityResult = civicrm_api3('Activity', 'create', $activityParams);
   if($class->getAction() == 'pause'){
     $resumeActivity = civicrm_api3('Activity', 'create', [
