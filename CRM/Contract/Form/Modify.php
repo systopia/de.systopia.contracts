@@ -107,6 +107,15 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       'entity' => 'campaign',
       'placeholder' => ts('- none -')
     ]);
+
+    // TODO Bjorn 
+    $this->add('select', 'cycle_day', ts('Cycle day'), [3 => 3, 9 => 9 ,17 => 17, 25 => 25]);
+    $this->add('text', 'iban', ts('IBAN'));
+    $this->add('text', 'bic', ts('BIC'));
+    $this->add('text', 'payment_amount', ts('Payment amount'));
+    $this->addEntityRef('payment_frequency', ts('Payment frequency'), array( 'entity' => 'option_value', 'api' => array( 'params' => array('option_group_id' => 92), 'select' => array('minimumInputLength' => 0))));
+
+
   }
 
   function addCancelFields(){
@@ -129,6 +138,8 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
   function setDefaults($defaultValues = null, $filter = null){
     if(isset($this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')])){
       $defaults['recurring_contribution'] = $this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')];
+
+      //TODO Bjorn - please add defaults for cycle_day, iban, bic, payment_amount and payment_frequency here
     }
 
     $defaults['membership_type_id'] = $this->membership['membership_type_id'];
@@ -160,6 +171,8 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       }
     }
 
+    //TODO Bjorn - you can add validation functions for the above fields here if you need to
+
     return parent::validate();
   }
 
@@ -184,6 +197,13 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       $params['membership_payment.membership_recurring_contribution'] = $submitted['recurring_contribution'];
       $params['membership_type_id'] = $submitted['membership_type_id'];
       $params['campaign_id'] = $submitted['campaign_id'];
+
+      // TODO Bjorn - these are the ones I have added.
+      $params['membership_payment.membership_annual'] = $submitted['payment_amount'] * 12 / $submitted['payment_frequency'];
+      $params['membership_payment.membership_frequency'] = $submitted['payment_frequency'];
+      $params['membership_payment.cycle_day'] = $submitted['cycle_day'];
+      // TODO Bjorn - handling membership_payment.to_ba might be tricky. Let me know if you want to discuss
+      $params['membership_payment.to_ba'] = $submitted['iban'] . $submitted['bic'];
 
     // If this is a cancellation
     }elseif($this->modificationActivity->getAction() == 'cancel'){

@@ -22,6 +22,31 @@
   {if $modificationActivity eq 'update' OR $modificationActivity eq 'revive' }
     {include file="CRM/Contract/Form/MandateBlock.tpl"}
     <div class="crm-section">
+      <div class="label">{$form.cycle_day.label}</div>
+      <div class="content">{$form.cycle_day.html}</div>
+      <div class="clear"></div>
+    </div>
+    <div class="crm-section">
+      <div class="label">{$form.iban.label}</div>
+      <div class="content">{$form.iban.html}</div>
+      <div class="clear"></div>
+    </div>
+    <div class="crm-section">
+      <div class="label">{$form.bic.label}</div>
+      <div class="content">{$form.bic.html}</div>
+      <div class="clear"></div>
+    </div>
+    <div class="crm-section">
+      <div class="label">{$form.payment_amount.label}</div>
+      <div class="content">{$form.payment_amount.html}</div>
+      <div class="clear"></div>
+    </div>
+    <div class="crm-section">
+      <div class="label">{$form.payment_frequency.label}</div>
+      <div class="content">{$form.payment_frequency.html}</div>
+      <div class="clear"></div>
+    </div>
+    <div class="crm-section">
       <div class="label">{$form.membership_type_id.label}</div>
       <div class="content">{$form.membership_type_id.html}</div>
       <div class="clear"></div>

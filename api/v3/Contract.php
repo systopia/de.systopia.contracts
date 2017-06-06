@@ -90,7 +90,7 @@ function civicrm_api3_Contract_modify($params){
   ];
 
   foreach($expectedCustomFields as $expectedCustomField){
-    $expectedCustomFieldsIds[]=CRM_Contract_Utils::getCustomFieldId($expectedCustomField);
+    $expectedCustomFieldIds[]=CRM_Contract_Utils::getCustomFieldId($expectedCustomField);
   }
 
   foreach($params as $key => $value){
@@ -105,7 +105,7 @@ function civicrm_api3_Contract_modify($params){
     case 'update':
     case 'revive':
 
-      $updateCustomFields = [
+      $updateFields = [
         'membership_type_id',
         'campaign_id',
         'membership_payment.membership_recurring_contribution',
@@ -114,15 +114,16 @@ function civicrm_api3_Contract_modify($params){
         'membership_payment.cycle_day',
         'membership_payment.to_ba'
       ];
-      foreach($updateCustomFields as $updateCustomField){
-        if(isset($params[$updateCustomField])){
-          $activityParams[CRM_Contract_Utils::contractToActivityCustomFieldId($updateCustomField)] = $params[$updateCustomField];
+      foreach($updateFields as $updateField){
+        if(isset($params[$updateField])){
+          echo $updateField;
+          $activityParams[CRM_Contract_Utils::contractToActivityFieldId($updateField)] = $params[$updateField];
         }
       }
       break;
     case 'cancel':
       if(isset($params['membership_cancellation.membership_cancel_reason'])){
-        $activityParams[CRM_Contract_Utils::contractToActivityCustomFieldId('membership_cancellation.membership_cancel_reason')] = $params['membership_cancellation.membership_cancel_reason'];
+        $activityParams[CRM_Contract_Utils::contractToActivityFieldId('membership_cancellation.membership_cancel_reason')] = $params['membership_cancellation.membership_cancel_reason'];
       }
       break;
     case 'pause':

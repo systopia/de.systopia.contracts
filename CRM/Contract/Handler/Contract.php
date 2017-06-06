@@ -115,6 +115,16 @@ class CRM_Contract_Handler_Contract{
   }
 
   function modify(){
+
+    // TODO Bjorn updates to the mandate should happen here. You have access to
+    // $this->startState (the original state of the mandate $this->params (the
+    // changes that have been requested (these were taken from
+    // $this->modificationActivity. I think you want to make the changes to the
+    // mandate before any changes to the contract. If you want to do anything
+    // after the contract has been updated, do it after setEndState. Or maybe
+    // add it to postModify. Let me know if you want to discuss.
+
+
     // Setting skip_handler to true  avoids us 'handling the already handled' call
     $params = $this->convertCustomIds($this->params);
     $params['skip_handler'] = true;
@@ -289,6 +299,8 @@ class CRM_Contract_Handler_Contract{
     $abbrevations['membership_payment.from_ba']='member iban';
     $abbrevations['membership_payment.cycle_day']='cycle day';
     $abbrevations['membership_payment.payment_instrument']='payment method';
+
+    $changesText = [];
 
     switch($this->modificationClass->getAction()){
       case 'update':
