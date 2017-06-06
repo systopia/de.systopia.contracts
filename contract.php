@@ -114,6 +114,10 @@ function contract_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
 
 function contract_civicrm_pageRun( &$page ){
   if($page->getVar('_name') == 'CRM_Member_Page_Tab'){
+    foreach(civicrm_api3('Membership', 'get', ['contact_id' => $page->_contactId])['values'] as $contract){
+      $contractStatuses[$contract['id']] = civicrm_api3('Contract', 'getstatus', ['id' => $contract['id']]);
+    }
+    CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('contractStatuses' => $contractStatuses));
     CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('cid' => $page->_contactId));
     CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Member/Page/Tab.js');
   }

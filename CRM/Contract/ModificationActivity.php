@@ -79,6 +79,22 @@ class CRM_Contract_ModificationActivity{
     return $activityTypeIds;
   }
 
+  static function getModificationActivityTypeLabels(){
+    foreach (self::$modificationActivityClasses as $class) {
+      $activityClass = new $class;
+      $activityTypes[] = $activityClass->getActivityType();
+    }
+    foreach(civicrm_api3('OptionValue', 'get', [
+      'option_group_id' => 'activity_type',
+      'name' => ['IN' => $activityTypes],
+      'return' => ['value', 'label']
+    ])['values'] as $activityType){
+      $activityTypeIds[$activityType['value']] = $activityType['label'];
+    }
+    return $activityTypeIds;
+  }
+
+
   function validateParams($params, $start){
     $this->params = $params;
     $this->start = $start;
