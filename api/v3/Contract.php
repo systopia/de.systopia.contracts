@@ -133,7 +133,6 @@ function civicrm_api3_Contract_modify($params){
           throw new Exception("Invalid format for resume date. Should be in 'Y-m-d' format, for example, '2000-12-31'");
         }
         $activityParams['resume_date'] = $params['resume_date'];
-        $activityParams['ignored_review_activities'][] = $resumeActivity['id'];
       }else{
         throw new Exception('You must supply a resume_date when pausing a contract.');
       }
