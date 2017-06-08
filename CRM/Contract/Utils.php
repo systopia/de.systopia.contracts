@@ -49,7 +49,7 @@ class CRM_Contract_Utils{
       try{
         self::$customFieldCache[$customField] = 'custom_'.civicrm_api3('CustomField', 'getvalue', [ 'return' => "id", 'custom_group_id' => $parts[0], 'name' => $parts[1]]);
       }catch (Exception $e){
-        throw new Exception("Could not find custom field '{$parts[0]}' in custom field set '{$parts[1]}'");
+        throw new Exception("Could not find custom field '{$parts[1]}' in custom field set '{$parts[0]}'");
       }
     }
 
