@@ -22,7 +22,7 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     $this->assign('contact', civicrm_api3('Contact', 'getsingle', ['id' => $this->get('cid')]));
 
     $formUtils = new CRM_Contract_FormUtils($this, 'Membership');
-    $formUtils->addPaymentContractSelect2('recurring_contribution', $this->get('cid'), true);
+    $formUtils->addPaymentContractSelect2('recurring_contribution', $this->get('cid'), false);
     CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('cid' => $this->get('cid')));
     CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/MandateBlock.js');
 
