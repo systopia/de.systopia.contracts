@@ -99,7 +99,7 @@ class CRM_Contract_Handler_Contract{
     }else{
       // If by this stage, we have been unable to find a valid modificationClass
       // this status change should not be allowed.
-      $this->errors['status_id'] = "You cannot update contract status from {$this->startStatus} to {$this->proposedStatus}.";
+      $this->errors['status_id'] = "You cannot update contract status from '{$this->startStatus}' to '{$this->proposedStatus}'.";
     }
 
     // Used, for instance, when we want to process a handle a pause without specifying a resume
