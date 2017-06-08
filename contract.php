@@ -68,6 +68,7 @@ function contract_civicrm_enable() {
   $customData->syncOptionGroup(__DIR__ . '/resources/activity_status_option_group.json');
   $customData->syncCustomGroup(__DIR__ . '/resources/contract_cancellation_custom_group.json');
   $customData->syncCustomGroup(__DIR__ . '/resources/contract_updates_custom_group.json');
+  // $customData->syncCustomGroup(__DIR__ . '/resources/membership_payment_custom_group.json');
   $customData->syncEntities(__DIR__ . '/resources/membership_status_entities.json');
 
   _contract_civix_civicrm_enable();

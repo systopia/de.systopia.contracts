@@ -1,0 +1,32 @@
+{
+  "_lookup": ["name"],
+  "_translate": ["title"],
+  "name": "membership_payment",
+  "title": "Contract Updates",
+  "extends": "Membership",
+  "style": "Inline",
+  "collapse_display": "1",
+  "is_active": "1",
+  "is_multiple": "0",
+  "table_name": "civicrm_value_membership_payment",
+  "collapse_adv_display": "1",
+  "is_reserved": "0",
+  "_fields": [
+    {
+      "_lookup": ["column_name", "custom_group_id"],
+      "_translate": ["label"],
+      "weight": "1",
+      "name": "membership_type",
+      "column_name": "membership_type",
+      "label": "Membership Type",
+      "data_type": "Int",
+      "html_type": "Text",
+      "is_required": "0",
+      "is_searchable": "1",
+      "is_search_range": "1",
+      "is_active": "1",
+      "is_view": "1",
+      "in_selector": "1"
+    }
+  ]
+}
