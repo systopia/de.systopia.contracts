@@ -34,9 +34,9 @@ class CRM_Contract_Wrapper_MembershipEditForm{
     $this->handler->setStartState($id);
 
     // Date formats are returned in a WEIRD format...
-    $joinDate = DateTime::createFromFormat('m/d/Y', $params['join_date']);
-    $startDate = DateTime::createFromFormat('m/d/Y', $params['start_date']);
-    $endDate = DateTime::createFromFormat('m/d/Y', $params['end_date']);
+    $joinDate = DateTime::createFromFormat('d/m/Y', $params['join_date']);
+    $startDate = DateTime::createFromFormat('d/m/Y', $params['start_date']);
+    $endDate = DateTime::createFromFormat('d/m/Y', $params['end_date']);
     $params['join_date'] = $joinDate->format('Y-m-d');
     $params['start_date'] = $startDate->format('Y-m-d');
     $params['end_date'] = $endDate->format('Y-m-d');

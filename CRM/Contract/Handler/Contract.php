@@ -440,6 +440,8 @@ class CRM_Contract_Handler_Contract{
     if($contributionRecur['frequency_unit'] == 'month' && $contributionRecur['frequency_interval'] == 1){
       return 12;
     }
+    //TODO
+    return 1;
     throw new Exception('Unkown payment frequency');
   }
 

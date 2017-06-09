@@ -157,15 +157,15 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
   function validate(){
 
     $submitted = $this->exportValues();
+    $activityDate = DateTime::createFromFormat('m/d/Y', $submitted['activity_date']);
 
-    $date = DateTime::createFromFormat('m/d/Y', $submitted['activity_date']);
-    if($date < DateTime::createFromFormat('Y-m-d H:i:s', date_format(new DateTime(''), 'Y-m-d 00:00:00'))){
+    if($activityDate < DateTime::createFromFormat('Y-m-d H:i:s', date_format(new DateTime(''), 'Y-m-d 00:00:00'))){
       HTML_QuickForm::setElementError ( 'activity_date', 'Activity date must be either today (which will execute the change now) or in the future');
     }
 
     if($this->modificationActivity->getAction() == 'pause'){
-      $activityDate = DateTime::createFromFormat('m/d/Y', $submitted['activity_date']);
-      $resumeDate = DateTime::createFromFormat('m/d/Y', $submitted['resume_date']);
+      $activityDate = DateTime::createFromFormat('d/m/Y', $submitted['activity_date']);
+      $resumeDate = DateTime::createFromFormat('d/m/Y', $submitted['resume_date']);
       if($activityDate > $resumeDate){
         HTML_QuickForm::setElementError ( 'resume_date', 'Resume date must be after the scheduled pause date');
       }
@@ -188,7 +188,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     //If the date was set, convert it to the necessary format
     if($submitted['activity_date']){
-      $activityDate = DateTime::createFromFormat('d/m/YH:iA', $submitted['activity_date'] . $submitted['activity_date_time']);
+      $activityDate = DateTime::createFromFormat('m/d/YH:iA', $submitted['activity_date'] . $submitted['activity_date_time']);
       $params['date'] = $activityDate->format('Y-m-d H:i:s');
     }
 
