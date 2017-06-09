@@ -138,7 +138,6 @@ function civicrm_api3_Contract_modify($params){
       }
   }
   $activityParams['source_contact_id'] = $sourceContactId;
-
   $activityResult = civicrm_api3('Activity', 'create', $activityParams);
   if($class->getAction() == 'pause'){
     $resumeActivity = civicrm_api3('Activity', 'create', [

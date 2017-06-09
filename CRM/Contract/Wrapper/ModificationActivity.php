@@ -18,6 +18,11 @@ class CRM_Contract_Wrapper_ModificationActivity{
   }
 
   public function pre($op, $params){
+
+    if(isset($params['resume_date'])){
+      $this->resumeDate = $params['resume_date'];
+    }
+
     $this->skip = false;
     if(isset($params['skip_handler']) && $params['skip_handler']){
       $this->skip = true;
@@ -114,8 +119,8 @@ class CRM_Contract_Wrapper_ModificationActivity{
 
       // If we are creating pause, we need pass the resume date through to
       // ensure that the resume activity is created as well
-      if($handler->modificationClass->getAction() == 'pause'){
-        $contractParams['resume_date'] = $params['resume_date'];
+      if(isset($this->resumeDate)){
+        $contractParams['resume_date'] = $this->resumeDate;
       }
 
       $handler->setParams($contractParams);
