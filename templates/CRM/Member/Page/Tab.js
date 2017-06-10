@@ -24,13 +24,15 @@ CRM.$(function($) {
     return "/civicrm/contract/review?reset=&snippet=1&id=" + id;
   }
 
-  $( "#memberships td.crm-membership-status" ).each(function() {
+  $( "#memberships td.crm-membership-status" ).each(createNeedsReview);
+
+  function createNeedsReview(){
     contractId = getIdFromRow($(this).parent());
     if(CRM.vars['de.systopia.contract'].contractStatuses[contractId].needs_review > 0){
       var link = getHistoryLink(contractId);
       $( this ).append(" <a href='" + link + "' class='show-scheduled-modifications'>needs review</a>");
     }
-  });
+  }
 
   $(document).on( "click", ".show-scheduled-modifications", function(e) {
     e.preventDefault();
@@ -40,7 +42,7 @@ CRM.$(function($) {
     $(this).remove();
   });
   $(document).on( "click", ".hide-scheduled-modifications", function() {
-    $(this).parent().parent().prev().find('td.crm-membership-status').append(" <a class='show-scheduled-modifications'>needs review</a>");
+    $(this).parent().parent().parent().prev().find('td.crm-membership-status').each(createNeedsReview);
     $(this).parent().parent().remove();
   });
 

@@ -25,9 +25,6 @@ class CRM_Contract_Page_Review extends CRM_Core_Page {
       'activity_date_time' => ['>' => date('Y-m-d H:i:s')]
     ])['values']);
 
-    CRM_Core_Resources::singleton()->addScriptFile( 'de.systopia.contract', 'templates/CRM/Contract/Page/Review.js' );
-
-
     parent::run();
   }
 

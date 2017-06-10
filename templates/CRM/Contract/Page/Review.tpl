@@ -1,5 +1,3 @@
-
-<ul>
 <table>
   <tr>
     <th>Date</th>
@@ -22,4 +20,3 @@
   </tr>
 {/foreach}
 </table>
-</ul>
