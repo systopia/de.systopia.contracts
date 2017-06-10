@@ -34,12 +34,9 @@ class CRM_Contract_Wrapper_MembershipEditForm{
     $this->handler->setStartState($id);
 
     // Date formats are returned in a WEIRD format...
-    $joinDate = DateTime::createFromFormat('d/m/Y', $params['join_date']);
-    $startDate = DateTime::createFromFormat('d/m/Y', $params['start_date']);
-    $endDate = DateTime::createFromFormat('d/m/Y', $params['end_date']);
-    $params['join_date'] = $joinDate->format('Y-m-d');
-    $params['start_date'] = $startDate->format('Y-m-d');
-    $params['end_date'] = $endDate->format('Y-m-d');
+    $joinDate = CRM_Utils_Date::processDate($params['join_date'], null, null, 'Y-m-d H:i:s');
+    $startDate = CRM_Utils_Date::processDate($params['start_date'], null, null, 'Y-m-d H:i:s');
+    $endDate = CRM_Utils_Date::processDate($params['end_date'], null, null, 'Y-m-d H:i:s');
 
     // In theory, the membership form is designed to take more than one
     // membership. We only ever use it with one.

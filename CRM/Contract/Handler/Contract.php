@@ -322,7 +322,6 @@ class CRM_Contract_Handler_Contract{
       case 'cancel':
         $subjectLine = "id{$this->endState['id']}: ";
         $cancelDate = new DateTime($this->modificationActivity['activity_date_time']);
-        // $cancelText[] = 'cancel date '.$cancelDate->format('d/m/Y');
         $cancelText[] = 'cancel reason '.$this->modificationActivity[CRM_Contract_Utils::getCustomFieldId('contract_cancellation.contact_history_cancel_reason')];
         $subjectLine .= implode(', ', $cancelText);
         break;
