@@ -93,10 +93,12 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     // Core fields
     $params['contact_id'] = $this->get('cid');
     $params['membership_type_id'] = $submitted['membership_type_id'];
-    $params['start_date'] = $submitted['start_date'];
-    $params['join_date'] = $submitted['join_date'];
+    $params['start_date'] = CRM_Utils_Date::processDate($submitted['start_date'], null, null, 'Y-m-d H:i:s');
+    $params['join_date'] = CRM_Utils_Date::processDate($submitted['join_date'], null, null, 'Y-m-d H:i:s');
+
+    // TODO Marco: should we remove start date from this form? As it should only be set when a contract is cancelled
     if($submitted['end_date']){
-      $params['end_date'] = $submitted['end_date'];
+      $params['end_date'] = CRM_Utils_Date::processDate($submitted['end_date'], null, null, 'Y-m-d H:i:s');
     }
     $params['campaign_id'] = $submitted['campaign_id'];
 
