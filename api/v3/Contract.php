@@ -130,7 +130,7 @@ function civicrm_api3_Contract_modify($params){
       if(isset($params['resume_date'])){
         $resumeDate = DateTime::createFromFormat('Y-m-d', $params['resume_date']);
         if($resumeDate->getLastErrors()['warning_count']){
-          throw new Exception("Invalid format for resume date. Should be in 'Y-m-d' format, for example, '2000-12-31'");
+          throw new Exception("Invalid format for resume date. Should be in 'Y-m-d' format, for example, '1999-12-31'");
         }
         $activityParams['resume_date'] = $params['resume_date'];
       }else{

@@ -114,8 +114,6 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     $this->add('text', 'bic', ts('BIC'));
     $this->add('text', 'payment_amount', ts('Payment amount'));
     $this->addEntityRef('payment_frequency', ts('Payment frequency'), array( 'entity' => 'option_value', 'api' => array( 'params' => array('option_group_id' => 'payment_frequency'), 'select' => array('minimumInputLength' => 0))));
-
-
   }
 
   function addCancelFields(){
@@ -155,17 +153,15 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
   }
 
   function validate(){
-
     $submitted = $this->exportValues();
-    $activityDate = DateTime::createFromFormat('m/d/Y', $submitted['activity_date']);
-
-    if($activityDate < DateTime::createFromFormat('Y-m-d H:i:s', date_format(new DateTime(''), 'Y-m-d 00:00:00'))){
+    $activityDate = CRM_Utils_Date::processDate($submitted['activity_date'], $submitted['activity_date_time']);
+    $midnightThisMorning = date('Ymd000000');
+    if($activityDate < $midnightThisMorning){
       HTML_QuickForm::setElementError ( 'activity_date', 'Activity date must be either today (which will execute the change now) or in the future');
     }
-
     if($this->modificationActivity->getAction() == 'pause'){
-      $activityDate = DateTime::createFromFormat('d/m/Y', $submitted['activity_date']);
-      $resumeDate = DateTime::createFromFormat('d/m/Y', $submitted['resume_date']);
+      $resumeDate = CRM_Utils_Date::processDate($submitted['resume_date']);
+
       if($activityDate > $resumeDate){
         HTML_QuickForm::setElementError ( 'resume_date', 'Resume date must be after the scheduled pause date');
       }
@@ -188,8 +184,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     //If the date was set, convert it to the necessary format
     if($submitted['activity_date']){
-      $activityDate = DateTime::createFromFormat('m/d/YH:iA', $submitted['activity_date'] . $submitted['activity_date_time']);
-      $params['date'] = $activityDate->format('Y-m-d H:i:s');
+      $params['date'] = CRM_Utils_Date::processDate($submitted['activity_date'], $submitted['activity_date_time'], false, 'Y-m-d H:i:s');
     }
 
     // If this is an update or a revival
@@ -211,8 +206,8 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     // If this is a pause
     }elseif($this->modificationActivity->getAction() == 'pause'){
-      $resumeDate = DateTime::createFromFormat('m/d/Y', $submitted['resume_date']);
-      $params['resume_date'] = $resumeDate->format('Y-m-d');
+      $params['resume_date'] = CRM_Utils_Date::processDate($submitted['resume_date'], false, false, 'Y-m-d');
+
     }
     civicrm_api3('contract', 'modify', $params);
   }
