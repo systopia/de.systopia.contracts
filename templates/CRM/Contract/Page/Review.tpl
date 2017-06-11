@@ -12,11 +12,8 @@
     <td>{$activityStatuses[$a.status_id]}</td>
     <td>{$a.subject}</td>
     <td>
-      <a class="edit-activity" href="{crmURL p='civicrm/activity/add' q="&action=update&reset=1&id=`$a.id`&context=activity&searchContext=activity"}" class="create-mandate">edit</a>
+      <a class="edit-activity" href="{crmURL p='civicrm/activity/add' q="&action=update&reset=1&id=`$a.id`&context=activity&searchContext=activity&cid=`$a.target_contact_id.0`"}" class="create-mandate">edit</a>
     </td>
-
-
-
   </tr>
 {/foreach}
 </table>
