@@ -107,30 +107,30 @@ class CRM_Contract_Wrapper_ModificationActivity{
       DateTime::createFromFormat('Y-m-d H:i:s', $this->endState['activity_date_time']) <= new DateTime('+15 seconds')
     ){
 
-      // Get a handler to do the heavy lifting
-      $handler = new CRM_Contract_Handler_Contract;
-
-      // Set the initial state of the handler
-      $handler->setStartState($this->endState['source_record_id']);
-      $handler->setModificationActivity($this->endState);
-
-      // Get the parameters of the change
-      $contractParams = CRM_Contract_Handler_ModificationActivityHelper::getContractParams($this->endState);
-
-      // If we are creating pause, we need pass the resume date through to
-      // ensure that the resume activity is created as well
-      if(isset($this->resumeDate)){
-        $contractParams['resume_date'] = $this->resumeDate;
-      }
-
-      $handler->setParams($contractParams);
-      if($handler->isValid()){
-        $handler->modify();
-        $this->reset();
-        return;
-      }else{
-        throw new exception(implode($handler->getErrors(), ';'));
-      }
+      // // Get a handler to do the heavy lifting
+      // $handler = new CRM_Contract_Handler_Contract;
+      //
+      // // Set the initial state of the handler
+      // $handler->setStartState($this->endState['source_record_id']);
+      // $handler->setModificationActivity($this->endState);
+      //
+      // // Get the parameters of the change
+      // $contractParams = CRM_Contract_Handler_ModificationActivityHelper::getContractParams($this->endState);
+      //
+      // // If we are creating pause, we need pass the resume date through to
+      // // ensure that the resume activity is created as well
+      // if(isset($this->resumeDate)){
+      //   $contractParams['resume_date'] = $this->resumeDate;
+      // }
+      //
+      // $handler->setParams($contractParams);
+      // if($handler->isValid()){
+      //   $handler->modify();
+      //   $this->reset();
+      //   return;
+      // }else{
+      //   throw new exception(implode($handler->getErrors(), ';'));
+      // }
     }
 
     // ACTION: If the status was changed to needs review, presume that this was
