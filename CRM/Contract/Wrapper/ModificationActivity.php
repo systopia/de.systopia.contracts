@@ -52,6 +52,7 @@ class CRM_Contract_Wrapper_ModificationActivity{
 
   public function post($id, $objectRef){
 
+    // Return early if we can.
     if($this->skip){
       $this->reset();
       return;
@@ -69,6 +70,9 @@ class CRM_Contract_Wrapper_ModificationActivity{
       $this->contractId = $this->endState['source_record_id'];
       $this->checkActivityType($this->endState);
     }
+
+    // If this is not a contract modification activity (checkActivityType), return
+    // We can't do this in pre when the op is create.
     if($this->skip){
       $this->reset();
       return;
@@ -80,71 +84,17 @@ class CRM_Contract_Wrapper_ModificationActivity{
     // and we know the type of operation; the start state, the end state and
     // a textual representation of the start and end statuses and the contract id
 
-    // From here on in we execute certain actions depending data in and
-    // transformations that have occured to the modification activity. Each
-    // action should be well commented here. Many actions return from the
-    // function, indicating that no further checks are necessary.
-
-    // After if we still here after executing all actions that may have returned
-    // us from the function, the default behaviour is to check the contract for
-    // possible conflicts.
-
-    // ACTION: If this was a create operation that has a status of scheduled and
-    // an activity_date_time of 'now + 30 seconds' (we use a generous definition
-    // of now in case the script is taking a while to execute) then attempt the
-    // update immediatley and return from the script.
-    //
-    // Note that since we have disabled the out of the box
-    // create forms for contract modification activities, the only time this is
-    // likely to happen is via the contract.modify API, or the activity.create
-    // API.
-    //
-    // Note also, that the contract update screens use the contract.modify
-    // API so form submissions there will pass by this route.
-    if(
-      $this->op =='create' &&
-      $this->endStatus == 'Scheduled' &&
-      DateTime::createFromFormat('Y-m-d H:i:s', $this->endState['activity_date_time']) <= new DateTime('+15 seconds')
-    ){
-
-      // // Get a handler to do the heavy lifting
-      // $handler = new CRM_Contract_Handler_Contract;
-      //
-      // // Set the initial state of the handler
-      // $handler->setStartState($this->endState['source_record_id']);
-      // $handler->setModificationActivity($this->endState);
-      //
-      // // Get the parameters of the change
-      // $contractParams = CRM_Contract_Handler_ModificationActivityHelper::getContractParams($this->endState);
-      //
-      // // If we are creating pause, we need pass the resume date through to
-      // // ensure that the resume activity is created as well
-      // if(isset($this->resumeDate)){
-      //   $contractParams['resume_date'] = $this->resumeDate;
-      // }
-      //
-      // $handler->setParams($contractParams);
-      // if($handler->isValid()){
-      //   $handler->modify();
-      //   $this->reset();
-      //   return;
-      // }else{
-      //   throw new exception(implode($handler->getErrors(), ';'));
-      // }
-    }
-
-    // ACTION: If the status was changed to needs review, presume that this was
+    // If the status was changed to needs review, presume that this was
     // done intentionally, and do not trigger any further checks for conflicts
     if($this->startStatus == 'Needs Review' && ($this->endStatus == 'Scheduled' || $this->endStatus == 'Cancelled')){
       $this->reset();
       return;
     }
 
+    // If we still here check the contract for possible conflicts.
     $conflictHandler = new CRM_Contract_Handler_ModificationConflicts;
     $conflictHandler->checkForConflicts($this->contractId);
   }
-
-
 
   // This function checks to see whether the activity that has been wrapped is
   // relevant, i.e. is a modification activity
