@@ -28,8 +28,7 @@ class CRM_Contract_Page_Review extends CRM_Core_Page {
         'activity_type_id',
         'target_contact_id'
       ],
-      'options' => array('sort' => "activity_date_time DESC"),
-      'activity_date_time' => ['>' => date('Y-m-d H:i:s')]
+      'status_id' => ['NOT IN' => ['cancelled']]
     ])['values']);
     CRM_Core_Resources::singleton()->addScriptFile('civicrm', 'packages/ckeditor/ckeditor.js');
 
