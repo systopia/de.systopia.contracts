@@ -47,7 +47,14 @@ If you are calling update or revive, you can pass
 
 * membership_type_id
 * membership_payment.membership_recurring_contribution
-* campaign id
+* campaign_id
+* membership_payment.membership_recurring_contribution'
+* membership_cancellation.membership_cancel_reason
+* membership_payment.membership_annual
+* membership_payment.membership_frequency
+* membership_payment.cycle_day
+* membership_payment.to_ba
+
 
 If you are calling cancel, you must pass
 * membership_cancellation.membership_cancel_reason (a cancel reason)
