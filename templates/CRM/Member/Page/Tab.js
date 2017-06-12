@@ -34,15 +34,8 @@ CRM.$(function($) {
     id = getIdFromRow(this);
     var contractStatus = contractStatuses[id];
 
-    // Add link to view contract history
-    contractHistory.call(this);
-
-    // Add a needs review if necessary
-    if(contractStatus.needs_review > 0){
-      addReviewLink.call(this);
-    }else if (contractStatus.scheduled > 0){
-      addReviewLink.call(this);
-    }
+    // Add a needs review
+    addReviewLink.call(this);
 
     if(contractStatus.needs_review > 0){
       $(this).addClass('needs-review');
@@ -62,10 +55,6 @@ CRM.$(function($) {
     return elementId.substr(elementId.indexOf("_") + 1);
   }
 
-  function contractHistory(){
-    // $(this).find('td.crm-membership-status').append(' history');
-  }
-
   function addReviewLink(){
     if($( this ).find('td.crm-membership-status .show-review').length == 0){
       $( this ).find('td.crm-membership-status').append(
@@ -74,10 +63,13 @@ CRM.$(function($) {
       );
     }
     if(contractStatuses[id].needs_review > 0){
-      $( this ).find('td.crm-membership-status .show-review').html('needs review');
-    }else{
-      $( this ).find('td.crm-membership-status .show-review').html('scheduled modifications');
+      text = '(needs review)';
+    }else if(contractStatuses[id].scheduled > 0) {
+      text = '(scheduled modifications)';
+    } else {
+      text = '(view history)';
     }
+    $( this ).find('td.crm-membership-status .show-review').html(text);
   }
 
   function getHistoryLink(id){
