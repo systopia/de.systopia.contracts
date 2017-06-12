@@ -5,6 +5,7 @@
 // schedule Contract.create for the future.
 
 function civicrm_api3_Contract_create($params){
+
     // Any parameters with a period in will be converted to the custom_N format
     // Other fields will be passed directly to the membership.create API
     foreach ($params as $key => $value){
@@ -153,14 +154,88 @@ function civicrm_api3_Contract_modify($params){
   return civicrm_api3_create_success($result);
 }
 
-function _civicrm_api3_Contract_getstatus_spec(&$params){
+function civicrm_api3_Contract_get_open_modifications_spec(&$params){
   $params['id']['api.required'] = 1;
 }
 
-function civicrm_api3_Contract_getstatus($params){
+function civicrm_api3_Contract_get_open_modifications($params){
   $activitiesForReview = civicrm_api3('Activity', 'getcount', [
     'source_record_id' => $params['id'],
     'status_id' => 'Needs Review'
   ]);
-  return ['needs_review' => $activitiesForReview];
+  $activitiesScheduled = civicrm_api3('Activity', 'getcount', [
+    'source_record_id' => $params['id'],
+    'status_id' => ['IN' => ['Scheduled']]
+  ]);
+  return [
+    'needs_review' => $activitiesForReview,
+    'scheduled' => $activitiesScheduled
+  ];
+}
+
+function civicrm_api3_Contract_process_open_modifications($params){
+
+  // Passing the now param is useful for testing
+  $now = new DateTime(isset($params['now']) ? $params['now'] : '');
+
+  // Get the limit (defaults to 1000)
+  $limit = isset($params['limit']) ? $params['limit'] : 1000;
+
+  $activityParams = [
+    'activity_type_id' => ['IN' => CRM_Contract_ModificationActivity::getModificationActivityTypeIds()],
+    'status_id' => 'scheduled',
+    'activity_date_time' => ['<=' => $now->format('Y-m-d 00:00')],
+    'option.limit' => $limit
+  ];
+  if(isset($params['id'])){
+    $activityParams['source_record_id'] = $params['id'];
+  }
+
+  $scheduledActivities = civicrm_api3('activity', 'get', $activityParams);
+
+  $counter = 0;
+
+  // Going old school and sorting by timestamp
+  foreach($scheduledActivities['values'] as $k => $scheduledActivity){
+    $scheduledActivities['values'][$k]['activity_date_unixtime'] = strtotime($scheduledModification['activity_date_time']);
+  }
+  usort($scheduledActivities['values'], function($a, $b){
+    return $a['activity_date_unixtime'] - $b['activity_date_unixtime'];
+  });
+
+
+
+
+  foreach($scheduledActivities['values'] as $scheduledActivity){
+    $result['order'][]=$scheduledActivity['id'];
+    // If the limit parameter has been passed, only process $params['limit']
+    $counter++;
+    if($counter > $limit){
+      break;
+    }
+
+    $handler = new CRM_Contract_Handler_Contract;
+
+    // Set the initial state of the handler
+    $handler->setStartState($scheduledActivity['source_record_id']);
+    $handler->setModificationActivity($scheduledActivity);
+
+    // Pass the parameters of the change
+    $handler->setParams(CRM_Contract_Handler_ModificationActivityHelper::getContractParams($scheduledActivity));
+
+    // We ignore the lack of resume_date when processing alredy scheduled pauses
+    // as we assume that the resume has already been created when the pause wraps
+    // originally scheduled and hence we wouldn't want to create it again
+    if($handler->isValid(['resume_date'])){
+      //TODO Might need/want to catch more exceptions here
+      $handler->modify();
+      $result['completed'][]=$scheduledActivity['id'];
+    }else{
+      $scheduledActivity['status_id'] = 'Failed';
+      $scheduledActivity['details'] .= '<p><b>Errors</b></p>'.implode($handler->getErrors(), ';');
+      civicrm_api3('activity', 'create', $scheduledActivity);
+      $result['failed'][]=$scheduledActivity['id'];
+    }
+  }
+  return civicrm_api3_create_success($result);
 }
