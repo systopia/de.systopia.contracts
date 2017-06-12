@@ -210,5 +210,6 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     }
     civicrm_api3('contract', 'modify', $params);
+    civicrm_api3('contract', 'process_scheduled_modifications', ['id' => $params['id']]);
   }
 }

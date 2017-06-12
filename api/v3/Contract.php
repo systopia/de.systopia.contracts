@@ -173,7 +173,7 @@ function civicrm_api3_Contract_get_open_modifications($params){
   ];
 }
 
-function civicrm_api3_Contract_process_open_modifications($params){
+function civicrm_api3_Contract_process_scheduled_modifications($params){
 
   // Passing the now param is useful for testing
   $now = new DateTime(isset($params['now']) ? $params['now'] : '');
@@ -203,8 +203,7 @@ function civicrm_api3_Contract_process_open_modifications($params){
     return $a['activity_date_unixtime'] - $b['activity_date_unixtime'];
   });
 
-
-
+  $result=[];
 
   foreach($scheduledActivities['values'] as $scheduledActivity){
     $result['order'][]=$scheduledActivity['id'];
