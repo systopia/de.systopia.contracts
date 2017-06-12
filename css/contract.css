@@ -1,0 +1,8 @@
+table.dataTable.display tbody tr.scheduled,
+table.dataTable.display tbody tr.scheduled:hover {
+    background-color: rgb(255,255,220);
+}
+table.dataTable.display tbody tr.needs-review,
+table.dataTable.display tbody tr.needs-review:hover {
+    background-color: rgb(255,220,220);
+}
