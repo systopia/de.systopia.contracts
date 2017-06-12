@@ -18,7 +18,7 @@ CRM.$(function($) {
   $(document).on( "crmPopupFormSuccess", '.edit-activity', function(){
     row = ($(this).parent().parent().parent().parent().parent().parent().parent().parent().prev());
     id = getIdFromRow(row);
-    CRM.api3('Contract', 'getstatus', {
+    CRM.api3('Contract', 'get_open_modifications', {
       "id": id
     }).done(function(result) {
       contractStatuses[id] = result;
