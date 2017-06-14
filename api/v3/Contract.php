@@ -154,11 +154,11 @@ function civicrm_api3_Contract_modify($params){
   return civicrm_api3_create_success($result);
 }
 
-function civicrm_api3_Contract_get_open_modifications_spec(&$params){
+function civicrm_api3_Contract_get_open_modification_counts_spec(&$params){
   $params['id']['api.required'] = 1;
 }
 
-function civicrm_api3_Contract_get_open_modifications($params){
+function civicrm_api3_Contract_get_open_modification_counts($params){
   $activitiesForReview = civicrm_api3('Activity', 'getcount', [
     'source_record_id' => $params['id'],
     'status_id' => 'Needs Review'
