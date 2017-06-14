@@ -113,7 +113,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     $this->add('text', 'iban', ts('IBAN'));
     $this->add('text', 'bic', ts('BIC'));
     $this->add('text', 'payment_amount', ts('Payment amount'));
-    $this->addEntityRef('payment_frequency', ts('Payment frequency'), array( 'entity' => 'option_value', 'api' => array( 'params' => array('option_group_id' => 'payment_frequency'), 'select' => array('minimumInputLength' => 0))));
+    $this->addEntityRef('payment_frequency', ts('Payment frequency'), array( 'entity' => 'OptionValue', 'api' => array( 'params' => array('option_group_id' => 'payment_frequency'), 'select' => array('minimumInputLength' => 0))));
   }
 
   function addCancelFields(){
@@ -167,6 +167,13 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       }
     }
 
+    if($submitted['payment_amount'] && !$submitted['payment_frequency']){
+      HTML_QuickForm::setElementError ( 'payment_frequency', 'Please specify a frequency when specifying an amount');
+    }
+    if($submitted['payment_frequency'] && !$submitted['payment_amount']){
+      HTML_QuickForm::setElementError ( 'payment_amount', 'Please specify an amount when specifying a frequency');
+    }
+
     //TODO Bjorn - you can add validation functions for the above fields here if you need to
 
     return parent::validate();
@@ -194,7 +201,9 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       $params['campaign_id'] = $submitted['campaign_id'];
 
       // TODO Bjorn - these are the ones I have added.
-      // $params['membership_payment.membership_annual'] = $submitted['payment_amount'] * 12 / $submitted['payment_frequency']; // leaving this commented out for now to avoid divide by zero errors
+      if($submitted['payment_frequency'] && $submitted['payment_amount']){
+        $params['membership_payment.membership_annual'] = $submitted['payment_amount'] * $submitted['payment_frequency'];
+      }
       $params['membership_payment.membership_frequency'] = $submitted['payment_frequency'];
       $params['membership_payment.cycle_day'] = $submitted['cycle_day'];
       // TODO Bjorn - handling membership_payment.to_ba might be tricky. Let me know if you want to discuss
