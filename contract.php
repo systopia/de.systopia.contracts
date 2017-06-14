@@ -117,7 +117,7 @@ function contract_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
 function contract_civicrm_pageRun( &$page ){
   if($page->getVar('_name') == 'CRM_Member_Page_Tab'){
     foreach(civicrm_api3('Membership', 'get', ['contact_id' => $page->_contactId])['values'] as $contract){
-      $contractStatuses[$contract['id']] = civicrm_api3('Contract', 'get_open_modifications', ['id' => $contract['id']]);
+      $contractStatuses[$contract['id']] = civicrm_api3('Contract', 'get_open_modification_counts', ['id' => $contract['id']]);
     }
     CRM_Core_Resources::singleton()->addStyleFile('de.systopia.contract', 'css/contract.css');
     CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('contractStatuses' => $contractStatuses));
@@ -134,8 +134,8 @@ function contract_civicrm_buildForm($formName, &$form) {
     // Membership form in view mode
     case 'CRM_Member_Form_MembershipView':
       $contactId = CRM_Utils_Request::retrieve('cid', 'Positive', $form);
-      $modifyForm = new CRM_Contract_FormUtils($form, 'Membership');
-      $modifyForm->showPaymentContractDetails();
+      $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
+      $formUtils->showPaymentContractDetails();
       break;
 
     // Membership form in add mode
@@ -192,11 +192,11 @@ function contract_civicrm_buildForm($formName, &$form) {
 
         // Show recurring contribution details
         $id =  CRM_Utils_Request::retrieve('id', 'Positive', $form);
-        $modifyForm = new CRM_Contract_FormUtils($form, 'Activity');
-        $modifyForm->showPaymentContractDetails();
+        $formUtils = new CRM_Contract_FormUtils($form, 'Activity');
+        $formUtils->showPaymentContractDetails();
 
         // Show membership label, not id
-        $modifyForm->showMembershipTypeLabel();
+        $formUtils->showMembershipTypeLabel();
 
       }
       break;
