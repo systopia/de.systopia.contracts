@@ -16,26 +16,66 @@ CRM.$(function($) {
 
   // When a pop up is closed, update the contract status and decorate the row
   $(document).on( "crmPopupFormSuccess", '.edit-activity', function(){
-    row = ($(this).parent().parent().parent().parent().parent().parent().parent().parent().prev());
+    row = $(this).parent().parent().parent().parent().parent().parent().parent().prev();
+    console.log(row);
     id = getIdFromRow(row);
-    CRM.api3('Contract', 'get_open_modifications', {
+    table = $(row).parent();
+    reviewPane = table.find(".crm-membership-review_"+ id)[0];
+    reviewLink = table.find("#crm-membership_"+ id + ' .review-link')[0];
+    $(reviewPane).find('td').load(reviewLink.href);
+
+    CRM.api3('Contract', 'get_open_modification_counts', {
       "id": id
     }).done(function(result) {
       contractStatuses[id] = result;
-      decorateRow.call(row);
-      // reload review pane
-      $(row).next().find('.review-pane').load("/civicrm/contract/review?reset=&snippet=1&id=" + id);
+      table = $(row).parent();
+      reviewPane = table.find(".crm-membership-review_"+ id)[0];
+      $(reviewPane).find('td').load(reviewLink.href);
+
     });
   });
 
-  function decorateRow(){
+  // Clicking on show review opens up a review pane under the contract if not already open
+  $(document).on( "click", ".review-link", function(e) {
 
+    e.preventDefault();
+    var row = $(this).parent().parent();
+    id = getIdFromRow(row);
+    table = $(row).parent();
+
+    reviewPane = table.find(".crm-membership-review_"+ id)[0];
+    reviewLink = table.find("#crm-membership_"+ id + ' .review-link')[0];
+
+    if($(reviewPane).is(":visible")){
+      $(reviewPane).hide();
+      $(reviewLink).html(getReviewLinkText(id));
+    }else{
+      $(reviewPane).find('td').load(reviewLink.href, function(){
+        $(reviewPane).show();
+        $(reviewLink).html('(close)');
+      });
+    }
+
+    // Prevent the default link action
+
+    // console.log(reviewPane);
+    // reviewPane.each().remove();
+  });
+
+  // Clicking on hide review closes the review pane
+  $(document).on( "click", ".hide-review", function() {
+    var review = $(this).parent().parent();
+    $(review).remove();
+  });
+
+  function decorateRow(){
+    console.log('called decorateRow');
     // get the status
     id = getIdFromRow(this);
     var contractStatus = contractStatuses[id];
 
     // Add a needs review
-    addReviewLink.call(this);
+    addReviewHtml.call(this);
 
     if(contractStatus.needs_review > 0){
       $(this).addClass('needs-review');
@@ -55,71 +95,35 @@ CRM.$(function($) {
     return elementId.substr(elementId.indexOf("_") + 1);
   }
 
-  function addReviewLink(){
-    if($( this ).find('td.crm-membership-status .show-review').length == 0){
+  function addReviewHtml(){
+
+    id = getIdFromRow(this);
+
+    // Add text to the membership status field if it is not there already
+    if($( this ).find('td.crm-membership-status .review-link').length == 0){
+      console.log('adding the review row');
       $( this ).find('td.crm-membership-status').append(
         " <a href='/civicrm/contract/review?reset=&snippet=1&id=" +
-        id + "' class='show-review'>scheduled modifications</a>"
+        id + "' class='review-link'>" + getReviewLinkText(id) + "</a>"
       );
     }
+
+    if($( this ).parent().find('tr.crm-membership-review_' + id).length == 0){
+      $( this ).after("<tr class= 'crm-membership-review_" + id + "'><td colspan=9></td></tr>");
+    }
+    $( this ).parent().find('tr.crm-membership-review_' + id).hide();
+
+  }
+
+  function getReviewLinkText(id){
     if(contractStatuses[id].needs_review > 0){
       text = '(needs review)';
     }else if(contractStatuses[id].scheduled > 0) {
       text = '(scheduled modifications)';
     } else {
-      text = '(view history)';
+      text = '(view modifications)';
     }
-    $( this ).find('td.crm-membership-status .show-review').html(text);
+    return text;
   }
-
-  function getHistoryLink(id){
-    return "/civicrm/contract/review?reset=&snippet=1&id=" + id;
-  }
-
-  function updateActivities(){
-    var link = getHistoryLink(getIdFromRow($(this).parents('tr').parents('tr').prev()));
-    $(this).parents('tr').parents('tr div.scheduled-modifications').load(link);
-  }
-
-  // Clicking on show review opens up a review pane under the contract if not already open
-  $(document).on( "click", ".show-review", function(e) {
-    // Prevent the default link action
-    e.preventDefault();
-    
-    var row = $(this).parent().parent();
-    id = getIdFromRow(row);
-
-    if(contractStatuses[id].reviewPane !== true){
-      $.get(e.target.attributes.href.value, function(data){
-        row.after("<tr><td colspan=9><div class='review-pane'>" + data + "</div><a class='hide-review'>hide</a></div></td></tr>");
-      });
-      contractStatuses[id].reviewPane = true;
-    }
-  });
-
-  // Clicking on hide review closes the review pane
-  $(document).on( "click", ".hide-review", function() {
-    var review = $(this).parent().parent();
-    var row = review.prev();
-    id = getIdFromRow(row);
-    $(review).remove();
-    addReviewLink.call(row);
-    contractStatuses[id].reviewPane = false;
-  });
-
-  // Clicking on show history opens up a history pane under the contract
-  $(document).on( "click", ".show-history", function(e) {
-    e.preventDefault();
-    var link = getHistoryLink(getIdFromRow($(this).parent().parent()));
-    $(this).parent().parent().after("<tr><td colspan=9><div><div class='history'></div><a class='hide-history'>hide</a></div></td></tr>");
-    $(this).parent().parent().next().find('div.scheduled-modifications').load(link);
-    $(this).remove();
-  });
-
-  // Clicking on hide history closes the history pane
-  $(document).on( "click", ".hide-history", function() {
-    $(this).parent().parent().parent().prev().find('td.crm-membership-status').each(createNeedsReview);
-    $(this).parent().parent().remove();
-  });
 
 });
