@@ -309,7 +309,7 @@ class CRM_Contract_Handler_Contract{
         foreach($deltas as $key => $delta){
           $changesText[] = "{$abbrevations[$key]} {$delta['old']} to {$delta['new']}";
         }
-        $subjectLine .= implode(', ', $changesText);
+        $subjectLine .= implode(' AND ', $changesText);
         break;
       }
       case 'sign':
@@ -317,13 +317,13 @@ class CRM_Contract_Handler_Contract{
         foreach($deltas as $key => $delta){
           $additionsText[] = "{$abbrevations[$key]} {$delta['new']}";
         }
-        $subjectLine .= implode(', ', $additionsText);
+        $subjectLine .= implode(' AND ', $additionsText);
         break;
       case 'cancel':
         $subjectLine = "id{$this->endState['id']}: ";
         $cancelDate = new DateTime($this->modificationActivity['activity_date_time']);
         $cancelText[] = 'cancel reason '.$this->modificationActivity[CRM_Contract_Utils::getCustomFieldId('contract_cancellation.contact_history_cancel_reason')];
-        $subjectLine .= implode(', ', $cancelText);
+        $subjectLine .= implode(' AND ', $cancelText);
         break;
       case 'pause':
         if(isset($this->params['resume_date'])){
