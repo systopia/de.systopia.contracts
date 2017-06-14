@@ -4,7 +4,7 @@ class CRM_Contract_Utils{
 
   private static $_singleton;
   private static $coreMembershipHistoryActivityIds;
-  private static $customFieldCache;
+  static $customFieldCache;
 
   public static function singleton() {
     if (!self::$_singleton) {
@@ -78,7 +78,7 @@ class CRM_Contract_Utils{
     }
   }
 
-  private static function warmCustomFieldCache(){
+  static function warmCustomFieldCache(){
     if(!self::$customFieldCache){
       $customGroupNames = ['membership_general', 'membership_payment', 'membership_cancellation', 'contract_cancellation', 'contract_updates'];
       $customGroups = civicrm_api3('CustomGroup', 'get', [ 'name' => ['IN' => $customGroupNames], 'return' => 'name'])['values'];

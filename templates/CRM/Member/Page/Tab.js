@@ -81,18 +81,20 @@ CRM.$(function($) {
     $(this).parents('tr').parents('tr div.scheduled-modifications').load(link);
   }
 
-
-  // Clicking on show review opens up a review pane under the contract
+  // Clicking on show review opens up a review pane under the contract if not already open
   $(document).on( "click", ".show-review", function(e) {
-    var row = $(this).parent().parent();
     // Prevent the default link action
     e.preventDefault();
-    $.get(e.target.attributes.href.value, function(data){
-      row.after("<tr><td colspan=9><div class='review-pane'>" + data + "</div><a class='hide-review'>hide</a></div></td></tr>");
-    });
-    $(this).remove();
+    
+    var row = $(this).parent().parent();
     id = getIdFromRow(row);
-    contractStatuses[id].reviewPane = true;
+
+    if(contractStatuses[id].reviewPane !== true){
+      $.get(e.target.attributes.href.value, function(data){
+        row.after("<tr><td colspan=9><div class='review-pane'>" + data + "</div><a class='hide-review'>hide</a></div></td></tr>");
+      });
+      contractStatuses[id].reviewPane = true;
+    }
   });
 
   // Clicking on hide review closes the review pane
