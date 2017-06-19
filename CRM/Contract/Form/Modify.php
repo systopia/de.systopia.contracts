@@ -14,7 +14,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     // If we requested a contract file download
     $download = CRM_Utils_Request::retrieve('ct_dl', 'String', CRM_Core_DAO::$_nullObject, FALSE, '', 'GET');
     if (!empty($download)) {
-      // FIXME: Could use CRM_Utils_System::download if it didn't use the full path as filename
+      // FIXME: Could use CRM_Utils_System::download but it still requires you to do all the work (load file to stream etc) before calling.
       if (CRM_Contract_Utils::downloadContractFile($download)) {
         CRM_Utils_System::civiExit();
       }

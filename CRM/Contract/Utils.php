@@ -158,6 +158,16 @@ class CRM_Contract_Utils{
   }
 
   /**
+   * Simple function to get real file name from contract number
+   * @param $file
+   *
+   * @return string
+   */
+  static function contractFileName($file) {
+    return $file.'.tif';
+  }
+
+  /**
    * This is hardcoded so contract files must be stored in customFileUploadDir/contracts/
    * Extension hardcoded to .tif
    * FIXME: This could be improved to use a setting to configure this.
@@ -175,7 +185,7 @@ class CRM_Contract_Utils{
     // Use the custom file upload dir as it's protected by a Deny from All in htaccess
     $config = CRM_Core_Config::singleton();
     if (!empty($config->customFileUploadDir)) {
-      $fullPath = $config->customFileUploadDir . "/contracts/$file.tif";
+      $fullPath = $config->customFileUploadDir . "/contracts/" . self::contractFileName($file);
       return $fullPath;
     }
     else {
