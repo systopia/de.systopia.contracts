@@ -218,4 +218,22 @@ Next debit: {$return[$cr['id']]['fields']['next_debit']}";
      * Replaced with js/membership-edit.js for now as filtering was doing weird
      * things to the status_id
      */
+
+    public function addMembershipContractFileDownloadLink($membershipId) {
+      $membershipContractCustomField = civicrm_api3('CustomField', 'getsingle', array('name' => "membership_contract"));
+      $membership = civicrm_api3('Membership','getsingle', array('id' => $membershipId));
+      if (!empty($membership['custom_'.$membershipContractCustomField['id']])) {
+        $membershipContract = $membership['custom_'.$membershipContractCustomField['id']];
+        $contractFile = CRM_Contract_Utils::contractFileExists($membershipContract);
+        if ($contractFile) {
+          $script = file_get_contents(CRM_Core_Resources::singleton()->getUrl('de.systopia.contract', 'templates/CRM/Member/Form/MembershipView.js'));
+          $url = CRM_Utils_System::url('civicrm/contract/modify', "ct_dl=".urlencode($membershipContract));
+          $script = str_replace('CONTRACT_FILE_DOWNLOAD', $url, $script);
+          CRM_Core_Region::instance('page-footer')->add(array(
+            'script' => $script,
+          ));
+        }
+      }
+    }
 }
+
