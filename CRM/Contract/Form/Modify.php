@@ -108,13 +108,13 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       'placeholder' => ts('- none -')
     ]);
 
-    // TODO Bjorn
-    $this->add('select', 'cycle_day', ts('Cycle day'), [3 => 3, 9 => 9 ,17 => 17, 25 => 25]);
+    $this->add('select', 'cycle_day', ts('Cycle day'), CRM_Contract_SepaLogic::getCycleDays());
     $this->add('text', 'iban', ts('IBAN'));
     $this->add('text', 'bic', ts('BIC'));
     $this->add('text', 'payment_amount', ts('Payment amount'));
     $this->addEntityRef('payment_frequency', ts('Payment frequency'), array( 'entity' => 'OptionValue', 'api' => array( 'params' => array('option_group_id' => 'payment_frequency'), 'select' => array('minimumInputLength' => 0))));
   }
+
 
   function addCancelFields(){
 
@@ -126,6 +126,8 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     $this->add('select', 'cancel_reason', ts('Cancellation reason'), array('' => '- none -') + $cancelOptions, true, array('class' => 'crm-select2'));
 
   }
+
+
   function addPauseFields(){
 
     // Resume date
@@ -137,7 +139,9 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     if(isset($this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')])){
       $defaults['recurring_contribution'] = $this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')];
 
-      //TODO Bjorn - please add defaults for cycle_day, iban, bic, payment_amount and payment_frequency here
+      // TODO: add more default values
+      $defaults['cycle_day'] = CRM_Contract_SepaLogic::nextCycleDay();
+      $defaults['payment_frequency'] = '12';
     }
 
     $defaults['membership_type_id'] = $this->membership['membership_type_id'];
@@ -151,6 +155,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     parent::setDefaults($defaults);
   }
+
 
   function validate(){
     $submitted = $this->exportValues();
@@ -174,7 +179,13 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       HTML_QuickForm::setElementError ( 'payment_amount', 'Please specify an amount when specifying a frequency');
     }
 
-    //TODO Bjorn - you can add validation functions for the above fields here if you need to
+    // SEPA validation
+    if (!empty($submitted['iban']) && !CRM_Contract_SepaLogic::validateIBAN($submitted['iban'])) {
+      HTML_QuickForm::setElementError ( 'iban', 'Please enter a valid IBAN');
+    }
+    if (!empty($submitted['bic']) && !CRM_Contract_SepaLogic::validateBIC($submitted['bic'])) {
+      HTML_QuickForm::setElementError ( 'bic', 'Please enter a valid BIC');
+    }
 
     return parent::validate();
   }
@@ -202,12 +213,12 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
       // TODO Bjorn - these are the ones I have added.
       if($submitted['payment_frequency'] && $submitted['payment_amount']){
-        $params['membership_payment.membership_annual'] = $submitted['payment_amount'] * $submitted['payment_frequency'];
+        $params['membership_payment.membership_annual'] = number_format($submitted['payment_amount'] * $submitted['payment_frequency'], 2);;
       }
       $params['membership_payment.membership_frequency'] = $submitted['payment_frequency'];
       $params['membership_payment.cycle_day'] = $submitted['cycle_day'];
-      // TODO Bjorn - handling membership_payment.to_ba might be tricky. Let me know if you want to discuss
-      $params['membership_payment.to_ba'] = $submitted['iban'] . $submitted['bic'];
+      $params['membership_payment.to_ba'] = CRM_Contract_BankingLogic::getCreditorBankAccount();
+      $params['membership_payment.from_ba'] = CRM_Contract_BankingLogic::getOrCreateBankAccount($submitted['contact_id'], $submitted['iban'], $submitted['bic']);
 
     // If this is a cancellation
     }elseif($this->modificationActivity->getAction() == 'cancel'){
