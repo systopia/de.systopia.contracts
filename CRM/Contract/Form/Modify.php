@@ -139,9 +139,10 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     if(isset($this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')])){
       $defaults['recurring_contribution'] = $this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')];
 
-      // TODO: add more default values
       $defaults['cycle_day'] = CRM_Contract_SepaLogic::nextCycleDay();
       $defaults['payment_frequency'] = '12';
+
+      // TODO: add more default values?
     }
 
     $defaults['membership_type_id'] = $this->membership['membership_type_id'];
@@ -211,7 +212,6 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       $params['membership_type_id'] = $submitted['membership_type_id'];
       $params['campaign_id'] = $submitted['campaign_id'];
 
-      // TODO Bjorn - these are the ones I have added.
       if($submitted['payment_frequency'] && $submitted['payment_amount']){
         $params['membership_payment.membership_annual'] = number_format($submitted['payment_amount'] * $submitted['payment_frequency'], 2);;
       }
