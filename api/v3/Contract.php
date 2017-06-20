@@ -1,9 +1,20 @@
 <?php
+/*-------------------------------------------------------------+
+| SYSTOPIA Contract Extension                                  |
+| Copyright (C) 2017 SYSTOPIA                                  |
+| Author: M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
+|         B. Endres (endres -at- systopia.de)                  |
+| http://www.systopia.de/                                      |
++--------------------------------------------------------------*/
 
+/*************************************
+ **    Contract.create              **
+ ************************************/
 
-// A wrapper around Membership.create with appropriate fields passed. On cannot
-// schedule Contract.create for the future.
-
+/**
+ * A wrapper around Membership.create with appropriate fields passed.
+ * You cannot schedule Contract.create for the future.
+ */
 function civicrm_api3_Contract_create($params){
 
     // Any parameters with a period in will be converted to the custom_N format
@@ -19,14 +30,33 @@ function civicrm_api3_Contract_create($params){
     return $membership;
 }
 
+
+
+
+/*************************************
+ **    Contract.modify              **
+ ************************************/
+
+/**
+ * Schedule a Contract modification
+ */
 function _civicrm_api3_Contract_modify_spec(&$params){
-  $params['action']['api.required'] = 1; // TODO For some reason, this is not getting picked up - I wonder why
-  $params['id']['api.required'] = 1;
+  $params['action'] = array(
+    'name'         => 'Action',
+    'api.required' => 1,
+    'title'        => 'Action to be executed',
+    );
+  $params['id'] = array(
+    'name'         => 'Contract ID',
+    'api.required' => 1,
+    'title'        => 'Contract (Membership) ID of the contract to be modified',
+    );
 }
 
-// A wrapper around Activity.create of an contract modification activity (which
-// in turn wraps Membership.create). Contract.modify enables the updating of
-// contracts either now or in the future.
+
+/**
+ * Schedule a Contract modification
+ */
 function civicrm_api3_Contract_modify($params){
 
   //Throw an exception is $params['action'] is not set
@@ -154,10 +184,26 @@ function civicrm_api3_Contract_modify($params){
   return civicrm_api3_create_success($result);
 }
 
-function civicrm_api3_Contract_get_open_modification_counts_spec(&$params){
-  $params['id']['api.required'] = 1;
+
+
+/************************************************
+ **    Contract.get_open_modification_counts   **
+ ************************************************/
+
+/**
+ * Get the number of scheduled modifications for a contract
+ */
+function _civicrm_api3_Contract_get_open_modification_counts_spec(&$params){
+  $params['id'] = array(
+    'name'         => 'Contract ID',
+    'api.required' => 1,
+    'title'        => 'Contract (Membership) ID of the contract to be modified',
+    );
 }
 
+/**
+ * Get the number of scheduled modifications for a contract
+ */
 function civicrm_api3_Contract_get_open_modification_counts($params){
   $activitiesForReview = civicrm_api3('Activity', 'getcount', [
     'source_record_id' => $params['id'],
@@ -167,12 +213,44 @@ function civicrm_api3_Contract_get_open_modification_counts($params){
     'source_record_id' => $params['id'],
     'status_id' => ['IN' => ['Scheduled']]
   ]);
+  // TODO (Michael): return proper API results (civicrm_api3_create_success)
   return [
     'needs_review' => $activitiesForReview,
     'scheduled' => $activitiesScheduled
   ];
 }
 
+
+
+/***************************************************
+ **    Contract.process_scheduled_modifications   **
+ ***************************************************/
+
+/**
+ * Process the scheduled contract modifications
+ */
+function _civicrm_api3_Contract_process_scheduled_modifications_spec(&$params){
+  $params['id'] = array(
+    'name'         => 'Contract ID',
+    'api.required' => 0,
+    'title'        => 'If given, only pending modifications for this contract will be processed',
+    );
+  $params['now'] = array(
+    'name'         => 'NOW Time',
+    'api.required' => 0,
+    'title'        => 'You can provide another datetime for what the algorithm considers to be now',
+    );
+  $params['limit'] = array(
+    'name'         => 'Limit',
+    'api.required' => 0,
+    'title'        => 'Max count of modifications to be processed',
+    );
+}
+
+
+/**
+ * Process the scheduled contract modifications
+ */
 function civicrm_api3_Contract_process_scheduled_modifications($params){
 
   // Passing the now param is useful for testing
