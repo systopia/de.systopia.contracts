@@ -125,7 +125,7 @@ class CRM_Contract_Handler_Contract{
     // add it to postModify. Let me know if you want to discuss.
 
     // adjust mandate
-    CRM_Contract_SepaLogic::updateSepaMandate($this->startState, $this->params)
+    CRM_Contract_SepaLogic::updateSepaMandate($this->startState['id'], $this->startState, $this->params, $this->modificationActivity);
 
     // Setting skip_handler to true  avoids us 'handling the already handled' call
     $params = $this->convertCustomIds($this->params);
@@ -178,7 +178,7 @@ class CRM_Contract_Handler_Contract{
       if($sepaMandateResult['count'] == 1){
         $sepaMandate = $sepaMandateResult['values'][$sepaMandateResult['id']];
         $params['membership_payment.from_ba'] = CRM_Contract_BankingLogic::getOrCreateBankAccount($sepaMandate['contact_id'], $sepaMandate['iban'], $sepaMandate['bic']);
-        $params['membership_payment.to_ba']   = getCreditorBankAccount();
+        $params['membership_payment.to_ba']   = CRM_Contract_BankingLogic::getCreditorBankAccount();
       }
     }
     $params = $this->convertCustomIds($params);

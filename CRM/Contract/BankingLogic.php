@@ -16,6 +16,34 @@ class CRM_Contract_BankingLogic {
   /** cached value for self::getCreditorBankAccount() */
   protected static $_creditorBankAccount = NULL;
 
+  /**
+   * get bank account information
+   */
+  public static function getBankAccount($account_id) {
+    $data = array();
+    $account = civicrm_api3('BankingAccount', 'getsingle', array('id' => $account_id));
+    $data['contact_id'] = $account['contact_id'];
+    $data['id'] = $account['id'];
+    if (!empty($account['data_parsed'])) {
+      $data_parsed = json_decode($account['data_parsed'], TRUE);
+      if ($data_parsed) {
+        $data += $data_parsed;
+      }
+    }
+
+
+    // load IBAN reference
+    $reference_type_value = civicrm_api3('OptionValue', 'getsingle', array(
+      'value'           => 'IBAN',
+      'option_group_id' => 'civicrm_banking.reference_types',
+      'is_active'       => 1));
+    $reference = civicrm_api3('BankingAccountReference', 'getsingle', array(
+      'ba_id'             => $account_id,
+      'reference_type_id' => $reference_type_value['id']));
+    $data['iban'] = $reference['reference'];
+
+    return $data;
+  }
 
   /**
    * Get the ID of the BankingAccount entity representating the
