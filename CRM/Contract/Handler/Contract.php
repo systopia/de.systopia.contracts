@@ -116,7 +116,7 @@ class CRM_Contract_Handler_Contract{
 
   function modify(){
 
-    // TODO Bjorn updates to the mandate should happen here. You have access to
+    // Updates to the mandate should happen here. You have access to
     // $this->startState (the original state of the mandate $this->params (the
     // changes that have been requested (these were taken from
     // $this->modificationActivity. I think you want to make the changes to the
@@ -124,6 +124,8 @@ class CRM_Contract_Handler_Contract{
     // after the contract has been updated, do it after setEndState. Or maybe
     // add it to postModify. Let me know if you want to discuss.
 
+    // adjust mandate
+    CRM_Contract_SepaLogic::updateSepaMandate($this->startState, $this->params)
 
     // Setting skip_handler to true  avoids us 'handling the already handled' call
     $params = $this->convertCustomIds($this->params);
@@ -164,7 +166,7 @@ class CRM_Contract_Handler_Contract{
     // If the contract has a contribution,
     if($this->endState['membership_payment.membership_recurring_contribution']){
       $contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $this->endState['membership_payment.membership_recurring_contribution']));
-      $params['membership_payment.membership_annual'] = $this->calcAnnualAmount($contributionRecur);
+      $params['membership_payment.membership_annual']    = $this->calcAnnualAmount($contributionRecur);
       $params['membership_payment.membership_frequency'] = $this->calcPaymentFrequency($contributionRecur);
       $params['membership_payment.cycle_day'] = $contributionRecur['cycle_day'];
 
@@ -175,8 +177,8 @@ class CRM_Contract_Handler_Contract{
       ));
       if($sepaMandateResult['count'] == 1){
         $sepaMandate = $sepaMandateResult['values'][$sepaMandateResult['id']];
-        $params['membership_payment.from_ba'] = $this->getBankAccountIdFromIban($sepaMandate['iban']); // TODO I *THINK* we are waiting on Björn for this functionality - need to confirm
-        $params['membership_payment.to_ba'] = $this->getBankAccountIdFromIban($this->getCreditorIban($sepaMandate['creditor_id']));
+        $params['membership_payment.from_ba'] = CRM_Contract_BankingLogic::getOrCreateBankAccount($sepaMandate['contact_id'], $sepaMandate['iban'], $sepaMandate['bic']);
+        $params['membership_payment.to_ba']   = getCreditorBankAccount();
       }
     }
     $params = $this->convertCustomIds($params);
@@ -442,48 +444,6 @@ class CRM_Contract_Handler_Contract{
     //TODO
     return 1;
     throw new Exception('Unkown payment frequency');
-  }
-
-  private function getBankAccountIds(){
-    //Check if it is a sepa recurring contribution
-    if($sepaMandate['count'] == 1){
-      // var_dump($sepaMandate);
-      // var_dump($this->activityFieldsByFullName['contract_updates.ch_from_ba']['id']);
-        $this->getBankAccountIdFromIban($sepaMandate['values'][$sepaMandate['id']]['iban']);
-      $this->activityParams[$this->activityFieldsByFullName['contract_updates.ch_to_ba']['id']] =
-        $this->getBankAccountIdFromIban($this->getCreditorIban($sepaMandate['values'][$sepaMandate['id']]['creditor_id']));
-    }
-  }
-
-  private function getBankAccountIdFromIban($iban){
-    try{
-      $result = civicrm_api3('BankingAccountReference', 'getsingle', array(
-        'reference_type_id' => 'iban',
-        'reference' => $iban,
-      ));
-    } catch(Exception $e){
-      // TODO FOR BJORN
-      // At the moment, if we can't find a bank account, we just return ''.
-      // Instead, we should try and find an account id and be throwing an
-      // exception when we can't
-      return '';
-      // throw new Exception("Could not find Banking account reference for IBAN {$iban}");
-    }
-    if(!$result['ba_id']){
-      throw new Exception("Bank account ID not defined for Bank account reference with ID {$result['id']}");
-    }
-    return $result['ba_id'];
-  }
-
-  private function getCreditorIban($creditorId){
-    try{
-      $result = civicrm_api3('SepaCreditor', 'getsingle', array(
-        'id' => $creditorId,
-      ));
-    } catch(Exception $e){
-      throw new Exception("Could not find IBAN for SEPA creditor with Id {$creditorId}");
-    }
-    return $result['iban'];
   }
 
 }

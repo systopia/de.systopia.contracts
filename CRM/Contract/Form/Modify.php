@@ -93,6 +93,14 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/MandateBlock.js');
     CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('cid' => $this->membership['contact_id']));
 
+    // add a generic switch to clean up form
+    $payment_options = array(
+      'nochange' => 'no change',
+      'select'   => 'select other',
+      'modify'   => 'modify');
+    $this->add('select', 'payment_option', ts('Payment'), $payment_options);
+
+
     $formUtils = new CRM_Contract_FormUtils($this, 'Membership');
     $formUtils->addPaymentContractSelect2('recurring_contribution', $this->membership['contact_id'], false);
 
@@ -105,14 +113,14 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     // Campaign
     $this->addEntityRef('campaign_id', ts('Campaign'), [
       'entity' => 'campaign',
-      'placeholder' => ts('- none -')
-    ]);
+      'placeholder' => ts('- none -'),
+    ], TRUE);
 
     $this->add('select', 'cycle_day', ts('Cycle day'), CRM_Contract_SepaLogic::getCycleDays());
-    $this->add('text', 'iban', ts('IBAN'));
-    $this->add('text', 'bic', ts('BIC'));
-    $this->add('text', 'payment_amount', ts('Payment amount'));
-    $this->addEntityRef('payment_frequency', ts('Payment frequency'), array( 'entity' => 'OptionValue', 'api' => array( 'params' => array('option_group_id' => 'payment_frequency'), 'select' => array('minimumInputLength' => 0))));
+    $this->add('text',   'iban', ts('IBAN'), array('class' => 'huge'));
+    $this->add('text',   'bic', ts('BIC'));
+    $this->add('text',   'payment_amount', ts('Annual amount'));
+    $this->add('select', 'payment_frequency', ts('Payment Frequency'), CRM_Contract_SepaLogic::getPaymentFrequencies());
   }
 
 
@@ -123,7 +131,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       $cancelOptions[$cancelReason['value']] = $cancelReason['label'];
     };
     $this->addRule('activity_date', 'Scheduled date is required for a cancellation', 'required');
-    $this->add('select', 'cancel_reason', ts('Cancellation reason'), array('' => '- none -') + $cancelOptions, true, array('class' => 'crm-select2'));
+    $this->add('select', 'cancel_reason', ts('Cancellation reason'), array('' => '- none -') + $cancelOptions, true, array('class' => 'crm-select2 huge'));
 
   }
 
@@ -141,6 +149,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
       $defaults['cycle_day'] = CRM_Contract_SepaLogic::nextCycleDay();
       $defaults['payment_frequency'] = '12';
+      $defaults['activity_medium'] = '7'; // Back Office
 
       // TODO: add more default values?
     }
@@ -208,17 +217,30 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     // If this is an update or a revival
     if(in_array($this->modificationActivity->getAction(), array('update', 'revive'))){
-      $params['membership_payment.membership_recurring_contribution'] = $submitted['recurring_contribution'];
+      switch ($params['payment_option']) {
+        case 'select': // select a new recurring contribution
+          $params['membership_payment.membership_recurring_contribution'] = $submitted['recurring_contribution'];
+          break;
+
+        case 'modify': // manually modify the existing
+          if($submitted['payment_frequency'] && $submitted['payment_amount']){
+            $params['membership_payment.membership_annual'] = number_format($submitted['payment_amount'] * $submitted['payment_frequency'], 2);;
+          }
+          $params['membership_payment.membership_frequency'] = $submitted['payment_frequency'];
+          $params['membership_payment.cycle_day'] = $submitted['cycle_day'];
+          $params['membership_payment.to_ba'] = CRM_Contract_BankingLogic::getCreditorBankAccount();
+          $params['membership_payment.from_ba'] = CRM_Contract_BankingLogic::getOrCreateBankAccount($submitted['contact_id'], $submitted['iban'], $submitted['bic']);
+          break;
+
+        default:
+        case 'nochange': // no changes to payment mode
+          break;
+      }
+
+      // add other changes
       $params['membership_type_id'] = $submitted['membership_type_id'];
       $params['campaign_id'] = $submitted['campaign_id'];
 
-      if($submitted['payment_frequency'] && $submitted['payment_amount']){
-        $params['membership_payment.membership_annual'] = number_format($submitted['payment_amount'] * $submitted['payment_frequency'], 2);;
-      }
-      $params['membership_payment.membership_frequency'] = $submitted['payment_frequency'];
-      $params['membership_payment.cycle_day'] = $submitted['cycle_day'];
-      $params['membership_payment.to_ba'] = CRM_Contract_BankingLogic::getCreditorBankAccount();
-      $params['membership_payment.from_ba'] = CRM_Contract_BankingLogic::getOrCreateBankAccount($submitted['contact_id'], $submitted['iban'], $submitted['bic']);
 
     // If this is a cancellation
     }elseif($this->modificationActivity->getAction() == 'cancel'){

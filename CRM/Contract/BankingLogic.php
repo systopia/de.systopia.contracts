@@ -35,7 +35,7 @@ class CRM_Contract_BankingLogic {
 
       // find existing references
       $existing_references = civicrm_api3('BankingAccountReference', 'get', array(
-        'reference'         => $reference,
+        'reference'         => $iban,
         'reference_type_id' => $reference_type_value['id'],
         'option.limit'      => 0));
 
@@ -65,12 +65,12 @@ class CRM_Contract_BankingLogic {
         'data_parsed' => json_encode($data)));
 
       $bank_account_reference = civicrm_api3('BankingAccountReference', 'create', array(
-        'reference'         => $reference,
+        'reference'         => $iban,
         'reference_type_id' => $reference_type_value['id'],
         'ba_id'             => $bank_account['id']));
       return $bank_account['id'];
     } catch (Exception $e) {
-      $this->logger->logError("Couldn't add bank account {$reference} [{$reference_type}]", $record);
+      error_log("Couldn't add bank account {$reference} [{$reference_type}]");
     }
   }
 

@@ -14,13 +14,42 @@
 class CRM_Contract_SepaLogic {
 
   /**
+   * Adjust or update the given SEPA mandate according to the
+   * requested change
+   */
+  public static function updateSepaMandate($contribution_recur_id, $current_state, $desired_state) {
+
+  }
+
+  /**
+   * Get a list of (accepted) payment frequencies
+   *
+   * @return array list of payment frequencies
+   */
+  public static function getPaymentFrequencies() {
+    // this is a hand-picked list of options
+    $optionValues = civicrm_api3('OptionValue', 'get', array(
+      'value'           => array('IN' => array(1, 3, 6, 12)),
+      'return'          => 'label,value',
+      'option_group_id' => 'payment_frequency',
+    ));
+
+    $options = array();
+    foreach ($optionValues['values'] as $value) {
+      $options[$value['value']] = $value['label'];
+    }
+    return $options;
+  }
+
+
+  /**
    * Get the available cycle days
    *
    * @return array list of accepted cycle days
    */
   public static function getCycleDays() {
     $creditor = CRM_Contract_SepaLogic::getCreditor();
-    return CRM_Sepa_Logic_Settings::getListSetting("cycledays", range(1, 28), $creditor);
+    return CRM_Sepa_Logic_Settings::getListSetting("cycledays", range(1, 28), $creditor->id);
   }
 
   /**

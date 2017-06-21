@@ -17,35 +17,52 @@
     Please confirm that you want to {$historyAction} this contract by clicking on '{$historyAction|ucfirst}' below.
   {/if}
 </h3> -->
-
-
   {if $modificationActivity eq 'update' OR $modificationActivity eq 'revive' }
-    {include file="CRM/Contract/Form/MandateBlock.tpl"}
+    <div class="content">
+      <p class=recurring-contribution-summary-text></p>
+    </div>
+
     <div class="crm-section">
+      <div class="label">{$form.payment_option.label}</div>
+      <div class="content">{$form.payment_option.html}</div>
+      <div class="clear"></div>
+    </div>
+
+    <div class="crm-section payment-select">
+      <div class="label">{$form.recurring_contribution.label}</div>
+      <div class="content">{$form.recurring_contribution.html}</div>
+      <div class="clear"></div>
+      <div class="label"></div>
+      <div class="clear"></div>
+    </div>
+
+    <div class="crm-section payment-modify">
       <div class="label">{$form.cycle_day.label}</div>
       <div class="content">{$form.cycle_day.html}</div>
       <div class="clear"></div>
     </div>
-    <div class="crm-section">
+    <div class="crm-section payment-modify">
       <div class="label">{$form.iban.label}</div>
       <div class="content">{$form.iban.html}</div>
       <div class="clear"></div>
     </div>
-    <div class="crm-section">
+    <div class="crm-section payment-modify">
       <div class="label">{$form.bic.label}</div>
       <div class="content">{$form.bic.html}</div>
       <div class="clear"></div>
     </div>
-    <div class="crm-section">
+    <div class="crm-section payment-modify">
       <div class="label">{$form.payment_amount.label}</div>
       <div class="content">{$form.payment_amount.html}</div>
       <div class="clear"></div>
     </div>
-    <div class="crm-section">
+    <div class="crm-section payment-modify">
       <div class="label">{$form.payment_frequency.label}</div>
       <div class="content">{$form.payment_frequency.html}</div>
       <div class="clear"></div>
     </div>
+
+
     <div class="crm-section">
       <div class="label">{$form.membership_type_id.label}</div>
       <div class="content">{$form.membership_type_id.html}</div>
@@ -99,3 +116,24 @@
     {include file="CRM/common/formButtons.tpl" location="bottom"}
   </div>
 </div>
+
+{literal}
+<script type="text/javascript">
+// add listener to payment_option selector
+cj("div.payment-select").hide();
+cj("div.payment-modify").hide();
+cj("#payment_option").change(function() {
+  var new_mode = cj("#payment_option").val();
+  if (new_mode == "select") {
+    cj("div.payment-select").show(300);
+    cj("div.payment-modify").hide(300);
+  } else if (new_mode == "modify") {
+    cj("div.payment-select").hide(300);
+    cj("div.payment-modify").show(300);
+  } else {
+    cj("div.payment-select").hide(300);
+    cj("div.payment-modify").hide(300);
+  }
+});
+</script>
+{/literal}

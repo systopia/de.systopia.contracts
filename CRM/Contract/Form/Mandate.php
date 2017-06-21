@@ -16,11 +16,11 @@ class CRM_Contract_Form_Mandate extends CRM_Core_Form{
       $this->set('cid', $this->cid);
     }
 
-    $this->add('text', 'iban', ts('IBAN'), null, true);
+    $this->add('text', 'iban', ts('IBAN'), array('class' => 'huge'), true);
     $this->add('text', 'bic', ts('BIC'), null, true);
     $this->add('text', 'amount', ts('Amount'), null, true);
-    $this->add('select', 'frequency_interval', ts('Frequency'), [1 => 'Monthly', 3 => 'Quarterly', 6 => 'Semi-annually', 12 => 'Annually', ], true);
-    $this->add('select', 'cycle_day', ts('Cycle day'), [3 => 3, 9 => 9 ,17 => 17, 25 => 25], true);
+    $this->add('select', 'frequency_interval', ts('Payment Frequency'), CRM_Contract_SepaLogic::getPaymentFrequencies());
+    $this->add('select', 'cycle_day', ts('Cycle day'), CRM_Contract_SepaLogic::getCycleDays(), true);
     $this->addDate('start_date', ts('Start date'), true, array('formatType' => 'activityDate'));
 
 
@@ -46,7 +46,8 @@ class CRM_Contract_Form_Mandate extends CRM_Core_Form{
       'start_date' => $submitted['start_date'],
       'frequency_unit' => 'month',
       'creditor_id' => 1,
-      'frequency_interval' => $submitted['frequency_interval'],
+      // caution: frequency_interval in SEPA/RecurringContribution terms is the inverse to the contract logic
+      'frequency_interval' => 12 / $submitted['frequency_interval'],
     ];
 
     $sepaResult = civicrm_api3('SepaMandate', 'createfull', $mandateParams);
