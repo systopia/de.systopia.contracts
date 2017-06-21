@@ -141,6 +141,7 @@ class CRM_Contract_Handler_Contract{
   // modification has been done already and you just want to do the things that need
   // to happen afterwards
   function postModify(){
+
     //update derived fields
     $this->updateDerivedFields();
 
@@ -148,6 +149,24 @@ class CRM_Contract_Handler_Contract{
       $this->updateModificationActivity();
     }else{
       $this->createModificationActivity();
+    }
+
+    // if this is a cancel, set the end date for the contract to the
+    // activity_date_time of the modification activity
+    if($this->modificationClass->getAction() == 'cancel'){
+      $membershipParams['end_date'] = $this->modificationActivity['activity_date_time'];
+      $membershipParams['id'] = $this->endState['id'];
+      $membershipParams['skip_handler'] = true;
+      civicrm_api3('Membership', 'create', $membershipParams);
+
+    }
+
+    // if this is a revive, set the end date for the contract to ''
+    if($this->modificationClass->getAction() == 'revive'){
+      $membershipParams['end_date'] = '';
+      $membershipParams['id'] = $this->endState['id'];
+      $membershipParams['skip_handler'] = true;
+      civicrm_api3('Membership', 'create', $membershipParams);
     }
 
     // Check for conflicts in the scheduled contract modifications
@@ -197,7 +216,8 @@ class CRM_Contract_Handler_Contract{
     // Create the activity
     $activityResult = civicrm_api3('Activity', 'create', $this->getModificationActivityParams());
 
-    // Store the updates so they can be returned )
+    // Store the updates so they can be used later (e.g. in setting the contract
+    // cancel date)
     $this->modificationActivity = $activityResult['values'][$activityResult['id']];
 
   }
@@ -209,8 +229,8 @@ class CRM_Contract_Handler_Contract{
     $activityParams['id'] = $this->modificationActivity['id'];
     $activityResult = civicrm_api3('Activity', 'create', $activityParams);
 
-    // And store it for later use (TODO necessary? if so, add note to specify
-    // how)
+    // Store the updates so they can be used later (e.g. in setting the contract
+    // cancel date)
     $this->modificationActivity = $activityResult['values'][$activityResult['id']];
   }
 
@@ -248,6 +268,10 @@ class CRM_Contract_Handler_Contract{
     // We need to skip the modification activity handler, otherwise, it will
     // create another membership.
     $params['skip_handler'] = true;
+
+    // Reload the entity so that we use its values later (e.g. in setting the
+    // contract cancel date)
+    $params['options']['reload'] = true;
 
     return $params;
   }
