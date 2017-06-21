@@ -16,6 +16,16 @@ function civicrm_api3_Contract_create($params){
       }
     }
     $membership = civicrm_api3('Membership', 'create', $params);
+
+    $activity = civicrm_api3('Activity', 'getsingle', [
+      'source_record_id' => $membership['id'],
+      'activity_type_id' => 'Contract_Signed',
+    ]);
+    $activity = civicrm_api3('Activity', 'create', [
+      'id' => $activity['id'],
+      'details' => $params['note'],
+      'medium_id' => $params['medium_id']
+    ]);
     return $membership;
 }
 
