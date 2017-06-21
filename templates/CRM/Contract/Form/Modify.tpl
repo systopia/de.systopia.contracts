@@ -117,6 +117,10 @@
   </div>
 </div>
 
+{if $bic_lookup_accessible}
+  {include file="CRM/Contract/Form/bic_lookup.tpl" location="bottom"}
+{/if}
+
 {literal}
 <script type="text/javascript">
 // add listener to payment_option selector

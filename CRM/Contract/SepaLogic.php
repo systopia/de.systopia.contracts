@@ -93,6 +93,15 @@ class CRM_Contract_SepaLogic {
   }
 
   /**
+   * Checks whether the "Little BIC Extension" is installed
+   *
+   * @return TRUE if it is
+   */
+  public static function isLittleBicExtensionAccessible() {
+    return CRM_Sepa_Logic_Settings::isLittleBicExtensionAccessible();
+  }
+
+  /**
    * Validate the given BIC
    *
    * @return TRUE if BIC is valid

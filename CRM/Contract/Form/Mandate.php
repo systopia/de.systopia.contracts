@@ -23,6 +23,8 @@ class CRM_Contract_Form_Mandate extends CRM_Core_Form{
     $this->add('select', 'cycle_day', ts('Cycle day'), CRM_Contract_SepaLogic::getCycleDays(), true);
     $this->addDate('start_date', ts('Start date'), true, array('formatType' => 'activityDate'));
 
+    // check if BIC lookup is possible
+    $this->assign('bic_lookup_accessible', CRM_Contract_SepaLogic::isLittleBicExtensionAccessible());
 
     $this->addButtons([
       array('type' => 'cancel', 'name' => 'Cancel'), // since Cancel looks bad when viewed next to the Cancel action

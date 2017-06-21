@@ -36,3 +36,7 @@
   </div>
 
 </div>
+
+{if $bic_lookup_accessible}
+  {include file="CRM/Contract/Form/bic_lookup.tpl" location="bottom"}
+{/if}

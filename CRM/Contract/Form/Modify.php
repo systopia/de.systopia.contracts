@@ -46,6 +46,9 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     // Assign the contact id (necessary for the mandate popup)
     $this->assign('cid', $this->membership['contact_id']);
 
+    // check if BIC lookup is possible
+    $this->assign('bic_lookup_accessible', CRM_Contract_SepaLogic::isLittleBicExtensionAccessible());
+
     // Validate that the contract has a valid start status
     $this->membershipStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->membership['status_id']));
     if(!in_array($this->membershipStatus['name'], $this->modificationActivity->getStartStatuses())){
@@ -114,7 +117,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     $this->addEntityRef('campaign_id', ts('Campaign'), [
       'entity' => 'campaign',
       'placeholder' => ts('- none -'),
-    ], TRUE);
+    ]);
 
     $this->add('select', 'cycle_day', ts('Cycle day'), CRM_Contract_SepaLogic::getCycleDays());
     $this->add('text',   'iban', ts('IBAN'), array('class' => 'huge'));
@@ -228,7 +231,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
           }
           $params['membership_payment.membership_frequency'] = $submitted['payment_frequency'];
           $params['membership_payment.cycle_day'] = $submitted['cycle_day'];
-          $params['membership_payment.to_ba'] = CRM_Contract_BankingLogic::getCreditorBankAccount();
+          $params['membership_payment.to_ba']   = CRM_Contract_BankingLogic::getCreditorBankAccount();
           $params['membership_payment.from_ba'] = CRM_Contract_BankingLogic::getOrCreateBankAccount($submitted['contact_id'], $submitted['iban'], $submitted['bic']);
           break;
 
