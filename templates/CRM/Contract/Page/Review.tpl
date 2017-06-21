@@ -35,7 +35,7 @@
       <td>{$campaigns[$a.campaign_id]}</td>
 
       <td>{$mediums[$a.medium_id]}</td>
-      <td>{$a.details}</td>
+      <td>{$a.details|truncate:50}</td>
       <td>{$a.contract_cancellation_contact_history_cancel_reason}</td>
       <td><a href="{crmURL p='civicrm/contact/view' q="reset=1&cid=`$a.source_contact_id`"}">{$contacts[$a.source_contact_id]}</a></td>
 

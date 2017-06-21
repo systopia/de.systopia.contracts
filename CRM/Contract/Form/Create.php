@@ -107,7 +107,8 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     $params['membership_general.membership_reference'] = $submitted['membership_reference']; // Reference number
     $params['membership_general.membership_contract'] = $submitted['membership_contract']; // Contract number
     $params['membership_general.membership_dialoger'] = $submitted['membership_dialoger']; // DD fundraiser
-    $params['membership_general.membership_channel'] = $submitted['membership_channel']; // Membership channel
+    $params['note'] = $submitted['activity_details']; // Membership channel
+    $params['medium_id'] = $submitted['activity_medium']; // Membership channel
 
     $membershipResult = civicrm_api3('Contract', 'create', $params);
   }
