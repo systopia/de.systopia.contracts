@@ -185,19 +185,21 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       }
     }
 
-    if($submitted['payment_amount'] && !$submitted['payment_frequency']){
-      HTML_QuickForm::setElementError ( 'payment_frequency', 'Please specify a frequency when specifying an amount');
-    }
-    if($submitted['payment_frequency'] && !$submitted['payment_amount']){
-      HTML_QuickForm::setElementError ( 'payment_amount', 'Please specify an amount when specifying a frequency');
-    }
+    if ($submitted['payment_option'] == 'modify') {
+      if($submitted['payment_amount'] && !$submitted['payment_frequency']){
+        HTML_QuickForm::setElementError ( 'payment_frequency', 'Please specify a frequency when specifying an amount');
+      }
+      if($submitted['payment_frequency'] && !$submitted['payment_amount']){
+        HTML_QuickForm::setElementError ( 'payment_amount', 'Please specify an amount when specifying a frequency');
+      }
 
-    // SEPA validation
-    if (!empty($submitted['iban']) && !CRM_Contract_SepaLogic::validateIBAN($submitted['iban'])) {
-      HTML_QuickForm::setElementError ( 'iban', 'Please enter a valid IBAN');
-    }
-    if (!empty($submitted['bic']) && !CRM_Contract_SepaLogic::validateBIC($submitted['bic'])) {
-      HTML_QuickForm::setElementError ( 'bic', 'Please enter a valid BIC');
+      // SEPA validation
+      if (!empty($submitted['iban']) && !CRM_Contract_SepaLogic::validateIBAN($submitted['iban'])) {
+        HTML_QuickForm::setElementError ( 'iban', 'Please enter a valid IBAN');
+      }
+      if (!empty($submitted['bic']) && !CRM_Contract_SepaLogic::validateBIC($submitted['bic'])) {
+        HTML_QuickForm::setElementError ( 'bic', 'Please enter a valid BIC');
+      }
     }
 
     return parent::validate();
@@ -220,9 +222,9 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     // If this is an update or a revival
     if(in_array($this->modificationActivity->getAction(), array('update', 'revive'))){
-      switch ($params['payment_option']) {
+      switch ($submitted['payment_option']) {
         case 'select': // select a new recurring contribution
-          $params['membership_payment.membership_recurring_contribution'] = $submitted['recurring_contribution'];
+          $params['membership_payment.membership_recurring_contribution'] = (int) $submitted['recurring_contribution'];
           break;
 
         case 'modify': // manually modify the existing
@@ -255,6 +257,6 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     }
     civicrm_api3('contract', 'modify', $params);
-    civicrm_api3('contract', 'process_scheduled_modifications', ['id' => $params['id']]);
+    // civicrm_api3('contract', 'process_scheduled_modifications', ['id' => $params['id']]);
   }
 }
