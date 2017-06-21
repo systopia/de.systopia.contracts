@@ -262,7 +262,7 @@ function civicrm_api3_Contract_process_scheduled_modifications($params){
   $activityParams = [
     'activity_type_id' => ['IN' => CRM_Contract_ModificationActivity::getModificationActivityTypeIds()],
     'status_id' => 'scheduled',
-    'activity_date_time' => ['<=' => $now->format('Y-m-d 00:00')],
+    'activity_date_time' => ['<=' => $now->format('Y-m-d H:i:s')],
     'option.limit' => $limit
   ];
   if(isset($params['id'])){
