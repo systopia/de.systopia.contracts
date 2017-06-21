@@ -261,10 +261,12 @@ function civicrm_api3_Contract_process_scheduled_modifications($params){
   $limit = isset($params['limit']) ? $params['limit'] : 1000;
 
   $activityParams = [
-    'activity_type_id' => ['IN' => CRM_Contract_ModificationActivity::getModificationActivityTypeIds()],
-    'status_id' => 'scheduled',
-    'activity_date_time' => ['<=' => $now->format('Y-m-d 00:00')],
-    'option.limit' => $limit
+    'activity_type_id'   => ['IN' => CRM_Contract_ModificationActivity::getModificationActivityTypeIds()],
+    'status_id'          => 'scheduled',
+    'activity_date_time' => ['<=' => $now->format('Y-m-d H:i:s')], // execute everything scheduled in the past
+    'option.limit'       => $limit,
+    'sequential'         => 1, // in the scheduled order(!)
+    'option.sort'        => 'activity_date_time ASC',
   ];
   if(isset($params['id'])){
     $activityParams['source_record_id'] = $params['id'];
