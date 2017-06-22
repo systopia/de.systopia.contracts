@@ -15,9 +15,6 @@ class CRM_Contract_Handler_ModificationActivityHelper{
         if(isset($activity[CRM_Contract_Utils::contractToActivityFieldId('membership_type_id')])){
           $params['membership_type_id'] = $activity[CRM_Contract_Utils::contractToActivityFieldId('membership_type_id')];
         }
-        if(isset($activity['campaign_id'])){
-          $params['campaign_id'] = $activity['campaign_id'];
-        }
         if(isset($activity[CRM_Contract_Utils::contractToActivityFieldId('membership_payment.membership_recurring_contribution')])){
           $params[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')] = $activity[CRM_Contract_Utils::contractToActivityFieldId('membership_payment.membership_recurring_contribution')];
         }
