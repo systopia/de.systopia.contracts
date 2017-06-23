@@ -68,7 +68,6 @@ function _civicrm_api3_Contract_modify_spec(&$params){
  * Schedule a Contract modification
  */
 function civicrm_api3_Contract_modify($params){
-  error_log("CALLED: " .json_encode($params));
   //Throw an exception is $params['action'] is not set
   if(!isset($params['action'])){
     throw new Exception('Please include an action parameter with this API call');
@@ -179,7 +178,6 @@ function civicrm_api3_Contract_modify($params){
       }
   }
   $activityParams['source_contact_id'] = $sourceContactId;
-  error_log("CREATE: " .json_encode($activityParams));
   $activityResult = civicrm_api3('Activity', 'create', $activityParams);
   if($class->getAction() == 'pause'){
     $resumeActivity = civicrm_api3('Activity', 'create', [

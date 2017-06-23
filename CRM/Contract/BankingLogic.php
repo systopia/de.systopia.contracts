@@ -54,6 +54,10 @@ class CRM_Contract_BankingLogic {
    * @return int account ID
    */
   public static function getOrCreateBankAccount($contact_id, $iban, $bic) {
+    if (empty($iban)) {
+      return '';
+    }
+
     try {
       // look up reference type option value ID(!)
       $reference_type_value = civicrm_api3('OptionValue', 'getsingle', array(
