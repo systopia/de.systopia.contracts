@@ -402,7 +402,7 @@ class CRM_Contract_Handler_Contract{
     ];
   }
 
-  private function setEndDate($value){
+  private function setContractEndDate($value){
     $params['end_date'] = $value;
     $params['id'] = $this->endState['id'];
     $params['skip_handler'] = true;
