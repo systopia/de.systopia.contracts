@@ -18,7 +18,7 @@ class CRM_Contract_Form_Mandate extends CRM_Core_Form{
 
     $this->add('text', 'iban', ts('IBAN'), array('class' => 'huge'), true);
     $this->add('text', 'bic', ts('BIC'), null, true);
-    $this->add('text', 'amount', ts('Amount'), null, true);
+    $this->add('text', 'amount', ts('Amount'), array('size' => 6), true);
     $this->add('select', 'frequency_interval', ts('Payment Frequency'), CRM_Contract_SepaLogic::getPaymentFrequencies());
     $this->add('select', 'cycle_day', ts('Cycle day'), CRM_Contract_SepaLogic::getCycleDays(), true);
     $this->addDate('start_date', ts('Start date'), true, array('formatType' => 'activityDate'));
@@ -37,17 +37,17 @@ class CRM_Contract_Form_Mandate extends CRM_Core_Form{
     $submitted = $this->exportValues();
 
     $mandateParams = [
-      'contact_id' => $this->get('cid'),
-      'type' => 'RCUR',
-      'iban' => $submitted['iban'],
-      'bic' => $submitted['bic'],
-      'amount' => $submitted['amount'],
-      'date' => date('YmdHis'),
-      'financial_type_id' => civicrm_api3('FinancialType', 'getvalue', ['return' => "id", 'name' => "Member dues"]),
-      'cycle_day' => $submitted['cycle_day'],
-      'start_date' => $submitted['start_date'],
-      'frequency_unit' => 'month',
-      'creditor_id' => 1,
+      'contact_id'         => $this->get('cid'),
+      'type'               => 'RCUR',
+      'iban'               => $submitted['iban'],
+      'bic'                => $submitted['bic'],
+      'amount'             => CRM_Contract_SepaLogic::formatMoney($submitted['amount']),
+      'date'               => date('YmdHis'),
+      'financial_type_id'  => civicrm_api3('FinancialType', 'getvalue', ['return' => "id", 'name' => "Member dues"]),
+      'cycle_day'          => $submitted['cycle_day'],
+      'start_date'         => $submitted['start_date'],
+      'frequency_unit'     => 'month',
+      'creditor_id'        => 1,
       // caution: frequency_interval in SEPA/RecurringContribution terms is the inverse to the contract logic
       'frequency_interval' => 12 / $submitted['frequency_interval'],
     ];
