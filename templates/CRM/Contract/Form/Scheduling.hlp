@@ -1,3 +1,11 @@
+{*-------------------------------------------------------------+
+| SYSTOPIA Contract Extension                                  |
+| Copyright (C) 2017 SYSTOPIA                                  |
+| Author: M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
+|         B. Endres (endres -at- systopia.de)                  |
+| http://www.systopia.de/                                      |
++-------------------------------------------------------------*}
+
 {htxt id="scheduling"}
 <h1>Scheduling updates</h1>
 <p>Fill in this field to schedule the change into the future.</p>

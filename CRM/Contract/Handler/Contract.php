@@ -1,4 +1,11 @@
 <?php
+/*-------------------------------------------------------------+
+| SYSTOPIA Contract Extension                                  |
+| Copyright (C) 2017 SYSTOPIA                                  |
+| Author: M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
+|         B. Endres (endres -at- systopia.de)                  |
+| http://www.systopia.de/                                      |
++--------------------------------------------------------------*/
 
 // This class is called after the creation of contract history activities by the
 // API wrapper CRM_Contract_Wrapper_ModificationActivity

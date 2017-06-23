@@ -1,4 +1,11 @@
 <?php
+/*-------------------------------------------------------------+
+| SYSTOPIA Contract Extension                                  |
+| Copyright (C) 2017 SYSTOPIA                                  |
+| Author: M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
+|         B. Endres (endres -at- systopia.de)                  |
+| http://www.systopia.de/                                      |
++--------------------------------------------------------------*/
 
 /**
 * This class wraps calls to the activity create API and passes them to the
