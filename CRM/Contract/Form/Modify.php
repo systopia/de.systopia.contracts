@@ -122,7 +122,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     $this->add('select', 'cycle_day', ts('Cycle day'), CRM_Contract_SepaLogic::getCycleDays());
     $this->add('text',   'iban', ts('IBAN'), array('class' => 'huge'));
     $this->add('text',   'bic', ts('BIC'));
-    $this->add('text',   'payment_amount', ts('Annual amount'));
+    $this->add('text',   'payment_amount', ts('Annual amount'), array('size' => 6));
     $this->add('select', 'payment_frequency', ts('Payment Frequency'), CRM_Contract_SepaLogic::getPaymentFrequencies());
   }
 
@@ -229,7 +229,8 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
         case 'modify': // manually modify the existing
           if($submitted['payment_frequency'] && $submitted['payment_amount']){
-            $params['membership_payment.membership_annual'] = number_format($submitted['payment_amount'] * $submitted['payment_frequency'], 2);;
+            $payment_amount = CRM_Contract_SepaLogic::formatMoney($submitted['payment_amount']);
+            $params['membership_payment.membership_annual'] = CRM_Contract_SepaLogic::formatMoney($payment_amount * $submitted['payment_frequency']);
           }
           $params['membership_payment.membership_frequency'] = $submitted['payment_frequency'];
           $params['membership_payment.cycle_day'] = $submitted['cycle_day'];

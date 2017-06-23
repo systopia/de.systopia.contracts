@@ -53,7 +53,7 @@
     </div>
     <div class="crm-section payment-modify">
       <div class="label">{$form.payment_amount.label}</div>
-      <div class="content">{$form.payment_amount.html}</div>
+      <div class="content">{$form.payment_amount.html}&nbsp;EUR</div>
       <div class="clear"></div>
     </div>
     <div class="crm-section payment-modify">

@@ -12,7 +12,7 @@
   </div>
   <div class="crm-section">
     <div class="label">{$form.amount.label}</div>
-    <div class="content">{$form.amount.html}</div>
+    <div class="content">{$form.amount.html}&nbsp;EUR</div>
     <div class="clear"></div>
   </div>
   <div class="crm-section">
