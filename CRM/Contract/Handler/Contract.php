@@ -149,31 +149,45 @@ class CRM_Contract_Handler_Contract{
   // to happen afterwards
   function postModify(){
 
-    //update derived fields
+    // Update the membership's derived fields
     $this->updateDerivedFields();
 
+    // If this modification happened via a modification activity, update the
+    // modification activity
     if(isset($this->modificationActivity)){
       $this->updateModificationActivity();
+    // Else, create a modification activity that reflects the change, if
+    // necessary
     }else{
       $this->createModificationActivity();
     }
 
-    // if this is a cancel, set the end date for the contract to the
+    // Various other updates happen now depending on the type of change.
+
+    // TODO Bjorn: I suspect that this is the best place for the mandate updates
+    // that you detail in #669 to happen.  The ::setContractEndDate() examples
+    // (see #679) are similar to what you want to do, I think. I'm guessing you
+    // can add appropriate method calls to those if statements. You'll see that
+    // I am using $this->modificationClass->getAction() to work out what type of
+    // modification was performed.
+    //
+    // By this point you will also have access to:
+    // handy variables like
+    // * $this->startState
+    // * $this->endState
+    // * $this->params
+    // which I am guessing will give you what you need. Let me know if you need
+    // access to any more data about the contract, etc.
+
+    // If this is a cancel, set the end date for the contract to the
     // activity_date_time of the modification activity
     if($this->modificationClass->getAction() == 'cancel'){
-      $membershipParams['end_date'] = $this->modificationActivity['activity_date_time'];
-      $membershipParams['id'] = $this->endState['id'];
-      $membershipParams['skip_handler'] = true;
-      civicrm_api3('Membership', 'create', $membershipParams);
-
+      $this->setContractEndDate($this->modificationActivity['activity_date_time']);
     }
 
-    // if this is a revive, set the end date for the contract to ''
+    // if this is a revive, clear any end date that has been set
     if($this->modificationClass->getAction() == 'revive'){
-      $membershipParams['end_date'] = '';
-      $membershipParams['id'] = $this->endState['id'];
-      $membershipParams['skip_handler'] = true;
-      civicrm_api3('Membership', 'create', $membershipParams);
+      $this->setContractEndDate('');
     }
 
     // Check for conflicts in the scheduled contract modifications
@@ -386,6 +400,13 @@ class CRM_Contract_Handler_Contract{
       'membership_payment.cycle_day',
       'membership_payment.payment_instrument',
     ];
+  }
+
+  private function setEndDate($value){
+    $params['end_date'] = $value;
+    $params['id'] = $this->endState['id'];
+    $params['skip_handler'] = true;
+    civicrm_api3('Membership', 'create', $params);
   }
 
   private function convertCustomIds($params){
