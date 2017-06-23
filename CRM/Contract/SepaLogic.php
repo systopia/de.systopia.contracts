@@ -98,8 +98,73 @@ class CRM_Contract_SepaLogic {
    * (if there is one)
    */
   public static function terminateSepaMandate($recurring_contribution_id) {
+    $mandate = self::getMandateForRecurringContributionID($recurring_contribution_id);
+    if ($mandate) {
+      CRM_Sepa_BAO_SEPAMandate::terminateMandate($mandate['id'], "now", 'CHNG');
+    } else {
+      // TODO: what to do with NO/NON-SEPA recurring contributions?
+    }
+  }
+
+  /**
+   * Pause the mandate connected ot the recurring contribution
+   * (if there is one)
+   */
+  public static function pauseSepaMandate($recurring_contribution_id) {
+    $mandate = self::getMandateForRecurringContributionID($recurring_contribution_id);
+    if ($mandate) {
+      if ($mandate['status'] == 'RCUR' || $mandate['status'] == 'FRST') {
+        // only for active mandates:
+        // set status to ONHOLD
+        civicrm_api3('SepaMandate', 'create', array(
+          'id'     => $mandate['id'],
+          'status' => 'ONHOLD'));
+
+        // delete any scheduled (pending) contributions
+        $pending_contributions = civicrm_api3('Contribution', 'get', array(
+          'return'                 => 'id',
+          'contribution_recur_id'  => $mandate['entity_id'],
+          'contribution_status_id' => (int) CRM_Core_OptionGroup::getValue('contribution_status', 'Pending', 'name'),
+          'receive_date'           => array('>=' => date('YmdHis'))));
+        foreach ($pending_contributions['values'] as $pending_contribution) {
+          civicrm_api3("Contribution", "delete", array('id' => $pending_contribution['id']));
+        }
+      } else {
+        // TODO (Michael): process error: Mandate is not active, cannot be paused
+      }
+    } else {
+      // TODO: what to do with NO/NON-SEPA recurring contributions?
+    }
+  }
+
+  /**
+   * Resume the mandate connected ot the recurring contribution
+   * (if there is one)
+   */
+  public static function resumeSepaMandate($recurring_contribution_id) {
+    $mandate = self::getMandateForRecurringContributionID($recurring_contribution_id);
+    if ($mandate) {
+      if ($mandate['status'] == 'ONHOLD') {
+        $new_status = empty($mandate['first_contribution_id']) ? 'FRST' : 'RCUR';
+        civicrm_api3('SepaMandate', 'create', array(
+          'id'     => $mandate['id'],
+          'status' => $new_status));
+      } else {
+        // TODO (Michael): process error: Mandate is not paused, cannot be activated
+      }
+    } else {
+      // TODO: what to do with NO/NON-SEPA recurring contributions?
+    }
+  }
+
+  /**
+   * Return the mandate entity if there is one attached to this recurring contribution
+   *
+   * @return mandate or NULL if there is not a (unique) match
+   */
+  public static function getMandateForRecurringContributionID($recurring_contribution_id) {
     if (empty($recurring_contribution_id)) {
-      return;
+      return NULL;
     }
 
     // load mandate
@@ -108,9 +173,10 @@ class CRM_Contract_SepaLogic {
       'entity_table' => 'civicrm_contribution_recur',
       'type'         => 'RCUR'));
 
-    // if found: stop it
     if ($mandate['count'] == 1 && $mandate['id']) {
-      CRM_Sepa_BAO_SEPAMandate::terminateMandate($mandate['id'], "now", 'CHNG');
+      return $mandate;
+    } else {
+      return NULL;
     }
   }
 
