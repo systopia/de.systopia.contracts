@@ -97,10 +97,10 @@ class CRM_Contract_SepaLogic {
    * Terminate the mandate connected ot the recurring contribution
    * (if there is one)
    */
-  public static function terminateSepaMandate($recurring_contribution_id) {
+  public static function terminateSepaMandate($recurring_contribution_id, $reason = 'CHNG') {
     $mandate = self::getMandateForRecurringContributionID($recurring_contribution_id);
     if ($mandate) {
-      CRM_Sepa_BAO_SEPAMandate::terminateMandate($mandate['id'], "now", 'CHNG');
+      CRM_Sepa_BAO_SEPAMandate::terminateMandate($mandate['id'], "now", $reason);
     } else {
       // TODO: what to do with NO/NON-SEPA recurring contributions?
     }
@@ -174,7 +174,7 @@ class CRM_Contract_SepaLogic {
       'type'         => 'RCUR'));
 
     if ($mandate['count'] == 1 && $mandate['id']) {
-      return $mandate;
+      return reset($mandate['values']);
     } else {
       return NULL;
     }

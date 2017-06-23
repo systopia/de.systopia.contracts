@@ -162,32 +162,34 @@ class CRM_Contract_Handler_Contract{
       $this->createModificationActivity();
     }
 
-    // Various other updates happen now depending on the type of change.
-
-    // TODO Bjorn: I suspect that this is the best place for the mandate updates
-    // that you detail in #669 to happen.  The ::setContractEndDate() examples
-    // (see #679) are similar to what you want to do, I think. I'm guessing you
-    // can add appropriate method calls to those if statements. You'll see that
-    // I am using $this->modificationClass->getAction() to work out what type of
-    // modification was performed.
     //
-    // By this point you will also have access to:
-    // handy variables like
-    // * $this->startState
-    // * $this->endState
-    // * $this->params
-    // which I am guessing will give you what you need. Let me know if you need
-    // access to any more data about the contract, etc.
+    // Various other updates happen now depending on the type of change.
+    //
 
     // If this is a cancel, set the end date for the contract to the
     // activity_date_time of the modification activity
     if($this->modificationClass->getAction() == 'cancel'){
       $this->setContractEndDate($this->modificationActivity['activity_date_time']);
+      CRM_Contract_SepaLogic::terminateSepaMandate(
+        $this->startState['membership_payment.membership_recurring_contribution'],
+        $this->modificationActivity[CRM_Contract_Utils::getCustomFieldId('contract_cancellation.contact_history_cancel_reason')]);
     }
 
-    // if this is a revive, clear any end date that has been set
+    // if this is a revive action, clear any end date that has been set
     if($this->modificationClass->getAction() == 'revive'){
       $this->setContractEndDate('');
+    }
+
+    // if this is a resume action, make sure the mandate is resumed
+    if($this->modificationClass->getAction() == 'resume'){
+      CRM_Contract_SepaLogic::resumeSepaMandate(
+        $this->startState['membership_payment.membership_recurring_contribution']);
+    }
+
+    // if this is a pause action, make sure the mandate is resumed
+    if($this->modificationClass->getAction() == 'pause'){
+      CRM_Contract_SepaLogic::pauseSepaMandate(
+        $this->startState['membership_payment.membership_recurring_contribution']);
     }
 
     // Check for conflicts in the scheduled contract modifications
