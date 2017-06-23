@@ -14,7 +14,7 @@
 | written permission from the original author(s).        |
 +--------------------------------------------------------*/
 
-define('CUSTOM_DATA_HELPER_VERSION', '0.3.1.dev');
+define('CUSTOM_DATA_HELPER_VERSION', '0.3.2.dev');
 define('CUSTOM_DATA_HELPER_LOG_LEVEL', 3);
 
 // log levels
@@ -128,6 +128,22 @@ class CRM_Contract_CustomData {
        throw new Exception("CRM_Utils_CustomData::syncCustomGroup: Invalid custom specs");
     }
 
+    // if extends_entity_column_value, make sure it's sensible data
+    if (isset($data['extends_entity_column_value'])) {
+      if ($data['extends'] == 'Activity') {
+        $extends_list = array();
+        foreach ($data['extends_entity_column_value'] as $activity_type) {
+          if (!is_numeric($activity_type)) {
+            $activity_type = CRM_Core_OptionGroup::getValue('activity_type', $activity_type, 'name');
+          }
+          if ($activity_type) {
+            $extends_list[] = $activity_type;
+          }
+        }
+        $data['extends_entity_column_value'] = $extends_list;
+      }
+    }
+
     // first: find or create custom group
     $this->translateStrings($data);
     $customGroup = $this->identifyEntity('CustomGroup', $data);
@@ -140,7 +156,7 @@ class CRM_Contract_CustomData {
        return;
     } else {
        // update CustomGroup
-       $this->updateEntity('CustomGroup', $data, $customGroup, array('extends'));
+       $this->updateEntity('CustomGroup', $data, $customGroup, array('extends', 'style'));
     }
 
     // now run the update for the CustomFields
@@ -298,13 +314,17 @@ class CRM_Contract_CustomData {
   /**
    * internal function to replace "<custom_group_name>.<custom_field_name>"
    * in the data array with the custom_XX notation.
+   *
+   * @param $data          array  key=>value data, keys will be changed
+   * @param $customgroups  array  if given, restrict to those groups
+   *
    */
-  public static function resolveCustomFields(&$data, $customgroups) {
+  public static function resolveCustomFields(&$data, $customgroups = NULL) {
     // first: find out which ones to cache
     $customgroups_used = array();
     foreach ($data as $key => $value) {
       if (preg_match('/^(?P<group_name>\w+)[.](?P<field_name>\w+)$/', $key, $match)) {
-        if (in_array($match['group_name'], $customgroups)) {
+        if (empty($customgroups) || in_array($match['group_name'], $customgroups)) {
           $customgroups_used[$match['group_name']] = 1;
         }
       }
@@ -316,7 +336,7 @@ class CRM_Contract_CustomData {
     // now: replace stuff
     foreach (array_keys($data) as $key) {
       if (preg_match('/^(?P<group_name>\w+)[.](?P<field_name>\w+)$/', $key, $match)) {
-        if (in_array($match['group_name'], $customgroups)) {
+        if (empty($customgroups) || in_array($match['group_name'], $customgroups)) {
           if (isset(self::$custom_group_cache[$match['group_name']][$match['field_name']])) {
             $custom_field = self::$custom_group_cache[$match['group_name']][$match['field_name']];
             $custom_key = 'custom_' . $custom_field['id'];
