@@ -14,7 +14,7 @@
 | written permission from the original author(s).        |
 +--------------------------------------------------------*/
 
-define('CUSTOM_DATA_HELPER_VERSION', '0.3.2.dev');
+define('CUSTOM_DATA_HELPER_VERSION', '0.3.3.dev');
 define('CUSTOM_DATA_HELPER_LOG_LEVEL', 3);
 
 // log levels
@@ -156,7 +156,7 @@ class CRM_Contract_CustomData {
        return;
     } else {
        // update CustomGroup
-       $this->updateEntity('CustomGroup', $data, $customGroup, array('extends', 'style'));
+       $this->updateEntity('CustomGroup', $data, $customGroup, array('extends', 'style', 'is_active'));
     }
 
     // now run the update for the CustomFields
