@@ -124,8 +124,6 @@
 {literal}
 <script type="text/javascript">
 // add listener to payment_option selector
-cj("div.payment-select").hide();
-cj("div.payment-modify").hide();
 cj("#payment_option").change(function() {
   var new_mode = cj("#payment_option").val();
   if (new_mode == "select") {
@@ -139,5 +137,7 @@ cj("#payment_option").change(function() {
     cj("div.payment-modify").hide(300);
   }
 });
+// call once for the UI to adjust
+cj("#payment_option").trigger('change');
 </script>
 {/literal}

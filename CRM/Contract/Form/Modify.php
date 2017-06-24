@@ -98,9 +98,13 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     // add a generic switch to clean up form
     $payment_options = array(
-      'nochange' => 'no change',
       'select'   => 'select other',
       'modify'   => 'modify');
+
+    // update also has the option of no change to payment contract
+    if ($this->modificationActivity->getAction() == 'update') {
+      $payment_options =  array('nochange' => 'no change') + $payment_options;
+    }
     $this->add('select', 'payment_option', ts('Payment'), $payment_options);
 
 
