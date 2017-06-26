@@ -17,30 +17,54 @@ class CRM_Contract_SepaLogic {
    * Adjust or update the given SEPA mandate according to the
    * requested change
    */
-  public static function updateSepaMandate($contribution_recur_id, $current_state, &$desired_state, $activity) {
-    // all relevant fields
-    $mandate_relevant_fields = array('cycle_day', 'from_ba', 'membership_annual', 'membership_frequency', 'membership_recurring_contribution');
+  public static function updateSepaMandate($contribution_recur_id, $current_state, $desired_state, $activity) {
+    error_log(json_encode($desired_state));
 
-    // calculate changes
-    $mandate_relevant_changes = array();
-    foreach ($mandate_relevant_fields as $field_raw) {
-      $field = "membership_payment.{$field_raw}";
-      if (    isset($desired_state[$field])
-           && $desired_state[$field] != $current_state[$field]) {
-        $mandate_relevant_changes[] = $field;
+    // desired_state (from activity) hasn't resolved the numeric custom_ fields yet
+    foreach ($desired_state as $key => $value) {
+      if (preg_match('#^custom_\d+$#', $key)) {
+        $full_key = CRM_Contract_Utils::getCustomFieldName($key);
+        $desired_state[$full_key] = $value;
       }
     }
 
-    if (empty($mandate_relevant_changes)) {
-      // nothing to do here
-      return;
+    // all relevant fields (activity -> membership)
+    $mandate_relevant_fields = array(
+      'contract_updates.ch_annual'                 => 'membership_payment.membership_annual',
+      'contract_updates.ch_from_ba'                => 'membership_payment.from_ba',
+      // 'contract_updates.ch_to_ba'                  => 'membership_payment.to_ba', // TODO: implement when multiple creditors are around
+      'contract_updates.ch_frequency'              => 'membership_payment.membership_frequency',
+      'contract_updates.ch_cycle_day'              => 'membership_payment.cycle_day',
+      'contract_updates.ch_recurring_contribution' => 'membership_payment.membership_recurring_contribution');
+
+    // calculate changes
+    // TODO: Change
+    $mandate_relevant_changes = array();
+    foreach ($mandate_relevant_fields as $field_raw) {
+      $desired_field_name = "contract_updates.ch_{$field_raw}";
+      $current_field_name = "membership_payment.{$field_raw}";
+      if (    isset($desired_state[$desired_field_name])
+           && $desired_state[$desired_field_name] != $current_state[$current_field_name]) {
+        $mandate_relevant_changes[] = $current_field_name;
+      } else {
+        error_log("FIELD {$desired_field_name} NOT SET.");
+      }
     }
 
+    error_log("CHANGES " . json_encode($mandate_relevant_changes));
+    if (empty($mandate_relevant_changes)) {
+      // nothing to do here
+      error_log("CURRENT " . json_encode($current_state));
+      error_log("DESIRED " . json_encode($desired_state));
+      return NULL;
+    }
+    exit();
+
     // get the right values
-    $from_ba       = CRM_Utils_Array::value('membership_payment.from_ba', $desired_state, CRM_Utils_Array::value('membership_payment.from_ba', $current_state));
-    $cycle_day     = CRM_Utils_Array::value('membership_payment.cycle_day', $desired_state, CRM_Utils_Array::value('membership_payment.cycle_day', $current_state));
-    $annual_amount = CRM_Utils_Array::value('membership_payment.membership_annual', $desired_state, CRM_Utils_Array::value('membership_payment.membership_annual', $current_state));
-    $frequency     = CRM_Utils_Array::value('membership_payment.membership_frequency', $desired_state, CRM_Utils_Array::value('membership_payment.membership_frequency', $current_state));
+    $from_ba       = CRM_Utils_Array::value('contract_updates.ch_from_ba', $desired_state, CRM_Utils_Array::value('membership_payment.from_ba', $current_state));
+    $cycle_day     = CRM_Utils_Array::value('contract_updates.ch_cycle_day', $desired_state, CRM_Utils_Array::value('membership_payment.cycle_day', $current_state));
+    $annual_amount = CRM_Utils_Array::value('contract_updates.ch_membership_annual', $desired_state, CRM_Utils_Array::value('membership_payment.membership_annual', $current_state));
+    $frequency     = CRM_Utils_Array::value('contract_updates.ch_membership_frequency', $desired_state, CRM_Utils_Array::value('membership_payment.membership_frequency', $current_state));
     $campaign_id   = CRM_Utils_Array::value('campaign_id', $activity, CRM_Utils_Array::value('campaign_id', $current_state));
 
     // calculate some stuff
@@ -90,7 +114,7 @@ class CRM_Contract_SepaLogic {
     }
 
     // and set the new recurring contribution
-    $current_state['membership_payment.membership_recurring_contribution'] = $new_mandate['entity_id'];
+    return $new_mandate['entity_id'];
   }
 
   /**

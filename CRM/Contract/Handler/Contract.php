@@ -132,7 +132,15 @@ class CRM_Contract_Handler_Contract{
     // add it to postModify. Let me know if you want to discuss.
 
     // adjust mandate
-    CRM_Contract_SepaLogic::updateSepaMandate($this->startState['id'], $this->startState, $this->params, $this->modificationActivity);
+    $new_recur = CRM_Contract_SepaLogic::updateSepaMandate($this->startState['id'],
+                                              $this->startState,
+                                              $this->normalise($this->modificationActivity),
+                                              $this->modificationActivity);
+    if ($new_recur) {
+      // this means a new mandate has been created -> set
+      $this->params['membership_payment.membership_recurring_contribution'] = $new_recur;
+    }
+
 
     // Setting skip_handler to true  avoids us 'handling the already handled' call
     $params = $this->convertCustomIds($this->params);
