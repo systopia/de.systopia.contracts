@@ -7,6 +7,9 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
+/**
+ * @deprecated see GP-672
+ */
 class CRM_Contract_Form_Mandate extends CRM_Core_Form{
 
   function buildQuickForm(){

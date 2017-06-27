@@ -6,6 +6,7 @@
 | http://www.systopia.de/                                      |
 +-------------------------------------------------------------*}
 
+{* DEPRECATED *}
 <div class="crm-block crm-form-block">
   <h3>Create a new mandate</h3>
   <div class="crm-section">

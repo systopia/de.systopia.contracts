@@ -14,6 +14,19 @@
 class CRM_Contract_SepaLogic {
 
   /**
+   * Create a new SEPA mandate
+   */
+  public static function createNewMandate($params) {
+    // TODO: fill? sanitise?
+
+    // pass it to the SEPA API
+    $new_mandate = civicrm_api3('SepaMandate', 'createfull', $params);
+
+    // reload to get all values
+    return civicrm_api3('SepaMandate', 'getsingle', array('id' => $new_mandate['id']));
+  }
+
+  /**
    * Adjust or update the given SEPA mandate according to the
    * requested change
    */
@@ -103,8 +116,7 @@ class CRM_Contract_SepaLogic {
       );
 
     // create and reload (to get all data)
-    $new_mandate = civicrm_api3('SepaMandate', 'createfull', $new_mandate_values);
-    $new_mandate = civicrm_api3('SepaMandate', 'getsingle', array('id' => $new_mandate['id']));
+    $new_mandate = self::createNewMandate($new_mandate_values);
 
     // then terminate the old one
     if (!empty($current_state['membership_payment.membership_recurring_contribution'])) {

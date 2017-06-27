@@ -18,6 +18,7 @@
   {/if}
 </h3> -->
   {if $modificationActivity eq 'update' OR $modificationActivity eq 'revive' }
+    {* FIXME: doesn't work any more: include file="CRM/Contract/Form/MandateBlock.tpl"*}
     <div class="content">
       <p class=recurring-contribution-summary-text></p>
     </div>

@@ -24,8 +24,17 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     $formUtils = new CRM_Contract_FormUtils($this, 'Membership');
     $formUtils->addPaymentContractSelect2('recurring_contribution', $this->get('cid'), false);
     CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('cid' => $this->get('cid')));
-    CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/MandateBlock.js');
 
+    // Payment dates
+    CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/MandateBlock.js');
+    CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('cid' => $this->get('cid')));
+    $this->add('select', 'payment_option', ts('Payment'), array('create' => 'create new mandate', 'select' => 'select existing contract'));
+    $this->add('select', 'cycle_day', ts('Cycle day'), CRM_Contract_SepaLogic::getCycleDays());
+    $this->add('text',   'iban', ts('IBAN'), array('class' => 'huge'));
+    $this->add('text',   'bic', ts('BIC'));
+    $this->add('text',   'payment_amount', ts('Annual amount'), array('size' => 6));
+    $this->add('select', 'payment_frequency', ts('Payment Frequency'), CRM_Contract_SepaLogic::getPaymentFrequencies());
+    $this->assign('bic_lookup_accessible', CRM_Contract_SepaLogic::isLittleBicExtensionAccessible());
 
     // Contract dates
     $this->addDate('join_date', ts('Member since'), TRUE, array('formatType' => 'activityDate'));
@@ -77,16 +86,90 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
 
   }
 
+  /**
+   * form validation
+   */
+  function validate() {
+    $submitted = $this->exportValues();
+
+    if ($submitted['payment_option'] == 'create') {
+      if($submitted['payment_amount'] && !$submitted['payment_frequency']){
+        HTML_QuickForm::setElementError ( 'payment_frequency', 'Please specify a frequency when specifying an amount');
+      }
+      if($submitted['payment_frequency'] && !$submitted['payment_amount']){
+        HTML_QuickForm::setElementError ( 'payment_amount', 'Please specify an amount when specifying a frequency');
+      }
+
+      $amount = CRM_Contract_SepaLogic::formatMoney($submitted['payment_amount'] / $submitted['payment_frequency']);
+      if ($amount < 0.01) {
+        HTML_QuickForm::setElementError ( 'payment_amount', 'Annual amount too small.');
+      }
+
+      // SEPA validation
+      if (!empty($submitted['iban']) && !CRM_Contract_SepaLogic::validateIBAN($submitted['iban'])) {
+        HTML_QuickForm::setElementError ( 'iban', 'Please enter a valid IBAN');
+      }
+      if (!empty($submitted['bic']) && !CRM_Contract_SepaLogic::validateBIC($submitted['bic'])) {
+        HTML_QuickForm::setElementError ( 'bic', 'Please enter a valid BIC');
+      }
+    }
+
+    return parent::validate();
+  }
+
+
   function setDefaults($defaultValues = null, $filter = null){
 
     list($defaults['join_date'], $null) = CRM_Utils_Date::setDateDefaults(NULL, 'activityDateTime');
     list($defaults['start_date'], $null) = CRM_Utils_Date::setDateDefaults(NULL, 'activityDateTime');
+
+    // sepa defaults
+    $defaults['payment_frequency'] = '1'; // monthly
+    $defaults['payment_option'] = 'create';
+    $defaults['cycle_day'] = CRM_Contract_SepaLogic::nextCycleDay();
 
     parent::setDefaults($defaults);
   }
 
   function postProcess(){
     $submitted = $this->exportValues();
+
+    if ($submitted['payment_option'] == 'create') {
+        // calculate some stuff
+        if ($submitted['cycle_day'] < 1 || $submitted['cycle_day'] > 30) {
+          // invalid cycle day
+          $submitted['cycle_day'] = CRM_Contract_SepaLogic::nextCycleDay();
+        }
+
+        // calculate amount
+        $annual_amount = CRM_Contract_SepaLogic::formatMoney($submitted['payment_amount']);
+        $frequency_interval = 12 / $submitted['payment_frequency'];
+        $amount = CRM_Contract_SepaLogic::formatMoney($annual_amount / $submitted['payment_frequency']);
+
+        $new_mandate = CRM_Contract_SepaLogic::createNewMandate(array(
+              'type'               => 'RCUR',
+              'contact_id'         => $this->get('cid'),
+              'amount'             => $amount,
+              'currency'           => 'EUR',
+              'start_date'         => CRM_Utils_Date::processDate($submitted['start_date'], null, null, 'Y-m-d H:i:s'),
+              'creation_date'      => date('YmdHis'), // NOW
+              'date'               => CRM_Utils_Date::processDate($submitted['start_date'], null, null, 'Y-m-d H:i:s'),
+              'validation_date'    => date('YmdHis'), // NOW
+              'iban'               => $submitted['iban'],
+              'bic'                => $submitted['bic'],
+              // 'source'             => ??
+              'campaign_id'        => $submitted['campaign_id'],
+              'financial_type_id'  => 2, // Membership Dues
+              'frequency_unit'     => 'month',
+              'cycle_day'          => $submitted['cycle_day'],
+              'frequency_interval' => $frequency_interval,
+            ));
+        $params['membership_payment.membership_recurring_contribution'] = $new_mandate['entity_id'];
+        $params['membership_general.membership_dialoger'] = $submitted['membership_dialoger']; // DD fundraiser
+    } else {
+        $params['membership_payment.membership_recurring_contribution'] = $submitted['recurring_contribution']; // Recurring contribution
+    }
+
 
     // Create the contract (the membership)
 
@@ -103,10 +186,10 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     $params['campaign_id'] = $submitted['campaign_id'];
 
     // 'Custom' fields
-    $params['membership_payment.membership_recurring_contribution'] = $submitted['recurring_contribution']; // Recurring contribution
     $params['membership_general.membership_reference'] = $submitted['membership_reference']; // Reference number
     $params['membership_general.membership_contract'] = $submitted['membership_contract']; // Contract number
     $params['membership_general.membership_dialoger'] = $submitted['membership_dialoger']; // DD fundraiser
+
     $params['note'] = $submitted['activity_details']; // Membership channel
     $params['medium_id'] = $submitted['activity_medium']; // Membership channel
 
