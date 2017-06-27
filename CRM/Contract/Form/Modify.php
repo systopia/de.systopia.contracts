@@ -232,10 +232,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
           break;
 
         case 'modify': // manually modify the existing
-          if($submitted['payment_frequency'] && $submitted['payment_amount']){
-            $payment_amount = CRM_Contract_SepaLogic::formatMoney($submitted['payment_amount']);
-            $params['membership_payment.membership_annual'] = CRM_Contract_SepaLogic::formatMoney($payment_amount * $submitted['payment_frequency']);
-          }
+          $params['membership_payment.membership_annual'] = CRM_Contract_SepaLogic::formatMoney($submitted['payment_amount']);
           $params['membership_payment.membership_frequency'] = $submitted['payment_frequency'];
           $params['membership_payment.cycle_day'] = $submitted['cycle_day'];
           $params['membership_payment.to_ba']   = CRM_Contract_BankingLogic::getCreditorBankAccount();

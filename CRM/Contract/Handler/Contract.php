@@ -134,7 +134,7 @@ class CRM_Contract_Handler_Contract{
     // adjust mandate
     $new_recur = CRM_Contract_SepaLogic::updateSepaMandate($this->startState['id'],
                                               $this->startState,
-                                              $this->normalise($this->modificationActivity),
+                                              $this->modificationActivity,
                                               $this->modificationActivity);
     if ($new_recur) {
       // this means a new mandate has been created -> set
@@ -490,6 +490,7 @@ class CRM_Contract_Handler_Contract{
   }
 
   private function calcAnnualAmount($contributionRecur){
+    // FIXME: only 'month' and 'year' should be in use
     $frequencyUnitTranslate = array(
       'day' => 365,
       'week' => 52,

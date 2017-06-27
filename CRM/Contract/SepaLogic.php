@@ -18,8 +18,6 @@ class CRM_Contract_SepaLogic {
    * requested change
    */
   public static function updateSepaMandate($contribution_recur_id, $current_state, $desired_state, $activity) {
-    error_log(json_encode($desired_state));
-
     // desired_state (from activity) hasn't resolved the numeric custom_ fields yet
     foreach ($desired_state as $key => $value) {
       if (preg_match('#^custom_\d+$#', $key)) {
@@ -28,7 +26,7 @@ class CRM_Contract_SepaLogic {
       }
     }
 
-    // all relevant fields (activity -> membership)
+    // all relevant fields (activity field  -> membership field)
     $mandate_relevant_fields = array(
       'contract_updates.ch_annual'                 => 'membership_payment.membership_annual',
       'contract_updates.ch_from_ba'                => 'membership_payment.from_ba',
@@ -37,34 +35,24 @@ class CRM_Contract_SepaLogic {
       'contract_updates.ch_cycle_day'              => 'membership_payment.cycle_day',
       'contract_updates.ch_recurring_contribution' => 'membership_payment.membership_recurring_contribution');
 
-    // calculate changes
-    // TODO: Change
+    // calculate changes to see whether we have to act
     $mandate_relevant_changes = array();
-    foreach ($mandate_relevant_fields as $field_raw) {
-      $desired_field_name = "contract_updates.ch_{$field_raw}";
-      $current_field_name = "membership_payment.{$field_raw}";
+    foreach ($mandate_relevant_fields as $desired_field_name => $current_field_name) {
       if (    isset($desired_state[$desired_field_name])
            && $desired_state[$desired_field_name] != $current_state[$current_field_name]) {
-        $mandate_relevant_changes[] = $current_field_name;
-      } else {
-        error_log("FIELD {$desired_field_name} NOT SET.");
+        $mandate_relevant_changes[] = $desired_field_name;
       }
     }
-
-    error_log("CHANGES " . json_encode($mandate_relevant_changes));
     if (empty($mandate_relevant_changes)) {
       // nothing to do here
-      error_log("CURRENT " . json_encode($current_state));
-      error_log("DESIRED " . json_encode($desired_state));
       return NULL;
     }
-    exit();
 
-    // get the right values
+    // get the right values (desired first, else from current)
     $from_ba       = CRM_Utils_Array::value('contract_updates.ch_from_ba', $desired_state, CRM_Utils_Array::value('membership_payment.from_ba', $current_state));
-    $cycle_day     = CRM_Utils_Array::value('contract_updates.ch_cycle_day', $desired_state, CRM_Utils_Array::value('membership_payment.cycle_day', $current_state));
-    $annual_amount = CRM_Utils_Array::value('contract_updates.ch_membership_annual', $desired_state, CRM_Utils_Array::value('membership_payment.membership_annual', $current_state));
-    $frequency     = CRM_Utils_Array::value('contract_updates.ch_membership_frequency', $desired_state, CRM_Utils_Array::value('membership_payment.membership_frequency', $current_state));
+    $cycle_day     = (int) CRM_Utils_Array::value('contract_updates.ch_cycle_day', $desired_state, CRM_Utils_Array::value('membership_payment.cycle_day', $current_state));
+    $annual_amount = CRM_Utils_Array::value('contract_updates.ch_annual', $desired_state, CRM_Utils_Array::value('membership_payment.membership_annual', $current_state));
+    $frequency     = (int) CRM_Utils_Array::value('contract_updates.ch_frequency', $desired_state, CRM_Utils_Array::value('membership_payment.membership_frequency', $current_state));
     $campaign_id   = CRM_Utils_Array::value('campaign_id', $activity, CRM_Utils_Array::value('campaign_id', $current_state));
 
     // calculate some stuff
@@ -73,8 +61,13 @@ class CRM_Contract_SepaLogic {
       $cycle_day = self::nextCycleDay();
     }
 
+    // calculate amount
     $frequency_interval = 12 / $frequency;
     $amount = number_format($annual_amount / $frequency, 2);
+    if ($amount < 0.01) {
+      // TODO: MARK ERROR: amount too small
+      return NULL;
+    }
 
     // get bank account
     $donor_account = CRM_Contract_BankingLogic::getBankAccount($from_ba);
@@ -84,9 +77,13 @@ class CRM_Contract_SepaLogic {
         $donor_account['bic'] = $bic_search['bic'];
       }
     }
+    if (empty($donor_account['iban']) || empty($donor_account['bic'])) {
+      // TODO: MARK ERROR: invalid iban/bic
+      return NULL;
+    }
 
     // we need to create a new mandate
-    $new_mandate = civicrm_api3('SepaMandate', 'createfull', array(
+    $new_mandate_values =  array(
       'type'               => 'RCUR',
       'contact_id'         => $current_state['contact_id'],
       'amount'             => $amount,
@@ -97,18 +94,19 @@ class CRM_Contract_SepaLogic {
       'validation_date'    => date('YmdHis'), // NOW
       'iban'               => $donor_account['iban'],
       'bic'                => $donor_account['bic'],
-      // 'source'             =>
+      // 'source'             => ??
       'campaign_id'        => $campaign_id,
       'financial_type_id'  => 2, // Membership Dues
       'frequency_unit'     => 'month',
       'cycle_day'          => $cycle_day,
       'frequency_interval' => $frequency_interval,
-      ));
+      );
 
-    // reload to get all data
+    // create and reload (to get all data)
+    $new_mandate = civicrm_api3('SepaMandate', 'createfull', $new_mandate_values);
     $new_mandate = civicrm_api3('SepaMandate', 'getsingle', array('id' => $new_mandate['id']));
 
-    // ...and terminate the old one
+    // then terminate the old one
     if (!empty($current_state['membership_payment.membership_recurring_contribution'])) {
       self::terminateSepaMandate($current_state['membership_payment.membership_recurring_contribution']);
     }
@@ -124,9 +122,16 @@ class CRM_Contract_SepaLogic {
   public static function terminateSepaMandate($recurring_contribution_id, $reason = 'CHNG') {
     $mandate = self::getMandateForRecurringContributionID($recurring_contribution_id);
     if ($mandate) {
-      CRM_Sepa_BAO_SEPAMandate::terminateMandate($mandate['id'], "now", $reason);
+      // FIXME: use "now" instead of "today" once that's fixed in CiviSEPA
+      CRM_Sepa_BAO_SEPAMandate::terminateMandate($mandate['id'], "today", $reason);
     } else {
-      // TODO: what to do with NO/NON-SEPA recurring contributions?
+      if ($recurring_contribution_id) {
+        // set (other) recurring contribution to 'COMPLETED' [1]
+        civicrm_api3('ContributionRecur', 'create', array(
+          'id'                     => $recurring_contribution_id,
+          'end_date'               => date('YmdHis'),
+          'contribution_status_id' => 1));
+      }
     }
   }
 
