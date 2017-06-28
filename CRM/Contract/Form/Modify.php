@@ -115,7 +115,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
 
     $formUtils = new CRM_Contract_FormUtils($this, 'Membership');
-    $formUtils->addPaymentContractSelect2('recurring_contribution', $this->membership['contact_id'], false);
+    $formUtils->addPaymentContractSelect2('recurring_contribution', $this->membership['contact_id'], false, $this->get('id'));
 
     // Membership type (membership)
     foreach(civicrm_api3('MembershipType', 'get', [])['values'] as $MembershipType){

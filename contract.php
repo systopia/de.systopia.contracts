@@ -142,6 +142,7 @@ function contract_civicrm_buildForm($formName, &$form) {
     case 'CRM_Member_Form_Membership':
 
       $contactId = CRM_Utils_Request::retrieve('cid', 'Positive', $form);
+      $id = CRM_Utils_Request::retrieve('id', 'Positive', $form);
 
       if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
 
@@ -171,7 +172,7 @@ function contract_civicrm_buildForm($formName, &$form) {
           $customGroupTableId = isset($form->_groupTree[$result['custom_group_id']]['table_id']) ? $form->_groupTree[$result['custom_group_id']]['table_id'] : '-1';
           $elementName = "custom_{$result['id']}_{$customGroupTableId}";
           $form->removeElement($elementName);
-          $formUtils->addPaymentContractSelect2($elementName, $contactId);
+          $formUtils->addPaymentContractSelect2($elementName, $contactId, true, $id);
           // NOTE for initial launch: all custom membership fields should be editable
           $formUtils->removeMembershipEditDisallowedCustomFields();
         }

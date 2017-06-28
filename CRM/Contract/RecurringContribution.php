@@ -13,12 +13,12 @@ class CRM_Contract_RecurringContribution {
    * Return a detailed list of recurring contribution
    * for the given contact
    */
-  public static function getAllForContact($cid) {
+  public static function getAllForContact($cid, $thatAreNotAssignedToOtherContracts = true, $contractId = null){
     $object = new CRM_Contract_RecurringContribution();
-    return $object->getAll($cid);
+    return $object->getAll($cid, $thatAreNotAssignedToOtherContracts, $contractId);
   }
 
-  public function getAll($cid){
+  public function getAll($cid, $thatAreNotAssignedToOtherContracts = true, $contractId = null){
     $contact = civicrm_api3('Contact', 'getsingle', array('id' => $cid));
     $contributionRecurs = civicrm_api3('ContributionRecur', 'get', ['contact_id' => $cid,'option.limit' => 1000])['values'];
     $sepaMandates = civicrm_api3('sepaMandate', 'get', ['contact_id' => $cid,'option.limit' => 1000])['values'];
@@ -27,7 +27,6 @@ class CRM_Contract_RecurringContribution {
     foreach($paymentInstrumentOptions as $paymentInstrumentOption){
       $paymentInstruments[$paymentInstrumentOption['value']]=$paymentInstrumentOption['name'];
     }
-    // var_dump($paymentInstruments);
     foreach($contributionRecurs as $cr){
       $return[$cr['id']]['fields']=[
         'display_name' => $contact['display_name'],
@@ -57,6 +56,22 @@ Creditor account: {$return[$cr['id']]['fields']['iban']}<br />
 Next debit: {$return[$cr['id']]['fields']['next_debit']}";
       }else{
         $return[$cr['id']]['label'] = "{$return[$cr['id']]['fields']['payment_instrument']}, {$return[$cr['id']]['fields']['amount']} {$return[$cr['id']]['fields']['frequency']}";
+      }
+    }
+
+    // We don't want to return recurring contributions for selection if they are
+    // already assigned to OTHER contracts.
+    if($thatAreNotAssignedToOtherContracts){
+      $rcField = CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution');
+      $memberships = civicrm_api3('Membership', 'get', ['contact_id' => $cid, 'return' => $rcField]);
+      $assignedRCs = array_column($memberships['values'], $rcField, 'id');
+      if($contractId){
+        unset($assignedRCs[$contractId]);
+      }
+    }
+    foreach($assignedRCs as $assignedRC){
+      if(isset($return[$assignedRC])){
+        unset($return[$assignedRC]);
       }
     }
     return $return;
