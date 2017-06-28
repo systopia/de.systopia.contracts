@@ -102,12 +102,15 @@ class CRM_Contract_Handler_Contract{
     // been passed and set any errors.
     if($this->modificationClass){
       $this->modificationClass->validateParams($this->params, $this->startState);
+      // Perform any extra validation
+      $this->modificationClass->validateExtra();
       $this->errors += $this->modificationClass->getErrors();
     }else{
       // If by this stage, we have been unable to find a valid modificationClass
       // this status change should not be allowed.
       $this->errors['status_id'] = "You cannot update contract status from '{$this->startStatus}' to '{$this->proposedStatus}'.";
     }
+
 
     // Used, for instance, when we want to process a handle a pause without specifying a resume
     foreach($errorsToIgnore aS $e){
