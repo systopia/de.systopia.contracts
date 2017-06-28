@@ -142,18 +142,25 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     $contactParams['prefix_id'] = $submitted['prefix_id'];
     $contactParams['first_name'] = $submitted['first_name'];
     $contactParams['last_name'] = $submitted['last_name'];
-    $contactParams['street_address'] = $submitted['street_address'];
-    $contactParams['postal_code'] = $submitted['postal_code'];
     $contactParams['birth_date'] = $submitted['birth_date'];
     $contactParams['contact_type'] = 'Individual';
     $contact = civicrm_api3('Contact', 'create', $contactParams);
 
     civicrm_api3('Email', 'create', ['contact_id' => $contact['id'], 'email' => $submitted['email']]);
+
     civicrm_api3('Phone', 'create', [
       'contact_id' => $contact['id'],
       'phone' => $submitted['phone'],
       'phone_type_id' => 'phone',
       'phone_location_id' => 'home'
+    ]);
+
+    civicrm_api3('Address', 'create', [
+      'contact_id' => $contact['id'],
+      'street_address' => $submitted['street_address'],
+      'city' => $submitted['city'],
+      'postal_code' => $submitted['postal_code'],
+      'location_type_id' => 'home'
     ]);
 
     if($submitted['groups']){
