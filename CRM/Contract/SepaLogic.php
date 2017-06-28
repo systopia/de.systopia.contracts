@@ -241,6 +241,41 @@ class CRM_Contract_SepaLogic {
     return $options;
   }
 
+  /**
+   * Get next collections
+   *
+   * @return array list cycle_day => next collection date
+   */
+  public static function getNextCollections() {
+    $cycle_days   = self::getCycleDays();
+    $nextCycleDay = self::nextCycleDay();
+    $nextCollections = array();
+
+    // jump to nearest cycle day
+    $now = strtotime("NOW");
+    while (date('d', $now) != $nextCycleDay) {
+      $now = strtotime('+ 1 day', $now);
+    }
+    $nextCollections[(int) $nextCycleDay] = date('Y-m-d', $now);
+
+    // add the other cycle days
+    while (date('d', $now) != $nextCycleDay) {
+      $now = strtotime('+ 1 day', $now);
+    }
+
+    // now add the other cycle days
+    for ($i=1; $i < count($cycle_days); $i++) {
+      $now = strtotime('+ 1 day', $now);
+      while (!in_array(date('d', $now), $cycle_days)) {
+        $now = strtotime('+ 1 day', $now);
+      }
+      // found one
+      $nextCollections[(int) date('d', $now)] = date('Y-m-d', $now);
+    }
+
+    return $nextCollections;
+  }
+
 
   /**
    * Get the available cycle days

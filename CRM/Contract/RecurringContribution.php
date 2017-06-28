@@ -7,7 +7,16 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-class CRM_Contract_RecurringContribution{
+class CRM_Contract_RecurringContribution {
+
+  /**
+   * Return a detailed list of recurring contribution
+   * for the given contact
+   */
+  public static function getAllForContact($cid) {
+    $object = new CRM_Contract_RecurringContribution();
+    return $object->getAll($cid);
+  }
 
   public function getAll($cid){
     $contact = civicrm_api3('Contact', 'getsingle', array('id' => $cid));

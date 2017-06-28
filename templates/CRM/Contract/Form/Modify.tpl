@@ -18,9 +18,11 @@
   {/if}
 </h3> -->
   {if $modificationActivity eq 'update' OR $modificationActivity eq 'revive' }
-    {* FIXME: doesn't work any more: include file="CRM/Contract/Form/MandateBlock.tpl"*}
-    <div class="content">
-      <p class=recurring-contribution-summary-text></p>
+
+    <div class="crm-section">
+      <div class="label">Current Payment Option</div>
+      <div class="content recurring-contribution-summary-text">None</div>
+      <div class="clear"></div>
     </div>
 
     <div class="crm-section">
@@ -118,6 +120,8 @@
   </div>
 </div>
 
+{if $modificationActivity eq 'update' OR $modificationActivity eq 'revive'}
+
 {if $bic_lookup_accessible}
   {include file="CRM/Contract/Form/bic_lookup.tpl" location="bottom"}
 {/if}
@@ -126,6 +130,7 @@
 <script type="text/javascript">
 // add listener to payment_option selector
 cj("#payment_option").change(function() {
+  updatePaymentSummaryText();
   var new_mode = cj("#payment_option").val();
   if (new_mode == "select") {
     cj("div.payment-select").show(300);
@@ -138,7 +143,86 @@ cj("#payment_option").change(function() {
     cj("div.payment-modify").hide(300);
   }
 });
+
+/**
+ * update the payment info shown
+ */
+function updatePaymentSummaryText() {
+  var mode = cj("#payment_option").val();
+  if (mode == "select") {
+    // display the selected recurring contribution
+    var recurring_contributions = CRM.vars['de.systopia.contract'].recurring_contributions;
+    var key = cj('[name=recurring_contribution]').val();
+    cj('.recurring-contribution-summary-text').html(recurring_contributions[key].text_summary);
+  } else if (mode == "nochange") {
+    var recurring_contributions = CRM.vars['de.systopia.contract'].recurring_contributions;
+    var key = CRM.vars['de.systopia.contract'].current_recurring;
+    cj('.recurring-contribution-summary-text').html(recurring_contributions[key].text_summary);
+  } else if (mode == "modify") {
+    // render the current SEPA values
+    var creditor = CRM.vars['de.systopia.contract'].creditor;
+    var cycle_day       = cj('[name=cycle_day]').val();
+    var iban            = cj('[name=iban]').val();
+    var annual          = parseMoney(cj('[name=payment_amount]').val());
+    var freqency        = cj('[name=payment_frequency]').val();
+    var freqency_label  = CRM.vars['de.systopia.contract'].frequencies[freqency];
+    var next_collection = CRM.vars['de.systopia.contract'].next_collections[cycle_day];
+    var installment     = 0.0;
+
+    // TODO: sanitise annual
+    // caculcate the installment
+    if (isNaN(annual)) {
+      annual = 0.0;
+    } else {
+      installment = (annual.toFixed(2) / parseFloat(freqency)).toFixed(2);
+    }
+
+    // TODO: use template
+    cj('.recurring-contribution-summary-text').html(
+      "Creditor name: " + creditor.name + "<br/>" +
+      "Payment method: SEPA Direct Debit<br/>" +
+      "Frequency: " + freqency_label + "<br/>" +
+      "Annual contract amount: " + annual.toFixed(2) + " EUR<br/>" +
+      "Frequency contract amount: " + installment + " EUR<br/>" +
+      "Organisational account: " + creditor.iban + "<br/>" +
+      "Creditor account: " + iban + "<br/>" +
+      "Next debit: " + next_collection + "<br/>"
+      );
+  }
+}
+
+/**
+ * formats a value to the CiviCRM failsafe format: 0.00 (e.g. 999999.90)
+ * even if there are ',' in there, which are used in some countries
+ * (e.g. Germany, Austria,) as a decimal point.
+ * @see CRM_Contract_SepaLogic::formatMoney
+ */
+function parseMoney(raw_value) {
+  if (raw_value.length == 0) {
+    return 0.0;
+  }
+
+  // find out if there's a problem with ','
+  var stripped_value = raw_value.replace(' ', '');
+  if (stripped_value.includes(',')) {
+    // if there are at least three digits after the ','
+    //  it's a thousands separator
+    if (stripped_value.match('#,\d{3}#')) {
+      // it's a thousands separator -> just strip
+      stripped_value = stripped_value.replace(',', '');
+    } else {
+      // it has to be interpreted as a decimal
+      // first remove all other decimals
+      stripped_value = stripped_value.replace('.', '');
+      stripped_value = stripped_value.replace(',', '.');
+    }
+  }
+  return parseFloat(stripped_value);
+}
 // call once for the UI to adjust
 cj("#payment_option").trigger('change');
+cj("div.payment-modify").change(updatePaymentSummaryText);
+
 </script>
 {/literal}
+{/if}

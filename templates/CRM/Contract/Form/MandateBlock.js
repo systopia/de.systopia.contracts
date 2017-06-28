@@ -6,6 +6,7 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
+/** DEPREACATED **/
 CRM.$(function($) {
 
   // Register listeners

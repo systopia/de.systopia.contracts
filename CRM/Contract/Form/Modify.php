@@ -94,7 +94,13 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     // JS for the pop up
     CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/MandateBlock.js');
-    CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('cid' => $this->membership['contact_id']));
+    CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array(
+      'cid'                     => $this->membership['contact_id'],
+      'current_recurring'       => $this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')],
+      'creditor'                => CRM_Contract_SepaLogic::getCreditor(),
+      'next_collections'        => CRM_Contract_SepaLogic::getNextCollections(),
+      'frequencies'             => CRM_Contract_SepaLogic::getPaymentFrequencies(),
+      'recurring_contributions' => CRM_Contract_RecurringContribution::getAllForContact($this->membership['contact_id'])));
 
     // add a generic switch to clean up form
     $payment_options = array(
@@ -155,7 +161,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       $defaults['recurring_contribution'] = $this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')];
 
       $defaults['cycle_day'] = CRM_Contract_SepaLogic::nextCycleDay();
-      $defaults['payment_frequency'] = '1';
+      $defaults['payment_frequency'] = '12';
       $defaults['activity_medium'] = '7'; // Back Office
 
       // TODO: add more default values?

@@ -7,6 +7,9 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
+/**
+ * @deprecated in favour of ContributionRecur.getdetails
+ */
 class CRM_Contract_Page_RecurringContributions extends CRM_Core_Page{
   function run(){
     if($contactId = CRM_Utils_Request::retrieve('cid', 'Positive')){

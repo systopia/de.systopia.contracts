@@ -23,11 +23,15 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
 
     $formUtils = new CRM_Contract_FormUtils($this, 'Membership');
     $formUtils->addPaymentContractSelect2('recurring_contribution', $this->get('cid'), false);
-    CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('cid' => $this->get('cid')));
+    CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array(
+      'cid'                     => $this->get('cid'),
+      'creditor'                => CRM_Contract_SepaLogic::getCreditor(),
+      'next_collections'        => CRM_Contract_SepaLogic::getNextCollections(),
+      'frequencies'             => CRM_Contract_SepaLogic::getPaymentFrequencies(),
+      'recurring_contributions' => CRM_Contract_RecurringContribution::getAllForContact($this->get('cid'))));
+    CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/MandateBlock.js');
 
     // Payment dates
-    CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/MandateBlock.js');
-    CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('cid' => $this->get('cid')));
     $this->add('select', 'payment_option', ts('Payment'), array('create' => 'create new mandate', 'select' => 'select existing contract'));
     $this->add('select', 'cycle_day', ts('Cycle day'), CRM_Contract_SepaLogic::getCycleDays());
     $this->add('text',   'iban', ts('IBAN'), array('class' => 'huge'));
@@ -124,7 +128,7 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     list($defaults['start_date'], $null) = CRM_Utils_Date::setDateDefaults(NULL, 'activityDateTime');
 
     // sepa defaults
-    $defaults['payment_frequency'] = '1'; // monthly
+    $defaults['payment_frequency'] = '12'; // monthly
     $defaults['payment_option'] = 'create';
     $defaults['cycle_day'] = CRM_Contract_SepaLogic::nextCycleDay();
 
