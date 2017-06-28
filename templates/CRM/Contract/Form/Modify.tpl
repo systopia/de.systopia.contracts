@@ -153,11 +153,19 @@ function updatePaymentSummaryText() {
     // display the selected recurring contribution
     var recurring_contributions = CRM.vars['de.systopia.contract'].recurring_contributions;
     var key = cj('[name=recurring_contribution]').val();
-    cj('.recurring-contribution-summary-text').html(recurring_contributions[key].text_summary);
+    if (key) {
+      cj('.recurring-contribution-summary-text').html(recurring_contributions[key].text_summary);
+    } else {
+      cj('.recurring-contribution-summary-text').html('');
+    }
   } else if (mode == "nochange") {
     var recurring_contributions = CRM.vars['de.systopia.contract'].recurring_contributions;
     var key = CRM.vars['de.systopia.contract'].current_recurring;
-    cj('.recurring-contribution-summary-text').html(recurring_contributions[key].text_summary);
+    if (key) {
+      cj('.recurring-contribution-summary-text').html(recurring_contributions[key].text_summary);
+    } else {
+      cj('.recurring-contribution-summary-text').html('');
+    }
   } else if (mode == "modify") {
     // render the current SEPA values
     var creditor = CRM.vars['de.systopia.contract'].creditor;
