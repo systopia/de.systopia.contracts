@@ -158,7 +158,7 @@ function updatePaymentSummaryText() {
     if (key) {
       cj('.recurring-contribution-summary-text').html(recurring_contributions[key].text_summary);
     } else {
-      cj('.recurring-contribution-summary-text').html('');
+      cj('.recurring-contribution-summary-text').html('None');
     }
   } else if (mode == "create") {
     // render the current SEPA values

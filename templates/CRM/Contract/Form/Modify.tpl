@@ -156,7 +156,7 @@ function updatePaymentSummaryText() {
     if (key) {
       cj('.recurring-contribution-summary-text').html(recurring_contributions[key].text_summary);
     } else {
-      cj('.recurring-contribution-summary-text').html('');
+      cj('.recurring-contribution-summary-text').html('None');
     }
   } else if (mode == "nochange") {
     var recurring_contributions = CRM.vars['de.systopia.contract'].recurring_contributions;
@@ -164,7 +164,7 @@ function updatePaymentSummaryText() {
     if (key) {
       cj('.recurring-contribution-summary-text').html(recurring_contributions[key].text_summary);
     } else {
-      cj('.recurring-contribution-summary-text').html('');
+      cj('.recurring-contribution-summary-text').html('None');
     }
   } else if (mode == "modify") {
     // render the current SEPA values
