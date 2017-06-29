@@ -16,13 +16,12 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     if($this->cid){
       $this->set('cid', $this->cid);
     }
-    $this->controller->_destination = CRM_Utils_System::url('civicrm/contact/view', "reset=1&cid={$this->get('cid')}&selectedChild=member");
 
     $this->assign('cid', $this->get('cid'));
     $this->assign('contact', civicrm_api3('Contact', 'getsingle', ['id' => $this->get('cid')]));
 
     $formUtils = new CRM_Contract_FormUtils($this, 'Membership');
-    $formUtils->addPaymentContractSelect2('recurring_contribution', $this->get('cid'), false);
+    $formUtils->addPaymentContractSelect2('recurring_contribution', $this->get('cid'), false, null);
     CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array(
       'cid'                     => $this->get('cid'),
       'creditor'                => CRM_Contract_SepaLogic::getCreditor(),
@@ -198,5 +197,8 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     $params['medium_id'] = $submitted['activity_medium']; // Membership channel
 
     $membershipResult = civicrm_api3('Contract', 'create', $params);
+
+    $this->controller->_destination = CRM_Utils_System::url('civicrm/contact/view', "reset=1&cid={$this->get('cid')}");
+
   }
 }

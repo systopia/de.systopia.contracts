@@ -105,7 +105,12 @@ class CRM_Contract_ModificationActivity{
     }
     $this->checkRequired();
     return !count($this->errors);
+  }
 
+
+  // This class should be overridden by child classes when they want to do extra
+  // validation
+  function validateExtra(){
   }
 
   function checkAllowed(){
@@ -123,6 +128,31 @@ class CRM_Contract_ModificationActivity{
         if(!isset($this->params[$required]) || !$this->params[$required]){
           $this->errors[$required] = "'{$required}' is required when {$this->getGerund()} a contract";
         }
+      }
+    }
+  }
+
+  // For when a modification wants to check that the recurring payment is not
+  // already associated with another contract.
+  function checkPaymentNotAssociatedWithAnotherContract(){
+
+    // If we have been asked to update the associated recurring contribution
+    if(isset($this->params['membership_payment.membership_recurring_contribution'])){
+
+      // Get all contracts already associated with this contribution (hopefully
+      // only one)
+      $associatedContracts = civicrm_api3('Membership', 'get', [
+        CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution') => $this->params['membership_payment.membership_recurring_contribution']
+      ]);
+
+      // If this is a modification, then we need to exlude the current contract
+      // from the list of contracts to check that the payment is associated with
+      if(isset($this->start['id'])){
+        unset($associatedContracts['values'][$this->start['id']]);
+      }
+
+      if(count($associatedContracts['values'])){
+        $this->errors['membership_payment.membership_recurring_contribution'] = "Recurring payment '$this->params['membership_payment.membership_recurring_contribution']' is already associated with contract '".implode(',', array_keys($associatedContracts['values']))."'";
       }
     }
   }

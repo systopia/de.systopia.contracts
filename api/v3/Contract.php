@@ -238,7 +238,7 @@ function civicrm_api3_Contract_get_open_modification_counts($params){
 /**
  * Process the scheduled contract modifications
  */
-function _civicrm_api3_Contract_process_scheduled_modifications_spec(&$params){
+  function _civicrm_api3_Contract_process_scheduled_modifications_spec(&$params){
   $params['id'] = array(
     'name'         => 'Contract ID',
     'api.required' => 0,
@@ -314,6 +314,8 @@ function civicrm_api3_Contract_process_scheduled_modifications($params){
     // We ignore the lack of resume_date when processing alredy scheduled pauses
     // as we assume that the resume has already been created when the pause wraps
     // originally scheduled and hence we wouldn't want to create it again
+    // TODO I don't think the above is true any more. Should find out for sure
+    // and remove if so.
     if($handler->isValid(['resume_date'])){
       //TODO Might need/want to catch more exceptions here
       $handler->modify();

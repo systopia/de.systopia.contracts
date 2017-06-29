@@ -33,7 +33,8 @@ class CRM_Contract_ModificationActivity_Sign extends CRM_Contract_ModificationAc
     return 'signed';
   }
 
-  function validateFieldUpdate($fields){
-    return true;
+  function validateExtra(){
+    $this->checkPaymentNotAssociatedWithAnotherContract();
   }
+
 }

@@ -13,10 +13,6 @@ class CRM_Contract_ModificationActivity_Update extends CRM_Contract_Modification
     return array('New', 'Current', 'Grace');
   }
 
-  function getValidEndStatuses(){
-    return array('New', 'Current', 'Grace');
-  }
-
   function getEndStatus(){
     return 'Current'; // TODO maybe we don't update the status for an update?
   }
@@ -37,7 +33,8 @@ class CRM_Contract_ModificationActivity_Update extends CRM_Contract_Modification
     return 'updated';
   }
 
-  function validateFieldUpdate($fields){
-    return true;
+  function validateExtra(){
+    $this->checkPaymentNotAssociatedWithAnotherContract();
   }
+
 }

@@ -32,4 +32,9 @@ class CRM_Contract_ModificationActivity_Resume extends CRM_Contract_Modification
   function getResult(){
     return 'resumed';
   }
+
+  function validateExtra(){
+    $this->checkPaymentNotAssociatedWithAnotherContract();
+  }
+
 }

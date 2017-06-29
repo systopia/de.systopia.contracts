@@ -24,7 +24,7 @@ class CRM_Contract_Wrapper_ModificationActivity{
     return self::$_singleton;
   }
 
-  public function pre($op, $params){
+  public function pre($op, &$params){
 
     if(isset($params['resume_date'])){
       $this->resumeDate = $params['resume_date'];
@@ -55,7 +55,14 @@ class CRM_Contract_Wrapper_ModificationActivity{
       $this->contractId = $this->startState['source_record_id'];
       $this->checkActivityType($this->startState);
     }
+
+    //Create a subject line for scheduled activities
+    if($this->op == 'create' && in_array($params['activity_type_id'], CRM_Contract_ModificationActivity::getModificationActivityTypeIds())){
+      $params['subject'] = $this->getScheduledSubjectLine($params);
+    }
   }
+
+
 
   public function post($id, $objectRef){
 
@@ -110,6 +117,41 @@ class CRM_Contract_Wrapper_ModificationActivity{
       $this->skip = true;
     }
   }
+
+  function getScheduledSubjectLine($params){
+    foreach($params as $key => $param){
+      if(substr($key, 0,7) == 'custom_'){
+        $params[CRM_Contract_Utils::getCustomFieldName($key)] = $param;
+        unset($params[$key]);
+      }
+    }
+
+    $deltas = [];
+    if(isset($params['contract_updates.ch_annual'])){
+      $deltas[] = 'amt. to '.$params['contract_updates.ch_annual'];
+    }
+    if(isset($params['contract_updates.ch_frequency'])){
+      $deltas[] = 'freq. to '.civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $params['contract_updates.ch_frequency'], 'option_group_id' => "payment_frequency" ]);
+    }
+    if(isset($params['contract_updates.ch_to_ba'])){
+      $deltas[] = 'gp iban to '.civicrm_api3('BankingAccountReference', 'getvalue', ['return' => "reference", 'id' => $params['contract_updates.ch_to_ba']]);
+    }
+    if(isset($params['contract_updates.ch_from_ba'])){
+      $deltas[] = 'member iban to '.civicrm_api3('BankingAccountReference', 'getvalue', ['return' => "reference", 'id' => $params['contract_updates.ch_from_ba']]);
+    }
+    if(isset($params['contract_updates.ch_membership_type'])){
+      $deltas[] = 'type to '.civicrm_api3('MembershipType', 'getvalue', [ 'return' => "name", 'id' => $params['contract_updates.ch_membership_type']]);;
+    }
+    if(isset($params['contract_updates.ch_cycle_day'])){
+      $deltas[] = 'cyle day to '.$params['contract_updates.ch_cycle_day'];
+    }
+    if(isset($params['contract_updates.ch_payment_instrument'])){
+      $deltas[] = 'payment method to '.$params['contract_updates.ch_payment_instrument'];
+    }
+    $subject = "id{$params['source_record_id']}: ".implode(' AND ', $deltas);
+    return $subject;
+  }
+
   // It feels prudent to unset all values of this wrapper once we are finished
   // with it so ensure that if and when it is run multiple times in one
   // execution, it is not polluted with details from previous runs

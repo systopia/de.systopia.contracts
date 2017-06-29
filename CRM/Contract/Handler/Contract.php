@@ -102,12 +102,15 @@ class CRM_Contract_Handler_Contract{
     // been passed and set any errors.
     if($this->modificationClass){
       $this->modificationClass->validateParams($this->params, $this->startState);
+      // Perform any extra validation
+      $this->modificationClass->validateExtra();
       $this->errors += $this->modificationClass->getErrors();
     }else{
       // If by this stage, we have been unable to find a valid modificationClass
       // this status change should not be allowed.
       $this->errors['status_id'] = "You cannot update contract status from '{$this->startStatus}' to '{$this->proposedStatus}'.";
     }
+
 
     // Used, for instance, when we want to process a handle a pause without specifying a resume
     foreach($errorsToIgnore aS $e){
@@ -347,6 +350,26 @@ class CRM_Contract_Handler_Contract{
     }
     if(isset($deltas['membership_payment.payment_instrument']['new']) && $deltas['membership_payment.payment_instrument']['new']){
       civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.payment_instrument']['new'], 'option_group_id' => "payment_instrument" ]);
+    }
+
+    if(isset($deltas['membership_payment.to_ba']['old']) && $deltas['membership_payment.to_ba']['old']){
+      civicrm_api3('BankingAccountReference', 'getvalue', ['return' => "reference", 'id' => $deltas['membership_payment.to_ba']['old']]);
+    }
+    if(isset($deltas['membership_payment.to_ba']['new']) && $deltas['membership_payment.to_ba']['new']){
+      civicrm_api3('BankingAccountReference', 'getvalue', ['return' => "reference", 'id' => $deltas['membership_payment.to_ba']['new']]);
+    }
+    if(isset($deltas['membership_payment.from_ba']['old']) && $deltas['membership_payment.from_ba']['old']){
+      civicrm_api3('BankingAccountReference', 'getvalue', ['return' => "reference", 'id' => $deltas['membership_payment.from_ba']['old']]);
+    }
+    if(isset($deltas['membership_payment.from_ba']['new']) && $deltas['membership_payment.from_ba']['new']){
+      civicrm_api3('BankingAccountReference', 'getvalue', ['return' => "reference", 'id' => $deltas['membership_payment.from_ba']['new']]);
+    }
+
+    if(isset($deltas['membership_payment.membership_frequency']['old']) && $deltas['membership_payment.membership_frequency']['old']){
+      civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.membership_frequency']['old'], 'option_group_id' => "payment_frequency" ]);
+    }
+    if(isset($deltas['membership_payment.membership_frequency']['new']) && $deltas['membership_payment.membership_frequency']['new']){
+      civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.membership_frequency']['new'], 'option_group_id' => "payment_frequency" ]);
     }
 
     $abbrevations['membership_type_id']='type';
