@@ -193,7 +193,7 @@ function updatePaymentSummaryText() {
       "Annual contract amount: " + annual.toFixed(2) + " EUR<br/>" +
       "Frequency contract amount: " + installment + " EUR<br/>" +
       "Organisational account: " + creditor.iban + "<br/>" +
-      "Creditor account: " + iban + "<br/>" +
+      "Debitor account: " + iban + "<br/>" +
       "Next debit: " + next_collection + "<br/>"
       );
   }

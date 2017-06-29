@@ -52,7 +52,7 @@ Frequency contract amount: {$return[$cr['id']]['fields']['amount']}<br />
         $return[$cr['id']]['fields']['next_debit'] = '?';
         $return[$cr['id']]['label'] = "SEPA, {$return[$cr['id']]['fields']['amount']} {$return[$cr['id']]['fields']['frequency']} ({$sepa['reference']})";
         $return[$cr['id']]['text_summary'] .= "Organisational account: {$return[$cr['id']]['fields']['org_iban']}<br />
-Creditor account: {$return[$cr['id']]['fields']['iban']}<br />
+Debitor account: {$return[$cr['id']]['fields']['iban']}<br />
 Next debit: {$return[$cr['id']]['fields']['next_debit']}";
       }else{
         $return[$cr['id']]['label'] = "{$return[$cr['id']]['fields']['payment_instrument']}, {$return[$cr['id']]['fields']['amount']} {$return[$cr['id']]['fields']['frequency']}";
