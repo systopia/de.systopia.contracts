@@ -28,7 +28,6 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
       'next_collections'        => CRM_Contract_SepaLogic::getNextCollections(),
       'frequencies'             => CRM_Contract_SepaLogic::getPaymentFrequencies(),
       'recurring_contributions' => CRM_Contract_RecurringContribution::getAllForContact($this->get('cid'))));
-    CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/MandateBlock.js');
 
     // Payment dates
     $this->add('select', 'payment_option', ts('Payment'), array('create' => 'create new mandate', 'select' => 'select existing contract'));

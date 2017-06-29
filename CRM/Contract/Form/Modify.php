@@ -93,7 +93,6 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
   function addUpdateFields(){
 
     // JS for the pop up
-    CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/MandateBlock.js');
     CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array(
       'cid'                     => $this->membership['contact_id'],
       'current_recurring'       => $this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')],
