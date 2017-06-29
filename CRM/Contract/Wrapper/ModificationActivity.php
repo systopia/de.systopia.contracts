@@ -134,10 +134,10 @@ class CRM_Contract_Wrapper_ModificationActivity{
       $deltas[] = 'freq. to '.civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $params['contract_updates.ch_frequency'], 'option_group_id' => "payment_frequency" ]);
     }
     if(isset($params['contract_updates.ch_to_ba'])){
-      $deltas[] = 'gp iban to '.civicrm_api3('BankingAccountReference', 'getvalue', ['return' => "reference", 'id' => $params['contract_updates.ch_to_ba']]);
+      $deltas[] = 'gp iban to '.CRM_Contract_BankingLogic::getIBANforBankAccount($params['contract_updates.ch_to_ba']);
     }
     if(isset($params['contract_updates.ch_from_ba'])){
-      $deltas[] = 'member iban to '.civicrm_api3('BankingAccountReference', 'getvalue', ['return' => "reference", 'id' => $params['contract_updates.ch_from_ba']]);
+      $deltas[] = 'member iban to '.CRM_Contract_BankingLogic::getIBANforBankAccount($params['contract_updates.ch_from_ba']);
     }
     if(isset($params['contract_updates.ch_membership_type'])){
       $deltas[] = 'type to '.civicrm_api3('MembershipType', 'getvalue', [ 'return' => "name", 'id' => $params['contract_updates.ch_membership_type']]);;
