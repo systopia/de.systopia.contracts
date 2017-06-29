@@ -23,7 +23,13 @@ class CRM_Contract_SepaLogic {
     $new_mandate = civicrm_api3('SepaMandate', 'createfull', $params);
 
     // reload to get all values
-    return civicrm_api3('SepaMandate', 'getsingle', array('id' => $new_mandate['id']));
+    $new_mandate = civicrm_api3('SepaMandate', 'getsingle', array('id' => $new_mandate['id']));
+
+    // create user message
+    $mandate_url = CRM_Utils_System::url('civicrm/sepa/xmandate', "mid={$new_mandate['id']}");
+    CRM_Core_Session::setStatus("New SEPA Mandate <a href=\"{$mandate_url}\">{$new_mandate['reference']}</a> created.", "Success", 'info');
+
+    return $new_mandate;
   }
 
   /**
