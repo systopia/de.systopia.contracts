@@ -161,7 +161,7 @@ function updatePaymentSummaryText() {
   } else if (mode == "nochange") {
     var recurring_contributions = CRM.vars['de.systopia.contract'].recurring_contributions;
     var key = CRM.vars['de.systopia.contract'].current_recurring;
-    if (key) {
+    if (key in recurring_contributions) {
       cj('.recurring-contribution-summary-text').html(recurring_contributions[key].text_summary);
     } else {
       cj('.recurring-contribution-summary-text').html('None');

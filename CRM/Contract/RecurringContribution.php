@@ -71,8 +71,11 @@ Next debit: {$return[$cr['id']]['fields']['next_debit']}";
         'return' => $rcField));
 
       // remove the ones from the $return list that are being used by other contracts
-      foreach ($contract_using_rcs['values'] as $rcs) {
-        unset($return[$rcs[$rcField]]);
+      foreach ($contract_using_rcs['values'] as $contract) {
+        // but leave the current one in
+        if ($contract['id'] != $contractId) {
+          unset($return[$contract[$rcField]]);
+        }
       }
     }
 

@@ -117,7 +117,7 @@ class CRM_Contract_BankingLogic {
       'return'            => 'reference'));
     if ($iban_references['count'] > 0) {
       $reference = reset($iban_references['values']);
-      return $reference['iban'];
+      return $reference['reference'];
     } else {
       return '';
     }
@@ -126,7 +126,7 @@ class CRM_Contract_BankingLogic {
   /**
    * Get the reference type ID for IBAN references (cached)
    */
-  public function getIbanReferenceTypeID() {
+  public static function getIbanReferenceTypeID() {
     if (self::$_ibanReferenceType === NULL) {
       $reference_type_value = civicrm_api3('OptionValue', 'getsingle', array(
         'value'           => 'IBAN',

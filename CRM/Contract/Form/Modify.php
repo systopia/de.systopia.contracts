@@ -99,7 +99,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       'creditor'                => CRM_Contract_SepaLogic::getCreditor(),
       'next_collections'        => CRM_Contract_SepaLogic::getNextCollections(),
       'frequencies'             => CRM_Contract_SepaLogic::getPaymentFrequencies(),
-      'recurring_contributions' => CRM_Contract_RecurringContribution::getAllForContact($this->membership['contact_id'])));
+      'recurring_contributions' => CRM_Contract_RecurringContribution::getAllForContact($this->membership['contact_id'], TRUE, $this->get('id'))));
 
     // add a generic switch to clean up form
     $payment_options = array(
@@ -241,7 +241,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
           $params['membership_payment.membership_frequency'] = $submitted['payment_frequency'];
           $params['membership_payment.cycle_day'] = $submitted['cycle_day'];
           $params['membership_payment.to_ba']   = CRM_Contract_BankingLogic::getCreditorBankAccount();
-          $params['membership_payment.from_ba'] = CRM_Contract_BankingLogic::getOrCreateBankAccount($submitted['contact_id'], $submitted['iban'], $submitted['bic']);
+          $params['membership_payment.from_ba'] = CRM_Contract_BankingLogic::getOrCreateBankAccount($this->membership['contact_id'], $submitted['iban'], $submitted['bic']);
           break;
 
         default:
