@@ -19,9 +19,9 @@ class CRM_Contract_RecurringContribution {
   }
 
   public function getAll($cid, $thatAreNotAssignedToOtherContracts = true, $contractId = null){
-    $contact = civicrm_api3('Contact', 'getsingle', array('id' => $cid));
+    $contact = civicrm_api3('Contact', 'getsingle', array('id' => $cid, 'return' => 'display_name'));
     $contributionRecurs = civicrm_api3('ContributionRecur', 'get', ['contact_id' => $cid,'option.limit' => 1000])['values'];
-    $sepaMandates = civicrm_api3('sepaMandate', 'get', ['contact_id' => $cid,'option.limit' => 1000])['values'];
+    $sepaMandates = civicrm_api3('SepaMandate', 'get', ['contact_id' => $cid,'option.limit' => 1000])['values'];
     $paymentInstrumentOptions = civicrm_api3('OptionValue', 'get', array( 'option_group_id' => "payment_instrument"))['values'];
     $sepaCreditors = civicrm_api3('SepaCreditor', 'get')['values'];
     foreach($paymentInstrumentOptions as $paymentInstrumentOption){
@@ -60,20 +60,22 @@ Next debit: {$return[$cr['id']]['fields']['next_debit']}";
     }
 
     // We don't want to return recurring contributions for selection if they are
-    // already assigned to OTHER contracts.
-    if($thatAreNotAssignedToOtherContracts){
+    // already assigned to OTHER contracts
+    // [Björn] I had to rework this entire section because
+    //     you were only checking for THIS contact, not assignment to other contracts in general
+    if ($thatAreNotAssignedToOtherContracts && !empty($return)) {
+      // find contracts already using any of our collected recrruing contributions:
       $rcField = CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution');
-      $memberships = civicrm_api3('Membership', 'get', ['contact_id' => $cid, 'return' => $rcField]);
-      $assignedRCs = array_column($memberships['values'], $rcField, 'id');
-      if($contractId){
-        unset($assignedRCs[$contractId]);
+      $contract_using_rcs = civicrm_api3('Membership', 'get', array(
+        $rcField => array('IN' => array_keys($return)),
+        'return' => $rcField));
+
+      // remove the ones from the $return list that are being used by other contracts
+      foreach ($contract_using_rcs['values'] as $rcs) {
+        unset($return[$rcs[$rcField]]);
       }
     }
-    foreach($assignedRCs as $assignedRC){
-      if(isset($return[$assignedRC])){
-        unset($return[$assignedRC]);
-      }
-    }
+
     return $return;
   }
 
