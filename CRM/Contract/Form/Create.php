@@ -34,7 +34,7 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     $this->add('select', 'cycle_day', ts('Cycle day'), CRM_Contract_SepaLogic::getCycleDays());
     $this->add('text',   'iban', ts('IBAN'), array('class' => 'huge'));
     $this->add('text',   'bic', ts('BIC'));
-    $this->add('text',   'payment_amount', ts('Annual amount'), array('size' => 6));
+    $this->add('text',   'payment_amount', ts('Installment amount'), array('size' => 6));
     $this->add('select', 'payment_frequency', ts('Payment Frequency'), CRM_Contract_SepaLogic::getPaymentFrequencies());
     $this->assign('bic_lookup_accessible', CRM_Contract_SepaLogic::isLittleBicExtensionAccessible());
 
@@ -95,17 +95,17 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     $submitted = $this->exportValues();
 
     if ($submitted['payment_option'] == 'create') {
-      if($submitted['payment_amount'] && !$submitted['payment_frequency']){
-        HTML_QuickForm::setElementError ( 'payment_frequency', 'Please specify a frequency when specifying an amount');
+      if(empty($submitted['payment_frequency'])) {
+        HTML_QuickForm::setElementError ( 'payment_frequency', 'Please specify a frequency');
       }
-      if($submitted['payment_frequency'] && !$submitted['payment_amount']){
-        HTML_QuickForm::setElementError ( 'payment_amount', 'Please specify an amount when specifying a frequency');
+      if(empty($submitted['payment_amount'])) {
+        HTML_QuickForm::setElementError ( 'payment_amount', 'Please specify an amount');
       }
 
-      $amount = CRM_Contract_SepaLogic::formatMoney($submitted['payment_amount'] / $submitted['payment_frequency']);
-      if ($amount < 0.01) {
-        HTML_QuickForm::setElementError ( 'payment_amount', 'Annual amount too small.');
-      }
+      // $amount = CRM_Contract_SepaLogic::formatMoney($submitted['payment_amount'] / $submitted['payment_frequency']);
+      // if ($amount < 0.01) {
+      //   HTML_QuickForm::setElementError ( 'payment_amount', 'Annual amount too small.');
+      // }
 
       // SEPA validation
       if (!empty($submitted['iban']) && !CRM_Contract_SepaLogic::validateIBAN($submitted['iban'])) {
@@ -144,9 +144,9 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
         }
 
         // calculate amount
-        $annual_amount = CRM_Contract_SepaLogic::formatMoney($submitted['payment_amount']);
+        $annual_amount = CRM_Contract_SepaLogic::formatMoney($submitted['payment_frequency'] * CRM_Contract_SepaLogic::formatMoney($submitted['payment_amount']));
         $frequency_interval = 12 / $submitted['payment_frequency'];
-        $amount = CRM_Contract_SepaLogic::formatMoney($annual_amount / $submitted['payment_frequency']);
+        $amount = CRM_Contract_SepaLogic::formatMoney($submitted['payment_amount']);
 
         $new_mandate = CRM_Contract_SepaLogic::createNewMandate(array(
               'type'               => 'RCUR',

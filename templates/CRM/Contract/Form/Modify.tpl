@@ -171,18 +171,15 @@ function updatePaymentSummaryText() {
     var creditor = CRM.vars['de.systopia.contract'].creditor;
     var cycle_day       = cj('[name=cycle_day]').val();
     var iban            = cj('[name=iban]').val();
-    var annual          = parseMoney(cj('[name=payment_amount]').val());
+    var installment     = parseMoney(cj('[name=payment_amount]').val());
     var freqency        = cj('[name=payment_frequency]').val();
     var freqency_label  = CRM.vars['de.systopia.contract'].frequencies[freqency];
     var next_collection = CRM.vars['de.systopia.contract'].next_collections[cycle_day];
-    var installment     = 0.0;
+    var annual          = 0.0;
 
-    // TODO: sanitise annual
     // caculcate the installment
-    if (isNaN(annual)) {
-      annual = 0.0;
-    } else {
-      installment = (annual.toFixed(2) / parseFloat(freqency)).toFixed(2);
+    if (!isNaN(installment)) {
+      annual = (installment.toFixed(2) * parseFloat(freqency)).toFixed(2);
     }
 
     // TODO: use template
@@ -190,8 +187,8 @@ function updatePaymentSummaryText() {
       "Creditor name: " + creditor.name + "<br/>" +
       "Payment method: SEPA Direct Debit<br/>" +
       "Frequency: " + freqency_label + "<br/>" +
-      "Annual contract amount: " + annual.toFixed(2) + " EUR<br/>" +
-      "Frequency contract amount: " + installment + " EUR<br/>" +
+      "Annual amount: " + annual + " EUR<br/>" +
+      "Installment amount: " + installment.toFixed(2) + " EUR<br/>" +
       "Organisational account: " + creditor.iban + "<br/>" +
       "Debitor account: " + iban + "<br/>" +
       "Next debit: " + next_collection + "<br/>"

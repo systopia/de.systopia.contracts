@@ -39,8 +39,8 @@ class CRM_Contract_RecurringContribution {
       $return[$cr['id']]['text_summary'] ="Creditor name: {$return[$cr['id']]['fields']['display_name']}<br />
 Payment method: {$return[$cr['id']]['fields']['payment_instrument']}<br />
 Frequency: {$return[$cr['id']]['fields']['frequency']}<br />
-Annual contract amount: {$return[$cr['id']]['fields']['annual_amount']}<br />
-Frequency contract amount: {$return[$cr['id']]['fields']['amount']}<br />
+Annual amount: {$return[$cr['id']]['fields']['annual_amount']}<br />
+Installment amount: {$return[$cr['id']]['fields']['amount']}<br />
 ";
       if (in_array($cr['payment_instrument_id'], $this->getSepaPaymentInstruments())) {
         $sepa = $this->getSepaByRecurringContributionId($cr['id'], $sepaMandates);
