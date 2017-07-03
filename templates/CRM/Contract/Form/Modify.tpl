@@ -20,7 +20,7 @@
   {if $modificationActivity eq 'update' OR $modificationActivity eq 'revive' }
 
     <div class="crm-section">
-      <div class="label">Current Payment Option</div>
+      <div class="label">Payment Preview</div>
       <div class="content recurring-contribution-summary-text">None</div>
       <div class="clear"></div>
     </div>
