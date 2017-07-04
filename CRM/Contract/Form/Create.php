@@ -13,9 +13,6 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
 
 
     $this->cid = CRM_Utils_Request::retrieve('cid', 'Integer');
-    if (empty($this->cid)) {
-      $this->cid = $this->get('cid');
-    }
     if($this->cid){
       $this->set('cid', $this->cid);
     }
