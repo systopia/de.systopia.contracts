@@ -99,6 +99,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       'creditor'                => CRM_Contract_SepaLogic::getCreditor(),
       'next_collections'        => CRM_Contract_SepaLogic::getNextCollections(),
       'frequencies'             => CRM_Contract_SepaLogic::getPaymentFrequencies(),
+      'current_contract'        => CRM_Contract_RecurringContribution::getCurrentContract($this->membership['contact_id'], $this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')]),
       'recurring_contributions' => CRM_Contract_RecurringContribution::getAllForContact($this->membership['contact_id'], TRUE, $this->get('id'))));
 
     // add a generic switch to clean up form

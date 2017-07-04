@@ -9,6 +9,11 @@
 
 class CRM_Contract_RecurringContribution {
 
+  /** cached variables */
+  protected $paymentInstruments = NULL;
+  protected $sepaPaymentInstruments = NULL;
+  static protected $cached_results = array();
+
   /**
    * Return a detailed list of recurring contribution
    * for the given contact
@@ -18,51 +23,75 @@ class CRM_Contract_RecurringContribution {
     return $object->getAll($cid, $thatAreNotAssignedToOtherContracts, $contractId);
   }
 
-  public function getAll($cid, $thatAreNotAssignedToOtherContracts = true, $contractId = null){
-    $contact = civicrm_api3('Contact', 'getsingle', array('id' => $cid, 'return' => 'display_name'));
-    $contributionRecurs = civicrm_api3('ContributionRecur', 'get', ['contact_id' => $cid,'option.limit' => 1000])['values'];
-    $sepaMandates = civicrm_api3('SepaMandate', 'get', ['contact_id' => $cid,'option.limit' => 1000])['values'];
-    $paymentInstrumentOptions = civicrm_api3('OptionValue', 'get', array( 'option_group_id' => "payment_instrument"))['values'];
+  /**
+   * Return a detailed list of recurring contribution
+   * for the given contact
+   */
+  public static function getCurrentContract($contact_id, $recurring_contribution_id) {
+    // load contact
+    $contact = civicrm_api3('Contact', 'getsingle', array(
+      'id'     => $contact_id,
+      'return' => 'display_name'));
+
+    // load contribution
+    $contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', ['id' => $recurring_contribution_id]);
+
+    // load SEPA creditors
     $sepaCreditors = civicrm_api3('SepaCreditor', 'get')['values'];
-    foreach($paymentInstrumentOptions as $paymentInstrumentOption){
-      $paymentInstruments[$paymentInstrumentOption['value']]=$paymentInstrumentOption['name'];
+
+    // load mandate
+    $sepaMandates = civicrm_api3('SepaMandate', 'get', [
+      'contact_id'   => $cid,
+      'type'         => 'RCUR',
+      'entity_table' => 'civicrm_contribution_recur',
+      'entity_id'    => $recurring_contribution_id,
+      ])['values'];
+
+    $object = new CRM_Contract_RecurringContribution();
+    return $object->renderRecurringContribution($contributionRecur, $contact, $sepaMandates, $sepaCreditors);
+  }
+
+  /**
+   * Render all recurring contributions for that contact
+   */
+  public function getAll($cid, $thatAreNotAssignedToOtherContracts = true, $contractId = null){
+    // see if we have that cached (it's getting called multiple times)
+    $cache_key = "{$cid}-{$thatAreNotAssignedToOtherContracts}-{$contractId}";
+    if (isset(self::$cached_results[$cache_key])) {
+      return self::$cached_results[$cache_key];
     }
-    foreach($contributionRecurs as $cr){
-      $return[$cr['id']]['fields']=[
-        'display_name' => $contact['display_name'],
-        'payment_instrument' => $paymentInstruments[$cr['payment_instrument_id']],
-        'frequency' => $this->writeFrequency($cr),
-        'amount' => $cr['amount'],
-        'annual_amount' => $this->calcAnnualAmount($cr),
-        'next_debit' => '?',
-      ];
-      $return[$cr['id']]['text_summary'] ="Creditor name: {$return[$cr['id']]['fields']['display_name']}<br />
-Payment method: {$return[$cr['id']]['fields']['payment_instrument']}<br />
-Frequency: {$return[$cr['id']]['fields']['frequency']}<br />
-Annual amount: {$return[$cr['id']]['fields']['annual_amount']}<br />
-Installment amount: {$return[$cr['id']]['fields']['amount']}<br />
-";
-      if (in_array($cr['payment_instrument_id'], $this->getSepaPaymentInstruments())) {
-        $sepa = $this->getSepaByRecurringContributionId($cr['id'], $sepaMandates);
-        $return[$cr['id']]['fields']['payment_instrument'] = "SEPA";
-        $return[$cr['id']]['fields']['iban'] = $sepa['iban'];
-        $return[$cr['id']]['fields']['org_iban'] = $sepaCreditors[$sepa['creditor_id']]['iban'];
-        // $return[$cr['id']]['fields']['org_iban'] = $sepa;
-        // $return[$cr['id']]['fields']['org_iban'] = $cr['id'];
-        $return[$cr['id']]['fields']['next_debit'] = '?';
-        $return[$cr['id']]['label'] = "SEPA, {$return[$cr['id']]['fields']['amount']} {$return[$cr['id']]['fields']['frequency']} ({$sepa['reference']})";
-        $return[$cr['id']]['text_summary'] .= "Organisational account: {$return[$cr['id']]['fields']['org_iban']}<br />
-Debitor account: {$return[$cr['id']]['fields']['iban']}<br />
-Next debit: {$return[$cr['id']]['fields']['next_debit']}";
-      }else{
-        $return[$cr['id']]['label'] = "{$return[$cr['id']]['fields']['payment_instrument']}, {$return[$cr['id']]['fields']['amount']} {$return[$cr['id']]['fields']['frequency']}";
-      }
+
+    // load contact
+    $contact = civicrm_api3('Contact', 'getsingle', array(
+      'id'     => $cid,
+      'return' => 'display_name'));
+
+    // load contribution
+    $contributionRecurs = civicrm_api3('ContributionRecur', 'get', [
+      'contact_id'             => $cid,
+      'sequential'             => 0,
+      'contribution_status_id' => ['IN' => $this->getValidRcurStatusIds()],
+      'option.limit'           => 1000
+      ])['values'];
+
+    // load attached mandates
+    $sepaMandates = civicrm_api3('SepaMandate', 'get', [
+      'contact_id'   => $cid,
+      'type'         => 'RCUR',
+      'entity_table' => 'civicrm_contribution_recur',
+      'entity_id'    => ['IN' => array_keys($contributionRecurs)]
+      ])['values'];
+
+    // load SEPA creditors
+    $sepaCreditors = civicrm_api3('SepaCreditor', 'get')['values'];
+
+    // render all recurring contributions
+    foreach($contributionRecurs as $cr) {
+      $return[$cr['id']] = $this->renderRecurringContribution($cr, $contact, $sepaMandates, $sepaCreditors);
     }
 
     // We don't want to return recurring contributions for selection if they are
     // already assigned to OTHER contracts
-    // [Björn] I had to rework this entire section because
-    //     you were only checking for THIS contact, not assignment to other contracts in general
     if ($thatAreNotAssignedToOtherContracts && !empty($return)) {
       // find contracts already using any of our collected recrruing contributions:
       $rcField = CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution');
@@ -79,9 +108,77 @@ Next debit: {$return[$cr['id']]['fields']['next_debit']}";
       }
     }
 
+    self::$cached_results[$cache_key] = $return;
     return $return;
   }
 
+
+  /**
+   * Render the given recurring contribution
+   */
+  protected function renderRecurringContribution($cr, $contact, $sepaMandates, $sepaCreditors) {
+    $result = array();
+
+    // get payment instruments
+    $paymentInstruments = $this->getPaymentInstruments();
+
+    // render fields
+    $result['fields'] = [
+      'display_name' => $contact['display_name'],
+      'payment_instrument' => $paymentInstruments[$cr['payment_instrument_id']],
+      'frequency' => $this->writeFrequency($cr),
+      'amount' => $cr['amount'],
+      'annual_amount' => $this->calcAnnualAmount($cr),
+      'next_debit' => '?',
+    ];
+
+    // render text
+    $result['text_summary'] = "
+      Creditor name: {$result['fields']['display_name']}<br />
+      Payment method: {$result['fields']['payment_instrument']}<br />
+      Frequency: {$result['fields']['frequency']}<br />
+      Annual amount: {$result['fields']['annual_amount']}&nbsp;EUR<br />
+      Installment amount: {$result['fields']['amount']}&nbsp;EUR<br />
+    ";
+
+    // override some values for SEPA mandates
+    if (in_array($cr['payment_instrument_id'], $this->getSepaPaymentInstruments())) {
+      // this is a SEPA DD mandate
+      $mandate = $this->getSepaByRecurringContributionId($cr['id'], $sepaMandates);
+      $result['fields']['payment_instrument'] = "SEPA";
+      $result['fields']['iban'] = $mandate['iban'];
+      $result['fields']['org_iban'] = $sepaCreditors[$mandate['creditor_id']]['iban'];
+      // $result['fields']['org_iban'] = $sepa;
+      // $result['fields']['org_iban'] = $cr['id'];
+      $result['fields']['next_debit'] = $cr['next_sched_contribution_date'];
+      $result['label'] = "SEPA, {$result['fields']['amount']} {$result['fields']['frequency']} ({$mandate['reference']})";
+      $result['text_summary'] .= "
+        Organisational account: {$result['fields']['org_iban']}<br />
+        Debitor account: {$result['fields']['iban']}<br />
+        Next debit: {$result['fields']['next_debit']}";
+    } else {
+      // this is another recurring contribution
+      $result['label'] = "{$result['fields']['payment_instrument']}, {$result['fields']['amount']} {$result['fields']['frequency']}";
+    }
+
+    return $result;
+  }
+
+
+  /**
+   * Get the status IDs for eligible recurring contributions
+   */
+  protected function getValidRcurStatusIds() {
+    $pending_id = CRM_Core_OptionGroup::getValue('contribution_status', 'Pending', 'name');
+    $current_id = CRM_Core_OptionGroup::getValue('contribution_status', 'In Progress', 'name');
+    return [$pending_id, $current_id];
+  }
+
+
+  /**
+   * ??
+   * @author Michael
+   */
   private function writeFrequency($cr){
     if($cr['frequency_interval']==1){
       $frequency = "Every {$cr['frequency_unit']}";
@@ -99,6 +196,10 @@ Next debit: {$return[$cr['id']]['fields']['next_debit']}";
     return $frequency;
   }
 
+  /**
+   * ??
+   * @author Michael
+   */
   private function calcAnnualAmount($cr){
     if($cr['frequency_unit']=='month'){
       $multiplier = 12;
@@ -108,28 +209,51 @@ Next debit: {$return[$cr['id']]['fields']['next_debit']}";
     return $cr['amount'] * $multiplier / $cr['frequency_interval'];
   }
 
+  /**
+   * ??
+   * @author Michael
+   */
   public function writePaymentContractLabel($contributionRecur)
   {
+      $paymentInstruments = $this->getPaymentInstruments();
       if (in_array($contributionRecur['payment_instrument_id'], $this->getSepaPaymentInstruments())) {
           $sepaMandate = civicrm_api3('SepaMandate', 'getsingle', array(
-          'entity_table' => 'civicrm_contribution_recur',
-          'entity_id' => $contributionRecur['id'],
-      ));
+            'entity_table' => 'civicrm_contribution_recur',
+            'entity_id' => $contributionRecur['id'],
+          ));
 
           $plural = $contributionRecur['frequency_interval'] > 1 ? 's' : '';
           return "SEPA: {$sepaMandate['reference']} ({$contributionRecur['amount']} every {$contributionRecur['frequency_interval']} {$contributionRecur['frequency_unit']}{$plural})";
       } else {
-          return "{$this->paymentInstruments[$contributionRecur['payment_instrument_id']]}: ({$contributionRecur['amount']} every {$contributionRecur['frequency_interval']} {$contributionRecur['frequency_unit']})";
+          return "{$paymentInstruments[$contributionRecur['payment_instrument_id']]}: ({$contributionRecur['amount']} every {$contributionRecur['frequency_interval']} {$contributionRecur['frequency_unit']})";
       }
   }
 
-  public function getSepaPaymentInstruments()
-  {
+  /**
+   * get all payment instruments
+   */
+  protected function getPaymentInstruments() {
+    if (!isset($this->paymentInstruments)) {
+      // load payment instruments
+      $paymentInstrumentOptions = civicrm_api3('OptionValue', 'get', array(
+        'option_group_id' => "payment_instrument")
+        )['values'];
+      $this->paymentInstruments = array();
+      foreach($paymentInstrumentOptions as $paymentInstrumentOption){
+        // $this->paymentInstruments[$paymentInstrumentOption['value']] = $paymentInstrumentOption['name'];
+        $this->paymentInstruments[$paymentInstrumentOption['value']] = $paymentInstrumentOption['label'];
+      }
+    }
+    return $this->paymentInstruments;
+  }
+
+  /**
+   * Get all CiviSEPA payment instruments(?)
+   * @author Michael
+   */
+  public function getSepaPaymentInstruments() {
       if (!isset($this->sepaPaymentInstruments)) {
-          $result = civicrm_api3('OptionValue', 'get', array('option_group_id' => 'payment_instrument'));
-          foreach ($result['values'] as $paymentInstrument) {
-              $this->paymentInstruments[$paymentInstrument['value']] = $paymentInstrument['label'];
-          }
+          $this->sepaPaymentInstruments = array();
           $result = civicrm_api3('OptionValue', 'get', array('option_group_id' => 'payment_instrument', 'name' => array('IN' => array('RCUR', 'OOFF', 'FRST'))));
           foreach ($result['values'] as $paymentInstrument) {
               $this->sepaPaymentInstruments[] = $paymentInstrument['value'];
@@ -139,6 +263,11 @@ Next debit: {$return[$cr['id']]['fields']['next_debit']}";
       return $this->sepaPaymentInstruments;
   }
 
+  /**
+   * Get the CiviSEPA mandate id connected to the given recurring contribution,
+   * from the given list.
+   * @author Michael
+   */
   private function getSepaByRecurringContributionId($id, $sepas){
     foreach($sepas as $sepa){
       if($sepa['entity_id'] == $id && $sepa['entity_table'] == 'civicrm_contribution_recur'){
@@ -146,6 +275,5 @@ Next debit: {$return[$cr['id']]['fields']['next_debit']}";
       }
     }
   }
-
 
 }
