@@ -103,24 +103,42 @@ class CRM_Contract_FormUtils
         }
     }
 
-    /**
-     * Replaced with js/membership-edit.js for now as filtering was doing weird
-     * things to the status_id
-     */
+  /**
+   * Add a download link to the custom field membership_contract
+   * @param $membershipId
+   */
     public function addMembershipContractFileDownloadLink($membershipId) {
-      $membershipContractCustomField = civicrm_api3('CustomField', 'getsingle', array('name' => "membership_contract"));
+      $membershipContractCustomField = civicrm_api3('CustomField', 'getsingle', array('name' => "membership_contract", 'return' => "id"));
       $membership = civicrm_api3('Membership','getsingle', array('id' => $membershipId));
       if (!empty($membership['custom_'.$membershipContractCustomField['id']])) {
         $membershipContract = $membership['custom_'.$membershipContractCustomField['id']];
         $contractFile = CRM_Contract_Utils::contractFileExists($membershipContract);
         if ($contractFile) {
           $script = file_get_contents(CRM_Core_Resources::singleton()->getUrl('de.systopia.contract', 'templates/CRM/Member/Form/MembershipView.js'));
-          $url = CRM_Utils_System::url('civicrm/contract/modify', "ct_dl=".urlencode($membershipContract));
+          $url = CRM_Utils_System::url('civicrm/contract/modify', "contract=".urlencode($membershipContract));
           $script = str_replace('CONTRACT_FILE_DOWNLOAD', $url, $script);
           CRM_Core_Region::instance('page-footer')->add(array(
             'script' => $script,
           ));
         }
+      }
+    }
+
+  /**
+   * Called from civicrm/contract/download?contract={contract_id}
+   * This function downloads a contract file via the users web browser
+   */
+    public function downloadMembershipContract() {
+      // If we requested a contract file download
+      $download = CRM_Utils_Request::retrieve('contract', 'String', CRM_Core_DAO::$_nullObject, FALSE, '', 'GET');
+      if (!empty($download)) {
+        // FIXME: Could use CRM_Utils_System::download but it still requires you to do all the work (load file to stream etc) before calling.
+        if (CRM_Contract_Utils::downloadContractFile($download)) {
+          CRM_Utils_System::civiExit();
+        }
+        // If the file didn't exist
+        echo "File does not exist";
+        CRM_Utils_System::civiExit();
       }
     }
 }
