@@ -20,7 +20,7 @@
   {if $modificationActivity eq 'update' OR $modificationActivity eq 'revive' }
 
     <div class="crm-section">
-      <div class="label">Current Payment Option</div>
+      <div class="label">Payment Preview</div>
       <div class="content recurring-contribution-summary-text">None</div>
       <div class="clear"></div>
     </div>
@@ -144,6 +144,7 @@ cj("#payment_option").change(function() {
   }
 });
 
+
 /**
  * update the payment info shown
  */
@@ -161,28 +162,39 @@ function updatePaymentSummaryText() {
   } else if (mode == "nochange") {
     var recurring_contributions = CRM.vars['de.systopia.contract'].recurring_contributions;
     var key = CRM.vars['de.systopia.contract'].current_recurring;
-    if (key) {
+    if (key in recurring_contributions) {
       cj('.recurring-contribution-summary-text').html(recurring_contributions[key].text_summary);
     } else {
       cj('.recurring-contribution-summary-text').html('None');
     }
   } else if (mode == "modify") {
     // render the current SEPA values
-    var creditor = CRM.vars['de.systopia.contract'].creditor;
+    var current_values  = CRM.vars['de.systopia.contract'].current_contract;
+    var creditor        = CRM.vars['de.systopia.contract'].creditor;
     var cycle_day       = cj('[name=cycle_day]').val();
     var iban            = cj('[name=iban]').val();
-    var annual          = parseMoney(cj('[name=payment_amount]').val());
+    var installment     = parseMoney(cj('[name=payment_amount]').val());
     var freqency        = cj('[name=payment_frequency]').val();
     var freqency_label  = CRM.vars['de.systopia.contract'].frequencies[freqency];
     var next_collection = CRM.vars['de.systopia.contract'].next_collections[cycle_day];
-    var installment     = 0.0;
+    var annual          = 0.0;
 
-    // TODO: sanitise annual
+    // In case of an update (not revive), we need to respect the already paid period, see #771
+    if (CRM.vars['de.systopia.contract'].action == 'update') {
+      next_collection = CRM.vars['de.systopia.contract'].graceful_collections[cycle_day];
+    }
+
+    // fill with old fields
+    if (!iban.length) {
+      iban = current_values.fields.iban;
+    }
+    if (installment == '0.00') {
+      installment = parseMoney(current_values.fields.amount);
+    }
+
     // caculcate the installment
-    if (isNaN(annual)) {
-      annual = 0.0;
-    } else {
-      installment = (annual.toFixed(2) / parseFloat(freqency)).toFixed(2);
+    if (!isNaN(installment)) {
+      annual = (installment.toFixed(2) * parseFloat(freqency)).toFixed(2);
     }
 
     // TODO: use template
@@ -190,10 +202,10 @@ function updatePaymentSummaryText() {
       "Creditor name: " + creditor.name + "<br/>" +
       "Payment method: SEPA Direct Debit<br/>" +
       "Frequency: " + freqency_label + "<br/>" +
-      "Annual contract amount: " + annual.toFixed(2) + " EUR<br/>" +
-      "Frequency contract amount: " + installment + " EUR<br/>" +
+      "Annual amount: " + annual + " EUR<br/>" +
+      "Installment amount: " + installment.toFixed(2) + " EUR<br/>" +
       "Organisational account: " + creditor.iban + "<br/>" +
-      "Creditor account: " + iban + "<br/>" +
+      "Debitor account: " + iban + "<br/>" +
       "Next debit: " + next_collection + "<br/>"
       );
   }

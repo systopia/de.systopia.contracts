@@ -160,6 +160,17 @@ function civicrm_api3_Contract_modify($params){
           $activityParams[CRM_Contract_Utils::contractToActivityFieldId($updateField)] = $params[$updateField];
         }
       }
+
+      // check the if the annual amount can be properly divided into installments
+      //  see GP-770
+      if (!empty($params['membership_payment.membership_annual']) && !empty($params['membership_payment.membership_frequency'])) {
+        $annual      = CRM_Contract_SepaLogic::formatMoney($params['membership_payment.membership_annual']);
+        $installment = CRM_Contract_SepaLogic::formatMoney($params['membership_payment.membership_annual'] / $params['membership_payment.membership_frequency']);
+        $real_annual = CRM_Contract_SepaLogic::formatMoney($installment * $params['membership_payment.membership_frequency']);
+        if ($annual != $real_annual) {
+          throw new Exception("The annual amount of '{$annual}' cannot be distributed over {$params['membership_payment.membership_frequency']} installments.");
+        }
+      }
       break;
     case 'cancel':
       if(isset($params['membership_cancellation.membership_cancel_reason'])){

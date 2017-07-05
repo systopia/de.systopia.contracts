@@ -4,6 +4,7 @@
   "name": "contract_cancellation",
   "title": "Contract Cancellation",
   "extends": "Activity",
+  "extends_entity_column_value": ["Contract_Cancelled"],
   "style": "Inline",
   "collapse_display": "1",
   "is_active": "1",

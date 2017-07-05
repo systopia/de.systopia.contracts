@@ -22,16 +22,16 @@ class CRM_Contract_Utils{
 
   static $ContractToModificationActivityField = [
     'id' => 'source_record_id',
-    'contact_id' => 'target_contact_id',
-    'campaign_id' => 'campaign_id',
-    'membership_type_id' => 'contract_updates.ch_membership_type',
+    'contact_id'                                           => 'target_contact_id',
+    'campaign_id'                                          => 'campaign_id',
+    'membership_type_id'                                   => 'contract_updates.ch_membership_type',
     'membership_payment.membership_recurring_contribution' => 'contract_updates.ch_recurring_contribution',
-    'membership_cancellation.membership_cancel_reason' => 'contract_cancellation.contact_history_cancel_reason',
-    'membership_payment.membership_annual' => 'contract_updates.ch_annual',
-    'membership_payment.membership_frequency' => 'contract_updates.ch_frequency',
-    'membership_payment.from_ba' => 'contract_updates.ch_to_ba',
-    'membership_payment.to_ba' => 'contract_updates.ch_from_ba',
-    'membership_payment.cycle_day' => 'contract_updates.ch_cycle_day'
+    'membership_cancellation.membership_cancel_reason'     => 'contract_cancellation.contact_history_cancel_reason',
+    'membership_payment.membership_annual'                 => 'contract_updates.ch_annual',
+    'membership_payment.membership_frequency'              => 'contract_updates.ch_frequency',
+    'membership_payment.from_ba'                           => 'contract_updates.ch_from_ba',
+    'membership_payment.to_ba'                             => 'contract_updates.ch_to_ba',
+    'membership_payment.cycle_day'                         => 'contract_updates.ch_cycle_day'
 ];
 
 

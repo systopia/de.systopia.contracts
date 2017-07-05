@@ -15,6 +15,7 @@ class CRM_Contract_BankingLogic {
 
   /** cached value for self::getCreditorBankAccount() */
   protected static $_creditorBankAccount = NULL;
+  protected static $_ibanReferenceType = NULL;
 
   /**
    * get bank account information
@@ -31,15 +32,10 @@ class CRM_Contract_BankingLogic {
       }
     }
 
-
     // load IBAN reference
-    $reference_type_value = civicrm_api3('OptionValue', 'getsingle', array(
-      'value'           => 'IBAN',
-      'option_group_id' => 'civicrm_banking.reference_types',
-      'is_active'       => 1));
     $reference = civicrm_api3('BankingAccountReference', 'getsingle', array(
       'ba_id'             => $account_id,
-      'reference_type_id' => $reference_type_value['id']));
+      'reference_type_id' => self::getIbanReferenceTypeID()));
     $data['iban'] = $reference['reference'];
 
     return $data;
@@ -59,16 +55,10 @@ class CRM_Contract_BankingLogic {
     }
 
     try {
-      // look up reference type option value ID(!)
-      $reference_type_value = civicrm_api3('OptionValue', 'getsingle', array(
-        'value'           => 'IBAN',
-        'option_group_id' => 'civicrm_banking.reference_types',
-        'is_active'       => 1));
-
       // find existing references
       $existing_references = civicrm_api3('BankingAccountReference', 'get', array(
         'reference'         => $iban,
-        'reference_type_id' => $reference_type_value['id'],
+        'reference_type_id' => self::getIbanReferenceTypeID(),
         'option.limit'      => 0));
 
       // get the accounts for this
@@ -98,11 +88,11 @@ class CRM_Contract_BankingLogic {
 
       $bank_account_reference = civicrm_api3('BankingAccountReference', 'create', array(
         'reference'         => $iban,
-        'reference_type_id' => $reference_type_value['id'],
+        'reference_type_id' =>self::getIbanReferenceTypeID(),
         'ba_id'             => $bank_account['id']));
       return $bank_account['id'];
     } catch (Exception $e) {
-      error_log("Couldn't add bank account {$reference} [{$reference_type}]");
+      error_log("Couldn't add bank account '{$iban}' [{$contact_id}]");
     }
   }
 
@@ -115,5 +105,36 @@ class CRM_Contract_BankingLogic {
       self::$_creditorBankAccount = self::getOrCreateBankAccount($creditor->creditor_id, $creditor->iban, $creditor->bic);
     }
     return self::$_creditorBankAccount;
+  }
+
+  /**
+   * return the IBAN for the given bank account id if there is one
+   */
+  public static function getIBANforBankAccount($bank_account_id) {
+    $iban_references = civicrm_api3('BankingAccountReference', 'get', array(
+      'ba_id'             => $bank_account_id,
+      'reference_type_id' => self::getIbanReferenceTypeID(),
+      'return'            => 'reference'));
+    if ($iban_references['count'] > 0) {
+      $reference = reset($iban_references['values']);
+      return $reference['reference'];
+    } else {
+      return '';
+    }
+  }
+
+  /**
+   * Get the reference type ID for IBAN references (cached)
+   */
+  public static function getIbanReferenceTypeID() {
+    if (self::$_ibanReferenceType === NULL) {
+      $reference_type_value = civicrm_api3('OptionValue', 'getsingle', array(
+        'value'           => 'IBAN',
+        'return'          => 'id',
+        'option_group_id' => 'civicrm_banking.reference_types',
+        'is_active'       => 1));
+      self::$_ibanReferenceType = $reference_type_value['id'];
+    }
+    return self::$_ibanReferenceType;
   }
 }

@@ -23,14 +23,20 @@ class CRM_Contract_SepaLogic {
     $new_mandate = civicrm_api3('SepaMandate', 'createfull', $params);
 
     // reload to get all values
-    return civicrm_api3('SepaMandate', 'getsingle', array('id' => $new_mandate['id']));
+    $new_mandate = civicrm_api3('SepaMandate', 'getsingle', array('id' => $new_mandate['id']));
+
+    // create user message
+    $mandate_url = CRM_Utils_System::url('civicrm/sepa/xmandate', "mid={$new_mandate['id']}");
+    CRM_Core_Session::setStatus("New SEPA Mandate <a href=\"{$mandate_url}\">{$new_mandate['reference']}</a> created.", "Success", 'info');
+
+    return $new_mandate;
   }
 
   /**
    * Adjust or update the given SEPA mandate according to the
    * requested change
    */
-  public static function updateSepaMandate($contribution_recur_id, $current_state, $desired_state, $activity) {
+  public static function updateSepaMandate($membership_id, $current_state, $desired_state, $activity) {
     // desired_state (from activity) hasn't resolved the numeric custom_ fields yet
     foreach ($desired_state as $key => $value) {
       if (preg_match('#^custom_\d+$#', $key)) {
@@ -101,7 +107,7 @@ class CRM_Contract_SepaLogic {
       'contact_id'         => $current_state['contact_id'],
       'amount'             => $amount,
       'currency'           => 'EUR',
-      'start_date'         => date('YmdHis'), // NOW
+      'start_date'         => self::getMandateUpdateStartDate($current_state, $current_state, $desired_state, $activity),
       'creation_date'      => date('YmdHis'), // NOW
       'date'               => date('YmdHis', strtotime($activity['activity_date_time'])),
       'validation_date'    => date('YmdHis'), // NOW
@@ -198,6 +204,72 @@ class CRM_Contract_SepaLogic {
     }
   }
 
+
+  /**
+   * Calculate the new mandate's start date.
+   * In most cases this is simply 'now', but in the case of a update
+   * the membership period already paid by the donor should be respected
+   *
+   * @see https://redmine.greenpeace.at/issues/771
+   */
+  public static function getMandateUpdateStartDate($current_state, $current_state, $desired_state, $activity) {
+    $now = date('YmdHis');
+    $update_activity_type  = CRM_Core_OptionGroup::getValue('activity_type', 'Contract_Updated', 'name');
+    $contribution_recur_id = CRM_Utils_Array::value('membership_payment.membership_recurring_contribution', $current_state);
+
+    // check if it is a proper update
+    if ($contribution_recur_id && $activity['activity_type_id'] == $update_activity_type) {
+      // load last successull collection for the recurring contribution
+      return self::getNextInstallmentDate($contribution_recur_id);
+    }
+
+    return $now;
+  }
+
+
+  /**
+   * Return the date of the last successfully collected contribution
+   *  of the give recurring contribution
+   * If no such contribution is found, the current date is returned
+   *
+   * @return string date or NULL if not found
+   */
+  public static function getNextInstallmentDate($contribution_recur_id) {
+    $now = date('YmdHis');
+
+    if (!$contribution_recur_id) {
+      return $now;
+    }
+
+    // load last successull collection for the recurring contribution
+    $last_collection_search = civicrm_api3('Contribution', 'get', array(
+      'contribution_recur_id'  => $contribution_recur_id,
+      'contribution_status_id' => array('IN' => array(1,5)), // status Completed or In Progres
+      'options'                => array('sort'  => 'receive_date desc',
+                                        'limit' => 1),
+      'return'                 => 'id,receive_date',
+      ));
+
+    if ($last_collection_search['count'] > 0) {
+      $last_collection = reset($last_collection_search['values']);
+
+      // load recurring contribution
+      $contribution_recur = civicrm_api3('ContributionRecur', 'getsingle', array(
+        'id'     => $contribution_recur_id,
+        'return' => 'frequency_unit,frequency_interval'));
+
+      // now calculate the next collection date
+      $start_date = date('YmdHis', strtotime("{$last_collection['receive_date']} + {$contribution_recur['frequency_interval']} {$contribution_recur['frequency_unit']}"));
+      if ($start_date > $now) {
+        // only makes sense if in the future
+        return $start_date;
+      }
+    }
+
+    return $now;
+  }
+
+
   /**
    * Return the mandate entity if there is one attached to this recurring contribution
    *
@@ -246,13 +318,13 @@ class CRM_Contract_SepaLogic {
    *
    * @return array list cycle_day => next collection date
    */
-  public static function getNextCollections() {
+  public static function getNextCollections($now_string = 'NOW') {
     $cycle_days   = self::getCycleDays();
     $nextCycleDay = self::nextCycleDay();
     $nextCollections = array();
 
     // jump to nearest cycle day
-    $now = strtotime("NOW");
+    $now = strtotime($now_string);
     while (date('d', $now) != $nextCycleDay) {
       $now = strtotime('+ 1 day', $now);
     }
@@ -315,7 +387,7 @@ class CRM_Contract_SepaLogic {
         throw new Exception("There's something wrong with the nextCycleDay method.");
       }
     }
-    return date('d', $start_date);
+    return (int) date('d', $start_date);
   }
 
   /**
