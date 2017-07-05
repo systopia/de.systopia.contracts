@@ -52,7 +52,7 @@ class CRM_Contract_Wrapper_ModificationActivity{
     }else{
       $this->startState = civicrm_api3('Activity', 'getsingle', ['id' => $params['id']]);
       $this->startStatus = civicrm_api3('OptionValue', 'getvalue', [ 'return' => "name", 'option_group_id' => "activity_status", 'value' => $this->startState['status_id']]);
-      $this->contractId = $this->startState['source_record_id'];
+      $this->contractId = isset($this->startState['source_record_id']) ? $this->startState['source_record_id'] : null;
       $this->checkActivityType($this->startState);
     }
 
@@ -81,7 +81,7 @@ class CRM_Contract_Wrapper_ModificationActivity{
     }else{
       $this->endState = civicrm_api3('Activity', 'getsingle', ['id' => $id]);
       $this->endStatus = civicrm_api3('OptionValue', 'getvalue', [ 'return' => "name", 'option_group_id' => "activity_status", 'value' => $this->endState['status_id']]);
-      $this->contractId = $this->endState['source_record_id'];
+      $this->contractId = isset($this->endState['source_record_id']) ? $this->endState['source_record_id'] : null;
       $this->checkActivityType($this->endState);
     }
 
