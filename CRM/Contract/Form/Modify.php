@@ -21,6 +21,12 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       CRM_Core_Error::fatal('Missing the contract ID');
     }
 
+    // Set a message when updating a contract if scheduled updates already exist
+    $modifications = civicrm_api3('Contract', 'get_open_modification_counts', ['id' => $this->get('id')]);
+    if($modifications['scheduled'] || $modifications['needs_review']){
+      CRM_Core_Session::setStatus('Some updates have already been scheduled for this contract. Please ensure that this new update will not conflict with existing updates', 'Scheduled updates exist!', 'alert', ['expires' => 0]);
+    }
+
     // Load the the contract to populate default form values
     try{
       $this->membership = civicrm_api3('Membership', 'getsingle', ['id' => $this->get('id')]);
