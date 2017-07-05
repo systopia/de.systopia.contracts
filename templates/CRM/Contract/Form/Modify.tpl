@@ -168,7 +168,8 @@ function updatePaymentSummaryText() {
     }
   } else if (mode == "modify") {
     // render the current SEPA values
-    var creditor = CRM.vars['de.systopia.contract'].creditor;
+    var current_values  = CRM.vars['de.systopia.contract'].current_contract;
+    var creditor        = CRM.vars['de.systopia.contract'].creditor;
     var cycle_day       = cj('[name=cycle_day]').val();
     var iban            = cj('[name=iban]').val();
     var installment     = parseMoney(cj('[name=payment_amount]').val());
@@ -176,6 +177,14 @@ function updatePaymentSummaryText() {
     var freqency_label  = CRM.vars['de.systopia.contract'].frequencies[freqency];
     var next_collection = CRM.vars['de.systopia.contract'].next_collections[cycle_day];
     var annual          = 0.0;
+
+    // fill with old fields
+    if (!iban.length) {
+      iban = current_values.fields.iban;
+    }
+    if (installment == '0.00') {
+      installment = parseMoney(current_values.fields.amount);
+    }
 
     // caculcate the installment
     if (!isNaN(installment)) {
