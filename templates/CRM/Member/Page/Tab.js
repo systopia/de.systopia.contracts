@@ -56,7 +56,6 @@ CRM.$(function($) {
   }
 
   function toggleReviewPane(membershipId){
-    console.log('toggle time');
     var reviewRow = $(document).find('#crm-membership-review_' + membershipId);
     var reviewLink = $(document).find('#crm-membership-review-link_' + membershipId);
     if(reviewRow.is(":visible")){
