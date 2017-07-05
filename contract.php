@@ -199,6 +199,8 @@ function contract_civicrm_buildForm($formName, &$form) {
         // Show membership label, not id
         $formUtils->showMembershipTypeLabel();
 
+      }elseif($form->getAction() == CRM_Core_Action::UPDATE){
+        CRM_Core_Resources::singleton()->addScriptFile( 'de.systopia.contract', 'templates/CRM/Activity/Form/Edit.js' );
       }
       break;
 
