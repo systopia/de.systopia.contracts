@@ -75,12 +75,16 @@ class CRM_Contract_RecurringContribution {
       ])['values'];
 
     // load attached mandates
-    $sepaMandates = civicrm_api3('SepaMandate', 'get', [
-      'contact_id'   => $cid,
-      'type'         => 'RCUR',
-      'entity_table' => 'civicrm_contribution_recur',
-      'entity_id'    => ['IN' => array_keys($contributionRecurs)]
-      ])['values'];
+    if (!empty($contributionRecurs)) {
+      $sepaMandates = civicrm_api3('SepaMandate', 'get', [
+        'contact_id'   => $cid,
+        'type'         => 'RCUR',
+        'entity_table' => 'civicrm_contribution_recur',
+        'entity_id'    => ['IN' => array_keys($contributionRecurs)]
+        ])['values'];
+    } else {
+      $sepaMandates = array();
+    }
 
     // load SEPA creditors
     $sepaCreditors = civicrm_api3('SepaCreditor', 'get')['values'];
