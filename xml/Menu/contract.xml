@@ -35,4 +35,10 @@
     <title>Contract Review</title>
     <access_arguments>access CiviCRM</access_arguments>
   </item>
+  <item>
+    <path>civicrm/admin/contract</path>
+    <page_callback>CRM_Contract_Form_Settings</page_callback>
+    <title>Contract Settings</title>
+    <access_arguments>edit memberships</access_arguments>
+  </item>
 </menu>

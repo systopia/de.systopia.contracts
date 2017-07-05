@@ -12,7 +12,6 @@ class CRM_Contract_Handler_ModificationConflicts{
   private $scheduledModifications = [];
 
   function __construct(){
-    $this->activityReviewerContactId = 5;
     $this->needsReviewStatusId = civicrm_api3('OptionValue', 'getvalue', [ 'return' => "value", 'option_group_id' => "activity_status", 'name' => 'Needs Review']);;
   }
 
@@ -60,10 +59,14 @@ class CRM_Contract_Handler_ModificationConflicts{
   }
 
   function markForReview($id){
+    $reviewers = civicrm_api3('Setting', 'GetValue', [
+      'name' => 'contract_modification_reviewers',
+      'group' => 'Contract preferences'
+    ]);
     civicrm_api3('activity', 'create', [
       'id' => $id,
       'status_id' => 'Needs Review',
-      'assignee_id' => $this->activityReviewerContactId,
+      'assignee_id' => explode(',', $reviewers),
       'skip_handler' => true,
     ]);
 

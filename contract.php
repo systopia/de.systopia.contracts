@@ -279,3 +279,26 @@ function contract_civicrm_post($op, $objectName, $id, &$objectRef){
     }
   }
 }
+
+function contract_civicrm_navigationMenu(&$menus){
+
+  // Find the mailing menu
+  foreach($menus as &$menu){
+    if($menu['attributes']['name'] == 'Memberships'){
+      $nextId = max(array_keys($menu['child']));
+      $menu['child'][$nextId]=[
+        'attributes' => array(
+          'label'      => 'Contract settings',
+          'name'       => 'Contract settings',
+          'url'        => 'civicrm/admin/contract',
+          'permission' => 'access CiviMember',
+          'navID'      => $nextId,
+          'operator'   => FALSE,
+          'separator'  => TRUE,
+          'parentID'   => $menu['attributes']['navID'],
+          'active'     => 1
+        ),
+      ];
+    }
+  }
+}
