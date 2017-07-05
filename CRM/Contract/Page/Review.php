@@ -18,6 +18,7 @@ class CRM_Contract_Page_Review extends CRM_Core_Page {
     $activityParams = [
       'source_record_id' => $id,
       'status_id' => ['NOT IN' => ['cancelled']],
+      'activity_type_id' => ['IN' => CRM_Contract_ModificationActivity::getModificationActivityTypeIds()],
       'return' => [
         'activity_date_time',
         'status_id',
