@@ -180,7 +180,7 @@ class CRM_Contract_Handler_Contract{
     // If this is a cancel, set the end date for the contract to the
     // activity_date_time of the modification activity
     if($this->modificationClass->getAction() == 'cancel'){
-      $this->setContractEndDate($this->modificationActivity['activity_date_time']);
+      $this->setContractEndDate(date('YmdHis'));
       CRM_Contract_SepaLogic::terminateSepaMandate(
         $this->startState['membership_payment.membership_recurring_contribution'],
         $this->modificationActivity[CRM_Contract_Utils::getCustomFieldId('contract_cancellation.contact_history_cancel_reason')]);
