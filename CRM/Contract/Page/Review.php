@@ -29,6 +29,8 @@ class CRM_Contract_Page_Review extends CRM_Core_Page {
         'campaign_id',
         'medium_id'
       ],
+      'option.sort'        => 'activity_date_time DESC',
+
     ];
     foreach(civicrm_api3('CustomField', 'get', [ 'custom_group_id' => ['IN' => ['contract_cancellation', 'contract_updates']]])['values'] as $customField){
       $activityParams['return'][]='custom_'.$customField['id'];
@@ -49,9 +51,6 @@ class CRM_Contract_Page_Review extends CRM_Core_Page {
 
     foreach($activities as $key => $activity){
 
-      // For accurate sorting by time
-      $activities[$key]['activity_date_unixtime'] = strtotime($activity['activity_date_time']);
-
       foreach($activity as $innerKey => $field){
         if(isset($customFieldIndex[$innerKey])){
           unset($activities[$key][$innerKey]);
@@ -59,9 +58,9 @@ class CRM_Contract_Page_Review extends CRM_Core_Page {
         }
       }
       if(isset($activities[$key]['contract_updates_ch_recurring_contribution']) && $activities[$key]['contract_updates_ch_recurring_contribution']){
-        civicrm_api3('ContributionRecur', 'getsingle', ['id' => $activities[$key]['contract_updates_ch_recurring_contribution']]);
-        $c = new CRM_Contract_RecurringContribution;
-        $activities[$key]['contract_updates_ch_recurring_contribution_text'] = $c->writePaymentContractLabel( civicrm_api3('ContributionRecur', 'getsingle', ['id' => $activities[$key]['contract_updates_ch_recurring_contribution']]));
+        $rc = civicrm_api3('ContributionRecur', 'getsingle', ['id' => $activities[$key]['contract_updates_ch_recurring_contribution']]);
+        $activities[$key]['payment_instrument_id'] = $rc['payment_instrument_id'];
+        $activities[$key]['recurring_contribution_contact_id'] = $rc['contact_id'];
       }
       if(isset($activities[$key]['contract_updates_ch_annual']) && isset($activities[$key]['contract_updates_ch_frequency']) && $activities[$key]['contract_updates_ch_annual'] && $activities[$key]['contract_updates_ch_frequency']){
         $activities[$key]['contract_updates_ch_amount'] = $activities[$key]['contract_updates_ch_annual'] / $activities[$key]['contract_updates_ch_frequency'];
@@ -69,25 +68,30 @@ class CRM_Contract_Page_Review extends CRM_Core_Page {
       if(isset($activities[$key]['campaign_id'])){
         $campaigns[] = $activities[$key]['campaign_id'];
       }
+      if(isset($activities[$key]['contract_cancellation_contact_history_cancel_reason'])){
+        $cancelReasons[] = $activities[$key]['contract_cancellation_contact_history_cancel_reason'];
+      }
       if(isset($activities[$key]['source_contact_id'])){
         $contacts[] = $activities[$key]['source_contact_id'];
       }
     }
-
-    // Sort activities
-    usort($activities, function($a, $b){
-      return $b['activity_date_unixtime'] - $a['activity_date_unixtime'];
-    });
 
     $this->assign('activities', $activities);
 
     // Get campaigns
     if($campaigns){
       foreach(civicrm_api3('Campaign', 'get', ['id' => ['IN' => array_unique($campaigns)]])['values'] as $campaign){
-        $campaigns[$campaign['id']] = $campaign['name'];
+        $campaigns[$campaign['id']] = $campaign['title'];
       }
     }
     $this->assign('campaigns', $campaigns);
+    if($cancelReasons){
+      foreach(civicrm_api3('OptionValue', 'get', ['option_group_id' => "contract_cancel_reason", 'value' => ['IN' => array_unique($cancelReasons)]])['values'] as $campaign){
+        $cancelReasons[$campaign['value']] = $campaign['label'];
+      }
+    }
+    $this->assign('cancelReasons', $cancelReasons);
+
 
     foreach(civicrm_api3('Contact', 'get', ['id' => ['IN' => array_unique($contacts)]])['values'] as $contact){
       $contacts[$contact['id']] = $contact['display_name'];
@@ -98,6 +102,11 @@ class CRM_Contract_Page_Review extends CRM_Core_Page {
       $mediums[$medium['value']] = $medium['label'];
     }
     $this->assign('mediums', $mediums);
+
+    foreach(civicrm_api3('OptionValue', 'get', [ 'option_group_id' => 'payment_instrument', 'return' => ['value', 'label'] ])['values'] as $paymentInstrument){
+      $paymentInstruments[$paymentInstrument['value']] = $paymentInstrument['label'];
+    }
+    $this->assign('paymentInstruments', $paymentInstruments);
 
 
     // Get activity statuses
