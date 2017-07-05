@@ -9,7 +9,7 @@
 CRM.$(function($) {
 
   // Note insane selector and chaining necessary to find element
-  element = $( "label:contains('Membership Type')" ).parent().next();
+  element = $( ".custom-group-contract_updates label:contains('Membership Type')" ).parent().next();
   membershipTypeId = element.find('input').val();
 
   CRM.api3('MembershipType', 'getsingle', {"id": membershipTypeId}).done(function(result) {
