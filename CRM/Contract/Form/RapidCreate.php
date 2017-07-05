@@ -8,44 +8,67 @@
 +--------------------------------------------------------------*/
 
 class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
+
   function buildQuickForm(){
-
+    CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/RapidCreate.js');
     // ### Contact information ###
-    $this->addEntityRef('prefix_id', ts('Prefix'), [
-      'entity' => 'option_value',
-      'api' => array(
-        'params' => array('option_group_id' => 'individual_prefix'),
-      ),
-      'placeholder' => ts('- Select -')
-    ], null, true);
-
+    $prefixes = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'individual_prefix'])['values'], 'name', 'value');
+    $this->add('select', 'prefix_id', 'Prefix', $prefixes, true);
     $this->add('text', 'first_name', 'First name');
-    $this->add('text', 'last_name', 'Last name');
+    $this->add('text', 'last_name', 'Last name', null, true);
     $this->add('text', 'phone', 'Phone');
     $this->add('text', 'email', 'Email');
     $this->add('text', 'street_address', 'Address');
     $this->add('text', 'postal_code', 'Postcode');
     $this->add('text', 'city', 'City');
-    $this->addDate('birth_date', 'Date of birth');
+    $this->addDate('birth_date', 'Date of Birth', true, array('formatType' => 'birth'));
 
     $this->addCheckbox('community_newsletter', 'Add to Community newsletter', ['' => true]);
-    $this->addEntityRef('groups', ts('Additional groups'), array(
-      'entity' => 'group',
-      'multiple' => true,
-    ));
 
     $this->addCheckbox('post_delivery_only_online', 'Post delivery only online', ['' => true]);
-    $this->add('text', 'interest', 'Interest');
-    $this->add('text', 't_shirt_size', 'T-shirt size');
-    $this->add('text', 'talk_topic', 'Talk topic');
+
+    $this->add('select', 'interest', 'Interest', [
+      '' => "- none -",
+      'Wald' => "Interesse an Wald",
+      'Landwirtschaft (aka Gentech)' => "Interesse an Landwirtschaft (aka Gentech)",
+      'Meere' => "Interesse an Meeren",
+      'Konsum/Marktcheck' => "Interesse an Konsum/Marktcheck",
+      'Klima/Arktis' => "Interesse an Klima/Arktis",
+      'Atom/Kohle/Erneuerbare' => "Interesse an Atom/Kohle/Erneuerbare"
+    ]);
+
+    $this->add('select', 'talk_topic', 'Talk topic', [
+      '' => "- none -",
+      'Ökobürger' => "DD Ökobürger",
+      'Rationalisten' => "DD Rationalisten",
+      'Tierfreunde' => "DD Tierfreunde",
+      'Aktivisten' => "DD Aktivisten"
+    ]);
+
+    $this->add('select', 'groups', 'Additional groups', [
+      '' => "- none -",
+      'kein ACT' => "kein ACT",
+      'kein Danke' => "kein Danke",
+      'kein Kalender' => "kein Kalender",
+      'keine Geburtstagsgratulation' => "keine Geburtstagsgratulation",
+      'keine Geschenke' => "keine Geschenke",
+      'keine Lotterie' => "keine Lotterie"
+    ], null, array('class' => 'crm-select2', 'multiple' => 'multiple') );
+
+    $this->addCheckbox('tshirt_order', 'Is this a T-shirt order?', ['' => true]);
+    // A dropdown-field "Shirt Type" needs to be in rthe form - the T-Shirt types available should be taken from the option group "shirt_type"
+    $shirtSizes = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'shirt_size'])['values'], 'name', 'value');
+    $shirtTypes = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'shirt_type'])['values'], 'name', 'value');
+    $this->add('select', 'shirt_type', 'Shirt type', $shirtTypes);
+    $this->add('select', 'shirt_size', 'Shirt size', $shirtSizes);
 
 
     // ### Mandate information ###
 
     $this->add('select', 'cycle_day', ts('Cycle day'), CRM_Contract_SepaLogic::getCycleDays());
-    $this->add('text',   'iban', ts('IBAN'), array('class' => 'huge'));
-    $this->add('text',   'bic', ts('BIC'));
-    $this->add('text',   'payment_amount', ts('Annual amount'), array('size' => 6));
+    $this->add('text',   'iban', ts('IBAN'), array('class' => 'huge'), true);
+    $this->add('text',   'bic', ts('BIC'), null, true);
+    $this->add('text',   'payment_amount', ts('Annual amount'), array('size' => 6), true);
     $this->add('select', 'payment_frequency', ts('Payment Frequency'), CRM_Contract_SepaLogic::getPaymentFrequencies());
     $this->assign('bic_lookup_accessible', CRM_Contract_SepaLogic::isLittleBicExtensionAccessible());
 
@@ -55,7 +78,7 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     $this->addEntityRef('campaign_id', ts('Campaign'), [
       'entity' => 'campaign',
       'placeholder' => ts('- none -')
-    ]);
+    ], true);
     // Membership type (membership)
     foreach(civicrm_api3('MembershipType', 'get', [])['values'] as $MembershipType){
       $MembershipTypeOptions[$MembershipType['id']] = $MembershipType['name'];
@@ -69,14 +92,14 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     // Reference number text
     $this->add('text', 'membership_reference', ts('Reference number'));
     // Contract number text
-    $this->add('text', 'membership_contract', ts('Contract number'));
+    $this->add('text', 'membership_contract', ts('Contract number'), null, true);
     // DD-Fundraiser
-    $this->addEntityRef('membership_dialoger', ts('DD-Fundraiser'), array('api' => array('params' => array('contact_type' => 'Individual'))));
+    $this->addEntityRef('membership_dialoger', ts('DD-Fundraiser'), array('api' => array('params' => array('contact_type' => 'Individual'))), true);
     // Membership channel
     foreach(civicrm_api3('OptionValue', 'get', ['option_group_id' => "campaign_subtype"])['values'] as $optionValue){
       $membershipChannelOptions[$optionValue['value']] = $optionValue['label'];
     };
-    $this->add('select', 'membership_channel', ts('Membership channel'), array('' => '- none -') + $membershipChannelOptions, false, array('class' => 'crm-select2'));
+    $this->add('select', 'membership_channel', ts('Membership channel'), array('' => '- none -') + $membershipChannelOptions, true, array('class' => 'crm-select2'));
 
     // Notes
     $this->addWysiwyg('activity_details', ts('Notes'), []);
@@ -146,37 +169,68 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     $contactParams['contact_type'] = 'Individual';
     $contact = civicrm_api3('Contact', 'create', $contactParams);
 
-    civicrm_api3('Email', 'create', ['contact_id' => $contact['id'], 'email' => $submitted['email']]);
+    if($submitted['email']){
+      civicrm_api3('Email', 'create', ['contact_id' => $contact['id'], 'email' => $submitted['email']]);
+    }
 
-    civicrm_api3('Phone', 'create', [
-      'contact_id' => $contact['id'],
-      'phone' => $submitted['phone'],
-      'phone_type_id' => 'phone',
-      'phone_location_id' => 'home'
-    ]);
+    if($submitted['phone']){
+      civicrm_api3('Phone', 'create', [
+        'contact_id' => $contact['id'],
+        'phone' => $submitted['phone'],
+        'phone_type_id' => 'phone',
+        'phone_location_id' => 'home'
+      ]);
+    }
 
-    civicrm_api3('Address', 'create', [
-      'contact_id' => $contact['id'],
-      'street_address' => $submitted['street_address'],
-      'city' => $submitted['city'],
-      'postal_code' => $submitted['postal_code'],
-      'location_type_id' => 'home'
-    ]);
+    if($submitted['street_address'] || $submitted['city'] || $submitted['postal_code']){
+      civicrm_api3('Address', 'create', [
+        'contact_id' => $contact['id'],
+        'street_address' => $submitted['street_address'],
+        'city' => $submitted['city'],
+        'postal_code' => $submitted['postal_code'],
+        'location_type_id' => 'home'
+      ]);
+    }
 
     if($submitted['groups']){
-      foreach(explode(',', $submitted['groups']) as $groupId){
+      foreach($submitted['groups'] as $groupTitle){
+        $group = civicrm_api3('Group', 'getsingle', [ 'title' => $groupTitle]);
+
         civicrm_api3('GroupContact', 'create', [
           'contact_id' => $contact['id'],
-          'group_id' => $groupId]
-        );
+          'group_id' => $group['id']
+        ]);
       }
     }
 
+    if($submitted['talk_topic']){
+      $talktopic = civicrm_api3('Group', 'getsingle', [ 'title' => $submitted['talk_topic']]);
+      civicrm_api3('GroupContact', 'create', [
+        'contact_id' => $contact['id'],
+        'group_id' => $talktopic['id']]
+      );
+    }
+
+    if($submitted['interest']){
+      $interest = civicrm_api3('Group', 'getsingle', [ 'title' => $submitted['interest']]);
+      civicrm_api3('GroupContact', 'create', [
+        'contact_id' => $contact['id'],
+        'group_id' => $interest['id']]
+      );
+    }
+
     if(isset($submitted['community_newsletter'])){
-      $newsletter = civicrm_api3('Group', 'get', [ 'name' => ['LIKE' => "community_nl%"]]);
+      $newsletter = civicrm_api3('Group', 'getsingle', [ 'title' => "Community NL"]);
       civicrm_api3('GroupContact', 'create', [
         'contact_id' => $contact['id'],
         'group_id' => $newsletter['id']]
+      );
+    }
+    if(isset($submitted['post_delivery_only_online'])){
+      $postdeliveryonlyonline = civicrm_api3('Group', 'getsingle', [ 'name' => "Zusendungen_nur_online_27"]);
+      civicrm_api3('GroupContact', 'create', [
+        'contact_id' => $contact['id'],
+        'group_id' => $postdeliveryonlyonline['id']]
       );
     }
 
@@ -227,7 +281,31 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     $contractParams['note'] = $submitted['activity_details']; // Membership channel
     $contractParams['medium_id'] = $submitted['activity_medium']; // Membership channel
 
-    civicrm_api3('Contract', 'create', $contractParams);
+    $contract = civicrm_api3('Contract', 'create', $contractParams);
+
+    // Create T-shirt order
+
+    if(isset($submitted['tshirt_order'])){
+      $webshopCustomFields = array_column(civicrm_api3('CustomField', 'get', [ 'custom_group_id' => 'webshop_information'])['values'], 'id', 'name');
+      $tshirtActivityParams['target_contact_id'] = $contact['id'];
+      $tshirtActivityParams['status_id'] = 'Scheduled';
+      $tshirtActivityParams['activity_type_id'] = civicrm_api3('OptionValue', 'getvalue', [
+        'option_group_id' => 'activity_type',
+        'name' => 'webshop order',
+        'return' => 'value',
+      ]);
+      $tshirtActivityParams['custom_'.$webshopCustomFields['order_type']] = civicrm_api3('OptionValue', 'getvalue', [
+        'option_group_id' => 'order_type',
+        'name' => 'T-Shirt',
+        'return' => 'value',
+      ]);
+      $tshirtActivityParams['custom_'.$webshopCustomFields['shirt_type']] = $submitted['shirt_type'];
+      $tshirtActivityParams['custom_'.$webshopCustomFields['shirt_size']] = $submitted['shirt_size'];
+      $tshirtActivityParams['custom_'.$webshopCustomFields['linked_membership']] = $contract['id'];
+
+      $tshirtResult = civicrm_api3('Activity', 'create', $tshirtActivityParams);
+    }
+
 
     $this->controller->_destination = CRM_Utils_System::url('civicrm/contact/view', "reset=1&cid={$contact['id']}");
 

@@ -179,15 +179,31 @@
   </div>
 
   <div class="crm-section">
-    <div class="label">{$form.t_shirt_size.label}</div>
-    <div class="content">{$form.t_shirt_size.html}</div>
+    <div class="label">{$form.talk_topic.label}</div>
+    <div class="content">{$form.talk_topic.html}</div>
     <div class="clear"></div>
   </div>
 
   <div class="crm-section">
-    <div class="label">{$form.talk_topic.label}</div>
-    <div class="content">{$form.talk_topic.html}</div>
+    <div class="label">{$form.tshirt_order.label}</div>
+    <div class="content">{$form.tshirt_order.html}</div>
     <div class="clear"></div>
+  </div>
+
+  <div class="tshirt_order_fields">
+
+    <div class="crm-section">
+      <div class="label">{$form.shirt_type.label}</div>
+      <div class="content">{$form.shirt_type.html}</div>
+      <div class="clear"></div>
+    </div>
+
+    <div class="crm-section">
+      <div class="label">{$form.shirt_size.label}</div>
+      <div class="content">{$form.shirt_size.html}</div>
+      <div class="clear"></div>
+    </div>
+
   </div>
 
   <hr/>
