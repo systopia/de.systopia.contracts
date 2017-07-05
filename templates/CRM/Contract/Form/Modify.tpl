@@ -144,6 +144,7 @@ cj("#payment_option").change(function() {
   }
 });
 
+
 /**
  * update the payment info shown
  */
@@ -177,6 +178,11 @@ function updatePaymentSummaryText() {
     var freqency_label  = CRM.vars['de.systopia.contract'].frequencies[freqency];
     var next_collection = CRM.vars['de.systopia.contract'].next_collections[cycle_day];
     var annual          = 0.0;
+
+    // In case of an update (not revive), we need to respect the already paid period, see #771
+    if (CRM.vars['de.systopia.contract'].action == 'update') {
+      next_collection = CRM.vars['de.systopia.contract'].graceful_collections[cycle_day];
+    }
 
     // fill with old fields
     if (!iban.length) {
