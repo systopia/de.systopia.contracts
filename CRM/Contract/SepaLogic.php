@@ -321,7 +321,7 @@ class CRM_Contract_SepaLogic {
         throw new Exception("There's something wrong with the nextCycleDay method.");
       }
     }
-    return date('d', $start_date);
+    return (int) date('d', $start_date);
   }
 
   /**
