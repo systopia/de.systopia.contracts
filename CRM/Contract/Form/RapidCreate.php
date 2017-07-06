@@ -227,7 +227,7 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
       );
     }
     if(isset($submitted['post_delivery_only_online'])){
-      $postdeliveryonlyonline = civicrm_api3('Group', 'getsingle', [ 'name' => "Zusendungen_nur_online_27"]);
+      $postdeliveryonlyonline = civicrm_api3('Group', 'getsingle', [ 'title' => "Zusendungen nur online"]);
       civicrm_api3('GroupContact', 'create', [
         'contact_id' => $contact['id'],
         'group_id' => $postdeliveryonlyonline['id']]
