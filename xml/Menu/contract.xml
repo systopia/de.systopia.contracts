@@ -39,6 +39,6 @@
     <path>civicrm/admin/contract</path>
     <page_callback>CRM_Contract_Form_Settings</page_callback>
     <title>Contract Settings</title>
-    <access_arguments>edit memberships</access_arguments>
+    <access_arguments>administer CiviCRM</access_arguments>
   </item>
 </menu>
