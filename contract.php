@@ -135,7 +135,9 @@ function contract_civicrm_buildForm($formName, &$form) {
     case 'CRM_Member_Form_MembershipView':
       $contactId = CRM_Utils_Request::retrieve('cid', 'Positive', $form);
       $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
-      $formUtils->showPaymentContractDetails();
+      $formUtils->replaceIdWithLabel('membership_payment.membership_recurring_contribution', 'ContributionRecur');
+      $formUtils->replaceIdWithLabel('membership_payment.to_ba', 'BankAccountReference');
+      $formUtils->replaceIdWithLabel('membership_payment.from_ba', 'BankAccountReference');
       break;
 
     // Membership form in add mode
@@ -194,7 +196,9 @@ function contract_civicrm_buildForm($formName, &$form) {
         // Show recurring contribution details
         $id =  CRM_Utils_Request::retrieve('id', 'Positive', $form);
         $formUtils = new CRM_Contract_FormUtils($form, 'Activity');
-        $formUtils->showPaymentContractDetails();
+        $formUtils->replaceIdWithLabel('contract_updates.ch_recurring_contribution', 'ContributionRecur');
+        $formUtils->replaceIdWithLabel('contract_updates.ch_from_ba', 'BankAccountReference');
+        $formUtils->replaceIdWithLabel('contract_updates.ch_to_ba', 'BankAccountReference');
 
         // Show membership label, not id
         $formUtils->showMembershipTypeLabel();

@@ -28,13 +28,13 @@ class CRM_Contract_FormUtils
         $this->form->add('select', $elementName, ts('Mandate / Recurring Contribution'), $recurringContributionOptions, $required, array('class' => 'crm-select2 huge'));
     }
 
-    public function showPaymentContractDetails()
+    public function replaceIdWithLabel($name, $entity)
     {
-        if($this->entity == 'Membership'){
-          $result = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'membership_payment', 'name' => 'membership_recurring_contribution'));
-        }elseif($this->entity == 'Activity'){
-          $result = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'contract_updates', 'name' => 'ch_recurring_contribution'));
-        }
+        list($groupName, $fieldName) = explode('.', $name);
+        $result = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => $groupName, 'name' => $fieldName));
+
+        $id = CRM_Contract_Utils::getCustomFieldId($name);
+
         // Get the custom data that was sent to the template
         $details = $this->form->get_template_vars('viewCustomData');
 
@@ -42,14 +42,19 @@ class CRM_Contract_FormUtils
         // this custom data is stored in
         $customGroupTableId = key($details[$result['custom_group_id']]);
 
-        $contributionRecurId = $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'];
-        if ($contributionRecurId) {
-            // Write nice text and return this to the template
-          $contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $contributionRecurId));
-            $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = $this->recurringContribution->writePaymentContractLabel($contributionRecur);
-            $this->form->assign('viewCustomData', $details);
+        $entityId = $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'];
+        if ($entityId) {
+          if($entity == 'ContributionRecur'){
+            $entityResult = civicrm_api3($entity, 'getsingle', array('id' => $entityId));
+            $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = $this->recurringContribution->writePaymentContractLabel($entityResult);
+          }elseif($entity == 'BankAccountReference'){
+            $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = CRM_Contract_BankingLogic::getIBANforBankAccount($entityId);
+          }
+          // Write nice text and return this to the template
+          $this->form->assign('viewCustomData', $details);
         }
     }
+
     public function showMembershipTypeLabel()
     {
         $result = civicrm_api3('CustomField', 'getsingle', array('custom_group_id' => 'contract_updates', 'name' => 'ch_membership_type'));
