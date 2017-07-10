@@ -154,7 +154,7 @@ class CRM_Contract_RecurringContribution {
       $result['fields']['org_iban'] = $sepaCreditors[$mandate['creditor_id']]['iban'];
       // $result['fields']['org_iban'] = $sepa;
       // $result['fields']['org_iban'] = $cr['id'];
-      $result['fields']['next_debit'] = $cr['next_sched_contribution_date'];
+      $result['fields']['next_debit'] = substr($cr['next_sched_contribution_date'], 0, 10);
       $result['label'] = "SEPA, {$result['fields']['amount']} {$result['fields']['frequency']} ({$mandate['reference']})";
       $result['text_summary'] .= "
         Organisational account: {$result['fields']['org_iban']}<br />

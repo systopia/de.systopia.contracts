@@ -176,12 +176,16 @@ function updatePaymentSummaryText() {
     var installment     = parseMoney(cj('[name=payment_amount]').val());
     var freqency        = cj('[name=payment_frequency]').val();
     var freqency_label  = CRM.vars['de.systopia.contract'].frequencies[freqency];
-    var next_collection = CRM.vars['de.systopia.contract'].next_collections[cycle_day];
+    // var next_collection = CRM.vars['de.systopia.contract'].next_collections[cycle_day];
+    var start_date      = cj('[name=activity_date]').val();
     var annual          = 0.0;
 
     // In case of an update (not revive), we need to respect the already paid period, see #771
+    var next_collection = '';
     if (CRM.vars['de.systopia.contract'].action == 'update') {
-      next_collection = CRM.vars['de.systopia.contract'].graceful_collections[cycle_day];
+      next_collection = nextCollectionDate(cycle_day, start_date, CRM.vars['de.systopia.contract'].frequencies.grace_end);
+    } else {
+      next_collection = nextCollectionDate(cycle_day, start_date, null);
     }
 
     // fill with old fields
@@ -242,6 +246,7 @@ function parseMoney(raw_value) {
 // call once for the UI to adjust
 cj("#payment_option").trigger('change');
 cj("div.payment-modify").change(updatePaymentSummaryText);
+cj("#activity_date").change(updatePaymentSummaryText);
 
 </script>
 {/literal}

@@ -456,4 +456,27 @@ class CRM_Contract_SepaLogic {
     $clean_value = number_format($stripped_value, 2, '.', '');
     return $clean_value;
   }
+
+
+  /**
+   * prepare and inject the sepa tools JS
+   */
+  public static function addJsSepaTools() {
+    // calculate creditor parameters
+    $creditor_parameters = civicrm_api3('SepaCreditor', 'get', array(
+      'options.limit' => 0))['values'];
+    foreach ($creditor_parameters as &$creditor) {
+      $creditor['grace']  = (int) CRM_Sepa_Logic_Settings::getSetting("batching.RCUR.grace", $creditor['id']);
+      $creditor['notice'] = (int) CRM_Sepa_Logic_Settings::getSetting("batching.RCUR.notice", $creditor['id']);
+    }
+
+    // set the default
+    $default_creditor_id = (int) CRM_Sepa_Logic_Settings::getSetting('batching_default_creditor');
+    $creditor_parameters['default'] = $creditor_parameters[$default_creditor_id];
+
+    // prep script and inject
+    $script = file_get_contents(__DIR__ . '/../../js/sepa_tools.js');
+    $script = str_replace('SEPA_CREDITOR_PARAMETERS', json_encode($creditor_parameters), $script);
+    CRM_Core_Region::instance('page-footer')->add(array('script' => $script));
+  }
 }
