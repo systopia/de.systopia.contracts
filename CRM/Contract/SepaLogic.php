@@ -99,7 +99,7 @@ class CRM_Contract_SepaLogic {
           $donor_account['bic'] = $bic_search['bic'];
         }
       }
-      if (empty($donor_account['iban']) || empty($donor_account['bic'])) {
+      if (empty($donor_account['iban']) || empty($donor_account['BIC'])) {
         throw new Exception("No donor bank account given.");
       }
 
