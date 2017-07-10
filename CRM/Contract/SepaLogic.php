@@ -84,8 +84,7 @@ class CRM_Contract_SepaLogic {
     $frequency_interval = 12 / $frequency;
     $amount = number_format($annual_amount / $frequency, 2);
     if ($amount < 0.01) {
-      // TODO: MARK ERROR: amount too small
-      return NULL;
+      throw new Exception("Installment amount too small");
     }
 
     // get bank account
@@ -97,8 +96,7 @@ class CRM_Contract_SepaLogic {
       }
     }
     if (empty($donor_account['iban']) || empty($donor_account['bic'])) {
-      // TODO: MARK ERROR: invalid iban/bic
-      return NULL;
+      throw new Exception("No donor bank account given.");
     }
 
     // we need to create a new mandate
@@ -177,7 +175,7 @@ class CRM_Contract_SepaLogic {
           civicrm_api3("Contribution", "delete", array('id' => $pending_contribution['id']));
         }
       } else {
-        // TODO (Michael): process error: Mandate is not active, cannot be paused
+        throw new Exception("Mandate is not active, cannot be paused");
       }
     } else {
       // TODO: what to do with NO/NON-SEPA recurring contributions?
@@ -197,7 +195,7 @@ class CRM_Contract_SepaLogic {
           'id'     => $mandate['id'],
           'status' => $new_status));
       } else {
-        // TODO (Michael): process error: Mandate is not paused, cannot be activated
+        throw new Exception(" Mandate is not paused, cannot be activated");
       }
     } else {
       // TODO: what to do with NO/NON-SEPA recurring contributions?
