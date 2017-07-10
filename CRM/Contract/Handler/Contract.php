@@ -301,6 +301,7 @@ class CRM_Contract_Handler_Contract{
 
     // We need to skip the modification activity handler, otherwise, it will
     // create another membership.
+    unset($params['campaign_id']);
     $params['skip_handler'] = true;
 
     // Reload the entity so that we use its values later (e.g. in setting the
