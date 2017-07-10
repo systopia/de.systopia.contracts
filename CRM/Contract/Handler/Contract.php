@@ -348,27 +348,24 @@ class CRM_Contract_Handler_Contract{
       $deltas['membership_type_id']['new'] = civicrm_api3('MembershipType', 'getvalue', [ 'return' => "name", 'id' => $deltas['membership_type_id']['new']]);
     }
     if(isset($deltas['membership_payment.payment_instrument']['old']) && $deltas['membership_payment.payment_instrument']['old']){
-      civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.payment_instrument']['old'], 'option_group_id' => "payment_instrument" ]);
+      $deltas['membership_payment.payment_instrument']['old'] = civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.payment_instrument']['old'], 'option_group_id' => "payment_instrument" ]);
     }
     if(isset($deltas['membership_payment.payment_instrument']['new']) && $deltas['membership_payment.payment_instrument']['new']){
-      civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.payment_instrument']['new'], 'option_group_id' => "payment_instrument" ]);
+      $deltas['membership_payment.payment_instrument']['new'] = civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.payment_instrument']['new'], 'option_group_id' => "payment_instrument" ]);
     }
 
-    // FIXME: Michael: What is this supposed to be doing? it doesn't seemt to set any values...
-    //  also: please use CRM_Contract_BankingLogic::getIBANforBankAccount($account_id)
-    //        your code crashes!
-    // if(isset($deltas['membership_payment.to_ba']['old']) && $deltas['membership_payment.to_ba']['old']){
-    //   civicrm_api3('BankingAccountReference', 'getvalue', ['return' => "reference", 'id' => $deltas['membership_payment.to_ba']['old']]);
-    // }
-    // if(isset($deltas['membership_payment.to_ba']['new']) && $deltas['membership_payment.to_ba']['new']){
-    //   civicrm_api3('BankingAccountReference', 'getvalue', ['return' => "reference", 'id' => $deltas['membership_payment.to_ba']['new']]);
-    // }
-    // if(isset($deltas['membership_payment.from_ba']['old']) && $deltas['membership_payment.from_ba']['old']){
-    //   civicrm_api3('BankingAccountReference', 'getvalue', ['return' => "reference", 'id' => $deltas['membership_payment.from_ba']['old']]);
-    // }
-    // if(isset($deltas['membership_payment.from_ba']['new']) && $deltas['membership_payment.from_ba']['new']){
-    //   civicrm_api3('BankingAccountReference', 'getvalue', ['return' => "reference", 'id' => $deltas['membership_payment.from_ba']['new']]);
-    // }
+    if(isset($deltas['membership_payment.to_ba']['old']) && $deltas['membership_payment.to_ba']['old']){
+      $deltas['membership_payment.to_ba']['old'] = CRM_Contract_BankingLogic::getIBANforBankAccount($deltas['membership_payment.to_ba']['old']);
+    }
+    if(isset($deltas['membership_payment.to_ba']['new']) && $deltas['membership_payment.to_ba']['new']){
+      $deltas['membership_payment.to_ba']['new'] = CRM_Contract_BankingLogic::getIBANforBankAccount($deltas['membership_payment.to_ba']['new']);
+    }
+    if(isset($deltas['membership_payment.from_ba']['old']) && $deltas['membership_payment.from_ba']['old']){
+      $deltas['membership_payment.from_ba']['old'] = CRM_Contract_BankingLogic::getIBANforBankAccount($deltas['membership_payment.from_ba']['old']);
+    }
+    if(isset($deltas['membership_payment.from_ba']['new']) && $deltas['membership_payment.from_ba']['new']){
+      $deltas['membership_payment.from_ba']['new'] = CRM_Contract_BankingLogic::getIBANforBankAccount($deltas['membership_payment.from_ba']['new']);
+    }
 
     if(isset($deltas['membership_payment.membership_frequency']['old']) && $deltas['membership_payment.membership_frequency']['old']){
       civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.membership_frequency']['old'], 'option_group_id' => "payment_frequency" ]);
