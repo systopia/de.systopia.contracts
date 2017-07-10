@@ -67,70 +67,78 @@ class CRM_Contract_SepaLogic {
       return NULL;
     }
 
-    // get the right values (desired first, else from current)
-    $from_ba       = CRM_Utils_Array::value('contract_updates.ch_from_ba', $desired_state, CRM_Utils_Array::value('membership_payment.from_ba', $current_state));
-    $cycle_day     = (int) CRM_Utils_Array::value('contract_updates.ch_cycle_day', $desired_state, CRM_Utils_Array::value('membership_payment.cycle_day', $current_state));
-    $annual_amount = CRM_Utils_Array::value('contract_updates.ch_annual', $desired_state, CRM_Utils_Array::value('membership_payment.membership_annual', $current_state));
-    $frequency     = (int) CRM_Utils_Array::value('contract_updates.ch_frequency', $desired_state, CRM_Utils_Array::value('membership_payment.membership_frequency', $current_state));
-    $campaign_id   = CRM_Utils_Array::value('campaign_id', $activity, CRM_Utils_Array::value('campaign_id', $current_state));
+    if (!in_array('contract_updates.ch_recurring_contribution', $mandate_relevant_changes)) {
+      // if there is no new recurring contribution given, create a new one based
+      //  on the parameters. See GP-669 / GP-789
 
-    // calculate some stuff
-    if ($cycle_day < 1 || $cycle_day > 30) {
-      // invalid cycle day
-      $cycle_day = self::nextCycleDay();
-    }
+      // get the right values (desired first, else from current)
+      $from_ba       = CRM_Utils_Array::value('contract_updates.ch_from_ba', $desired_state, CRM_Utils_Array::value('membership_payment.from_ba', $current_state));
+      $cycle_day     = (int) CRM_Utils_Array::value('contract_updates.ch_cycle_day', $desired_state, CRM_Utils_Array::value('membership_payment.cycle_day', $current_state));
+      $annual_amount = CRM_Utils_Array::value('contract_updates.ch_annual', $desired_state, CRM_Utils_Array::value('membership_payment.membership_annual', $current_state));
+      $frequency     = (int) CRM_Utils_Array::value('contract_updates.ch_frequency', $desired_state, CRM_Utils_Array::value('membership_payment.membership_frequency', $current_state));
+      $campaign_id   = CRM_Utils_Array::value('campaign_id', $activity, CRM_Utils_Array::value('campaign_id', $current_state));
 
-    // calculate amount
-    $frequency_interval = 12 / $frequency;
-    $amount = number_format($annual_amount / $frequency, 2);
-    if ($amount < 0.01) {
-      // TODO: MARK ERROR: amount too small
-      return NULL;
-    }
-
-    // get bank account
-    $donor_account = CRM_Contract_BankingLogic::getBankAccount($from_ba);
-    if (empty($donor_account['bic']) && self::isLittleBicExtensionAccessible()) {
-      $bic_search = civicrm_api3('Bic', 'findbyiban', array('iban' => $donor_account['iban']));
-      if (!empty($bic_search['bic'])) {
-        $donor_account['bic'] = $bic_search['bic'];
+      // calculate some stuff
+      if ($cycle_day < 1 || $cycle_day > 30) {
+        // invalid cycle day
+        $cycle_day = self::nextCycleDay();
       }
+
+      // calculate amount
+      $frequency_interval = 12 / $frequency;
+      $amount = number_format($annual_amount / $frequency, 2);
+      if ($amount < 0.01) {
+        throw new Exception("Installment amount too small");
+      }
+
+      // get bank account
+      $donor_account = CRM_Contract_BankingLogic::getBankAccount($from_ba);
+      if (empty($donor_account['bic']) && self::isLittleBicExtensionAccessible()) {
+        $bic_search = civicrm_api3('Bic', 'findbyiban', array('iban' => $donor_account['iban']));
+        if (!empty($bic_search['bic'])) {
+          $donor_account['bic'] = $bic_search['bic'];
+        }
+      }
+      if (empty($donor_account['iban']) || empty($donor_account['bic'])) {
+        throw new Exception("No donor bank account given.");
+      }
+
+      // we need to create a new mandate
+      $new_mandate_values =  array(
+        'type'               => 'RCUR',
+        'contact_id'         => $current_state['contact_id'],
+        'amount'             => $amount,
+        'currency'           => 'EUR',
+        'start_date'         => self::getMandateUpdateStartDate($current_state, $current_state, $desired_state, $activity),
+        'creation_date'      => date('YmdHis'), // NOW
+        'date'               => date('YmdHis', strtotime($activity['activity_date_time'])),
+        'validation_date'    => date('YmdHis'), // NOW
+        'iban'               => $donor_account['iban'],
+        'bic'                => $donor_account['bic'],
+        // 'source'             => ??
+        'campaign_id'        => $campaign_id,
+        'financial_type_id'  => 2, // Membership Dues
+        'frequency_unit'     => 'month',
+        'cycle_day'          => $cycle_day,
+        'frequency_interval' => $frequency_interval,
+        );
+
+      // create and reload (to get all data)
+      $new_mandate = self::createNewMandate($new_mandate_values);
+      $new_recurring_contribution = $new_mandate['entity_id'];
+
+    } else {
+      // another (existing) recurring contribution has been chosen by the user:
+      $new_recurring_contribution = (int) CRM_Utils_Array::value('contract_updates.ch_recurring_contribution', $desired_state, CRM_Utils_Array::value('membership_payment.membership_recurring_contribution', $current_state));
     }
-    if (empty($donor_account['iban']) || empty($donor_account['bic'])) {
-      // TODO: MARK ERROR: invalid iban/bic
-      return NULL;
-    }
 
-    // we need to create a new mandate
-    $new_mandate_values =  array(
-      'type'               => 'RCUR',
-      'contact_id'         => $current_state['contact_id'],
-      'amount'             => $amount,
-      'currency'           => 'EUR',
-      'start_date'         => self::getMandateUpdateStartDate($current_state, $current_state, $desired_state, $activity),
-      'creation_date'      => date('YmdHis'), // NOW
-      'date'               => date('YmdHis', strtotime($activity['activity_date_time'])),
-      'validation_date'    => date('YmdHis'), // NOW
-      'iban'               => $donor_account['iban'],
-      'bic'                => $donor_account['bic'],
-      // 'source'             => ??
-      'campaign_id'        => $campaign_id,
-      'financial_type_id'  => 2, // Membership Dues
-      'frequency_unit'     => 'month',
-      'cycle_day'          => $cycle_day,
-      'frequency_interval' => $frequency_interval,
-      );
-
-    // create and reload (to get all data)
-    $new_mandate = self::createNewMandate($new_mandate_values);
-
-    // then terminate the old one
+    // finally: terminate the old one
     if (!empty($current_state['membership_payment.membership_recurring_contribution'])) {
       self::terminateSepaMandate($current_state['membership_payment.membership_recurring_contribution']);
     }
 
     // and set the new recurring contribution
-    return $new_mandate['entity_id'];
+    return $new_recurring_contribution;
   }
 
   /**
@@ -177,7 +185,7 @@ class CRM_Contract_SepaLogic {
           civicrm_api3("Contribution", "delete", array('id' => $pending_contribution['id']));
         }
       } else {
-        // TODO (Michael): process error: Mandate is not active, cannot be paused
+        throw new Exception("Mandate is not active, cannot be paused");
       }
     } else {
       // TODO: what to do with NO/NON-SEPA recurring contributions?
@@ -197,7 +205,7 @@ class CRM_Contract_SepaLogic {
           'id'     => $mandate['id'],
           'status' => $new_status));
       } else {
-        // TODO (Michael): process error: Mandate is not paused, cannot be activated
+        throw new Exception(" Mandate is not paused, cannot be activated");
       }
     } else {
       // TODO: what to do with NO/NON-SEPA recurring contributions?

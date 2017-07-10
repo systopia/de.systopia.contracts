@@ -21,6 +21,8 @@ class CRM_Contract_BankingLogic {
    * get bank account information
    */
   public static function getBankAccount($account_id) {
+    if (empty($account_id)) return NULL;
+
     $data = array();
     $account = civicrm_api3('BankingAccount', 'getsingle', array('id' => $account_id));
     $data['contact_id'] = $account['contact_id'];
