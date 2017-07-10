@@ -247,13 +247,15 @@ class CRM_Contract_Handler_Contract{
 
   private function createModificationActivity(){
 
-    // Create the activity
-    $activityResult = civicrm_api3('Activity', 'create', $this->getModificationActivityParams());
-
-    // Store the updates so they can be used later (e.g. in setting the contract
-    // cancel date)
-    $this->modificationActivity = $activityResult['values'][$activityResult['id']];
-
+    $params = $this->getModificationActivityParams();
+    //This also sets $this->deltas
+    $changedFields = array_intersect(array_keys($this->deltas), $this->getMonitoredFields());
+    if($changedFields){
+      $activityResult = civicrm_api3('Activity', 'create', $params);
+      // Store the updates so they can be used later (e.g. in setting the contract
+      // cancel date)
+      $this->modificationActivity = $activityResult['values'][$activityResult['id']];
+    }
   }
 
   private function updateModificationActivity(){
@@ -328,7 +330,6 @@ class CRM_Contract_Handler_Contract{
   private function getSubjectLine(){
 
     $deltas = array_intersect_key($this->deltas, array_flip($this->getMonitoredFields()));
-
     // We don't need to mention status_id in the subject line as it is implicit
     // in the activity type
     if(isset($deltas['status_id'])){
