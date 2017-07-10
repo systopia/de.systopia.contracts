@@ -144,6 +144,7 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
         }
 
         // calculate amount
+        //TODO we can probably remove the calculation of $annual_amount
         $annual_amount = CRM_Contract_SepaLogic::formatMoney($submitted['payment_frequency'] * CRM_Contract_SepaLogic::formatMoney($submitted['payment_amount']));
         $frequency_interval = 12 / $submitted['payment_frequency'];
         $amount = CRM_Contract_SepaLogic::formatMoney($submitted['payment_amount']);

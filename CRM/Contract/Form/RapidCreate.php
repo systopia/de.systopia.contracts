@@ -12,7 +12,7 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
   function buildQuickForm(){
     CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/RapidCreate.js');
     // ### Contact information ###
-    $prefixes = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'individual_prefix'])['values'], 'name', 'value');
+    $prefixes = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'individual_prefix', 'is_active' => 1])['values'], 'label', 'value');
     $this->add('select', 'prefix_id', 'Prefix', $prefixes, true);
     $this->add('text', 'first_name', 'First name');
     $this->add('text', 'last_name', 'Last name', null, true);
@@ -68,7 +68,7 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     $this->add('select', 'cycle_day', ts('Cycle day'), CRM_Contract_SepaLogic::getCycleDays());
     $this->add('text',   'iban', ts('IBAN'), array('class' => 'huge'), true);
     $this->add('text',   'bic', ts('BIC'), null, true);
-    $this->add('text',   'payment_amount', ts('Annual amount'), array('size' => 6), true);
+    $this->add('text',   'payment_amount', ts('Installment amount'), array('size' => 6));
     $this->add('select', 'payment_frequency', ts('Payment Frequency'), CRM_Contract_SepaLogic::getPaymentFrequencies());
     $this->assign('bic_lookup_accessible', CRM_Contract_SepaLogic::isLittleBicExtensionAccessible());
 
@@ -241,10 +241,8 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     }
 
     // calculate amount
-    $annual_amount = CRM_Contract_SepaLogic::formatMoney($submitted['payment_amount']);
+    $amount = CRM_Contract_SepaLogic::formatMoney($submitted['payment_amount']);
     $frequency_interval = 12 / $submitted['payment_frequency'];
-    $amount = CRM_Contract_SepaLogic::formatMoney($annual_amount / $submitted['payment_frequency']);
-
     $new_mandate = CRM_Contract_SepaLogic::createNewMandate(array(
       'type'               => 'RCUR',
       'contact_id'         => $contact['id'],
