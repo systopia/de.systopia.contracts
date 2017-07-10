@@ -459,6 +459,11 @@ class CRM_Contract_Handler_Contract{
   }
 
   private function normalise($params){
+
+    $dialogerCustomFieldId = CRM_Contract_Utils::getCustomFieldId('membership_general.membership_dialoger');
+    if(isset($params[$dialogerCustomFieldId.'_id'])){
+      $params[$dialogerCustomFieldId] = $params[$dialogerCustomFieldId.'_id'];
+    }
     // If a custom data field has been passed in the $params['custom'] element
     // which is not also in $params move it to params
     if(isset($params['custom'])){
