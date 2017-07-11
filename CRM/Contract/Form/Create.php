@@ -13,9 +13,15 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
 
 
     $this->cid = CRM_Utils_Request::retrieve('cid', 'Integer');
+    if (empty($this->cid)) {
+      $this->cid = $this->get('cid');
+    }
     if($this->cid){
       $this->set('cid', $this->cid);
+    } else {
+      CRM_Core_Error::statusBounce('You have to specify a contact ID to create a new contract');
     }
+    $this->controller->_destination = CRM_Utils_System::url('civicrm/contact/view', "reset=1&cid={$this->get('cid')}&selectedChild=member");
 
     $this->assign('cid', $this->get('cid'));
     $this->contact = civicrm_api3('Contact', 'getsingle', ['id' => $this->get('cid')]);
