@@ -35,7 +35,7 @@
       <td>{$a.id} {$activityTypes[$a.activity_type_id]}</td>
       <td>{$a.activity_date_time|crmDate}</td>
       <td><a href="{crmURL p='civicrm/contact/view/contributionrecur' q="reset=1&id=`$a.contract_updates_ch_recurring_contribution`&cid=`$a.recurring_contribution_contact_id`"}" class="crm-popup">{$paymentInstruments[$a.payment_instrument_id]}</a></td>
-      <td>&euro;{$a.contract_updates_ch_annual} (&euro;{$a.contract_updates_ch_amount})</td>
+      <td>{$a.contract_updates_ch_annual|crmMoney} ({$a.contract_updates_ch_amount|crmMoney})</td>
 
       <td>{$paymentFrequencies[$a.contract_updates_ch_frequency]}</td>
       <td>{$a.contract_updates_ch_cycle_day}</td>
