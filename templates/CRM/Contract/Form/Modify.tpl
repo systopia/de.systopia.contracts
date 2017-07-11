@@ -219,9 +219,10 @@ function updatePaymentSummaryText() {
 
 // call once for the UI to adjust
 cj(document).ready(function() {
-  cj("#payment_option").trigger('change');
+  cj('[name=recurring_contribution]').change(updatePaymentSummaryText);
   cj("div.payment-modify").change(updatePaymentSummaryText);
   cj("#activity_date").parent().parent().change(updatePaymentSummaryText);
+  updatePaymentSummaryText();
 });
 
 </script>
