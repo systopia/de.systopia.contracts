@@ -247,13 +247,15 @@ class CRM_Contract_Handler_Contract{
 
   private function createModificationActivity(){
 
-    // Create the activity
-    $activityResult = civicrm_api3('Activity', 'create', $this->getModificationActivityParams());
-
-    // Store the updates so they can be used later (e.g. in setting the contract
-    // cancel date)
-    $this->modificationActivity = $activityResult['values'][$activityResult['id']];
-
+    $params = $this->getModificationActivityParams();
+    //This also sets $this->deltas
+    $changedFields = array_intersect(array_keys($this->deltas), $this->getMonitoredFields());
+    if($changedFields){
+      $activityResult = civicrm_api3('Activity', 'create', $params);
+      // Store the updates so they can be used later (e.g. in setting the contract
+      // cancel date)
+      $this->modificationActivity = $activityResult['values'][$activityResult['id']];
+    }
   }
 
   private function updateModificationActivity(){
@@ -301,6 +303,7 @@ class CRM_Contract_Handler_Contract{
 
     // We need to skip the modification activity handler, otherwise, it will
     // create another membership.
+    unset($params['campaign_id']);
     $params['skip_handler'] = true;
 
     // Reload the entity so that we use its values later (e.g. in setting the
@@ -327,7 +330,6 @@ class CRM_Contract_Handler_Contract{
   private function getSubjectLine(){
 
     $deltas = array_intersect_key($this->deltas, array_flip($this->getMonitoredFields()));
-
     // We don't need to mention status_id in the subject line as it is implicit
     // in the activity type
     if(isset($deltas['status_id'])){
@@ -346,27 +348,24 @@ class CRM_Contract_Handler_Contract{
       $deltas['membership_type_id']['new'] = civicrm_api3('MembershipType', 'getvalue', [ 'return' => "name", 'id' => $deltas['membership_type_id']['new']]);
     }
     if(isset($deltas['membership_payment.payment_instrument']['old']) && $deltas['membership_payment.payment_instrument']['old']){
-      civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.payment_instrument']['old'], 'option_group_id' => "payment_instrument" ]);
+      $deltas['membership_payment.payment_instrument']['old'] = civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.payment_instrument']['old'], 'option_group_id' => "payment_instrument" ]);
     }
     if(isset($deltas['membership_payment.payment_instrument']['new']) && $deltas['membership_payment.payment_instrument']['new']){
-      civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.payment_instrument']['new'], 'option_group_id' => "payment_instrument" ]);
+      $deltas['membership_payment.payment_instrument']['new'] = civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.payment_instrument']['new'], 'option_group_id' => "payment_instrument" ]);
     }
 
-    // FIXME: Michael: What is this supposed to be doing? it doesn't seemt to set any values...
-    //  also: please use CRM_Contract_BankingLogic::getIBANforBankAccount($account_id)
-    //        your code crashes!
-    // if(isset($deltas['membership_payment.to_ba']['old']) && $deltas['membership_payment.to_ba']['old']){
-    //   civicrm_api3('BankingAccountReference', 'getvalue', ['return' => "reference", 'id' => $deltas['membership_payment.to_ba']['old']]);
-    // }
-    // if(isset($deltas['membership_payment.to_ba']['new']) && $deltas['membership_payment.to_ba']['new']){
-    //   civicrm_api3('BankingAccountReference', 'getvalue', ['return' => "reference", 'id' => $deltas['membership_payment.to_ba']['new']]);
-    // }
-    // if(isset($deltas['membership_payment.from_ba']['old']) && $deltas['membership_payment.from_ba']['old']){
-    //   civicrm_api3('BankingAccountReference', 'getvalue', ['return' => "reference", 'id' => $deltas['membership_payment.from_ba']['old']]);
-    // }
-    // if(isset($deltas['membership_payment.from_ba']['new']) && $deltas['membership_payment.from_ba']['new']){
-    //   civicrm_api3('BankingAccountReference', 'getvalue', ['return' => "reference", 'id' => $deltas['membership_payment.from_ba']['new']]);
-    // }
+    if(isset($deltas['membership_payment.to_ba']['old']) && $deltas['membership_payment.to_ba']['old']){
+      $deltas['membership_payment.to_ba']['old'] = CRM_Contract_BankingLogic::getIBANforBankAccount($deltas['membership_payment.to_ba']['old']);
+    }
+    if(isset($deltas['membership_payment.to_ba']['new']) && $deltas['membership_payment.to_ba']['new']){
+      $deltas['membership_payment.to_ba']['new'] = CRM_Contract_BankingLogic::getIBANforBankAccount($deltas['membership_payment.to_ba']['new']);
+    }
+    if(isset($deltas['membership_payment.from_ba']['old']) && $deltas['membership_payment.from_ba']['old']){
+      $deltas['membership_payment.from_ba']['old'] = CRM_Contract_BankingLogic::getIBANforBankAccount($deltas['membership_payment.from_ba']['old']);
+    }
+    if(isset($deltas['membership_payment.from_ba']['new']) && $deltas['membership_payment.from_ba']['new']){
+      $deltas['membership_payment.from_ba']['new'] = CRM_Contract_BankingLogic::getIBANforBankAccount($deltas['membership_payment.from_ba']['new']);
+    }
 
     if(isset($deltas['membership_payment.membership_frequency']['old']) && $deltas['membership_payment.membership_frequency']['old']){
       civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $deltas['membership_payment.membership_frequency']['old'], 'option_group_id' => "payment_frequency" ]);
@@ -457,6 +456,11 @@ class CRM_Contract_Handler_Contract{
   }
 
   private function normalise($params){
+
+    $dialogerCustomFieldId = CRM_Contract_Utils::getCustomFieldId('membership_general.membership_dialoger');
+    if(isset($params[$dialogerCustomFieldId.'_id'])){
+      $params[$dialogerCustomFieldId] = $params[$dialogerCustomFieldId.'_id'];
+    }
     // If a custom data field has been passed in the $params['custom'] element
     // which is not also in $params move it to params
     if(isset($params['custom'])){
