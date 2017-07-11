@@ -520,23 +520,30 @@ class CRM_Contract_Handler_Contract{
   }
 
   private function calcAnnualAmount($contributionRecur){
-    // FIXME: only 'month' and 'year' should be in use
+    // only 'month' and 'year' should be in use
     $frequencyUnitTranslate = array(
-      'day' => 365,
-      'week' => 52,
       'month' => 12,
       'year' => 1
     );
-    return number_format($contributionRecur['amount'] * $frequencyUnitTranslate[$contributionRecur['frequency_unit']] / $contributionRecur['frequency_interval'], 2, '.', '');
+    return CRM_Contract_SepaLogic::formatMoney($contributionRecur['amount'] * $frequencyUnitTranslate[$contributionRecur['frequency_unit']] / $contributionRecur['frequency_interval']);
   }
 
-  private function calcPaymentFrequency($contributionRecur){
-    if($contributionRecur['frequency_unit'] == 'month' && $contributionRecur['frequency_interval'] == 1){
-      return 12;
+  /**
+   * extract the annual frequency from the recurring contribution
+   */
+  private function calcPaymentFrequency($contributionRecur) {
+    if (empty($contributionRecur['frequency_interval'])) {
+      // unable to calculate
+      return 0;
     }
-    //TODO
-    return 1;
-    throw new Exception('Unkown payment frequency');
+
+    if ($contributionRecur['frequency_unit'] == 'year') {
+      return 1 / $contributionRecur['frequency_interval'];
+    } else if ($contributionRecur['frequency_unit'] == 'month') {
+      return 12 / $contributionRecur['frequency_interval'];
+    } else {
+      throw new Exception("Frequency unit '{$contributionRecur['frequency_unit']}' not allowed.");
+    }
   }
 
 }

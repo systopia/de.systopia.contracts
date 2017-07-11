@@ -86,7 +86,7 @@ class CRM_Contract_SepaLogic {
 
       // calculate amount
       $frequency_interval = 12 / $frequency;
-      $amount = number_format($annual_amount / $frequency, 2);
+      $amount = self::formatMoney($annual_amount / $frequency);
       if ($amount < 0.01) {
         throw new Exception("Installment amount too small");
       }
