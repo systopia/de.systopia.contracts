@@ -171,6 +171,7 @@ function updatePaymentSummaryText() {
     // render the current SEPA values
     var current_values  = CRM.vars['de.systopia.contract'].current_contract;
     var creditor        = CRM.vars['de.systopia.contract'].creditor;
+    var debitor_name    = CRM.vars['de.systopia.contract'].debitor_name;
     var cycle_day       = cj('[name=cycle_day]').val();
     var iban            = cj('[name=iban]').val();
     var installment     = parseMoney(cj('[name=payment_amount]').val());
@@ -203,13 +204,14 @@ function updatePaymentSummaryText() {
 
     // TODO: use template
     cj('.recurring-contribution-summary-text').html(
+      "Debitor name: " + debitor_name + "<br/>" +
+      "Debitor account: " + iban + "<br/>" +
       "Creditor name: " + creditor.name + "<br/>" +
+      "Creditor account: " + creditor.iban + "<br/>" +
       "Payment method: SEPA Direct Debit<br/>" +
       "Frequency: " + freqency_label + "<br/>" +
       "Annual amount: " + annual + " EUR<br/>" +
       "Installment amount: " + installment.toFixed(2) + " EUR<br/>" +
-      "Organisational account: " + creditor.iban + "<br/>" +
-      "Debitor account: " + iban + "<br/>" +
       "Next debit: " + next_collection + "<br/>"
       );
   }

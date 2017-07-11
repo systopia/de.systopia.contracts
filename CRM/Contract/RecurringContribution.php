@@ -131,37 +131,47 @@ class CRM_Contract_RecurringContribution {
       'display_name' => $contact['display_name'],
       'payment_instrument' => $paymentInstruments[$cr['payment_instrument_id']],
       'frequency' => $this->writeFrequency($cr),
-      'amount' => $cr['amount'],
-      'annual_amount' => $this->calcAnnualAmount($cr),
+      'amount' => CRM_Contract_SepaLogic::formatMoney($cr['amount']),
+      'annual_amount' => CRM_Contract_SepaLogic::formatMoney($this->calcAnnualAmount($cr)),
       'next_debit' => '?',
     ];
 
     // render text
-    $result['text_summary'] = "
-      Creditor name: {$result['fields']['display_name']}<br />
-      Payment method: {$result['fields']['payment_instrument']}<br />
-      Frequency: {$result['fields']['frequency']}<br />
-      Annual amount: {$result['fields']['annual_amount']}&nbsp;EUR<br />
-      Installment amount: {$result['fields']['amount']}&nbsp;EUR<br />
-    ";
 
     // override some values for SEPA mandates
     if (in_array($cr['payment_instrument_id'], $this->getSepaPaymentInstruments())) {
       // this is a SEPA DD mandate
       $mandate = $this->getSepaByRecurringContributionId($cr['id'], $sepaMandates);
-      $result['fields']['payment_instrument'] = "SEPA";
+      $result['fields']['payment_instrument'] = "SEPA Direct Debit";
       $result['fields']['iban'] = $mandate['iban'];
       $result['fields']['org_iban'] = $sepaCreditors[$mandate['creditor_id']]['iban'];
+      $result['fields']['creditor_name'] = $sepaCreditors[$mandate['creditor_id']]['name'];
       // $result['fields']['org_iban'] = $sepa;
       // $result['fields']['org_iban'] = $cr['id'];
       $result['fields']['next_debit'] = substr($cr['next_sched_contribution_date'], 0, 10);
       $result['label'] = "SEPA, {$result['fields']['amount']} {$result['fields']['frequency']} ({$mandate['reference']})";
-      $result['text_summary'] .= "
-        Organisational account: {$result['fields']['org_iban']}<br />
+
+      $result['text_summary'] = "
+        Debitor name: {$result['fields']['display_name']}<br />
         Debitor account: {$result['fields']['iban']}<br />
-        Next debit: {$result['fields']['next_debit']}";
+        Creditor name: {$result['fields']['creditor_name']}<br />
+        Creditor account: {$result['fields']['org_iban']}<br />
+        Payment method: {$result['fields']['payment_instrument']}<br />
+        Frequency: {$result['fields']['frequency']}<br />
+        Annual amount: {$result['fields']['annual_amount']}&nbsp;EUR<br />
+        Installment amount: {$result['fields']['amount']}&nbsp;EUR<br />
+        Next debit: {$result['fields']['next_debit']}
+      ";
+
     } else {
-      // this is another recurring contribution
+      // this is a non-SEPA recurring contribution
+      $result['text_summary'] = "
+        Debitor name: {$result['fields']['display_name']}<br />
+        Payment method: {$result['fields']['payment_instrument']}<br />
+        Frequency: {$result['fields']['frequency']}<br />
+        Annual amount: {$result['fields']['annual_amount']}&nbsp;EUR<br />
+        Installment amount: {$result['fields']['amount']}&nbsp;EUR<br />
+      ";
       $result['label'] = "{$result['fields']['payment_instrument']}, {$result['fields']['amount']} {$result['fields']['frequency']}";
     }
 
@@ -189,10 +199,12 @@ class CRM_Contract_RecurringContribution {
     }else{
       $frequency = "Every {$cr['frequency_interval']} {$cr['frequency_unit']}s";
     }
+
+    // FIXME: use SepaLogic::getPaymentFrequencies
     $shortHands = [
-      'Every 12 months' => 'Annual',
-      'Every year' => 'Annual',
-      'Every month' => 'Monthly'
+      'Every 12 months' => 'annually',
+      'Every year'      => 'annually',
+      'Every month'     => 'monthly'
     ];
     if(array_key_exists($frequency, $shortHands)){
       return $shortHands[$frequency];

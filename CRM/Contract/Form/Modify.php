@@ -98,10 +98,20 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
   // Note: also used for revive
   function addUpdateFields(){
 
+    // load contact
+    if (empty($this->membership['contact_id'])) {
+      $this->contact = array('display_name' => 'Error');
+    } else {
+      $this->contact = civicrm_api3('Contact', 'getsingle', array(
+        'id'     => $this->membership['contact_id'],
+        'return' => 'display_name'));
+    }
+
     // JS for the pop up
     CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array(
       'cid'                     => $this->membership['contact_id'],
       'current_recurring'       => $this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')],
+      'debitor_name'            => $this->contact['display_name'],
       'creditor'                => CRM_Contract_SepaLogic::getCreditor(),
       // 'next_collections'        => CRM_Contract_SepaLogic::getNextCollections(),
       'frequencies'             => CRM_Contract_SepaLogic::getPaymentFrequencies(),

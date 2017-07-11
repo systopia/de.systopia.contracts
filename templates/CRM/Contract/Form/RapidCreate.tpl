@@ -247,13 +247,14 @@ function updatePaymentSummaryText() {
 
   // TODO: use template
   cj('.recurring-contribution-summary-text').html(
+    // "Debitor name: " + debitor_name + "<br/>" +
+    // "Debitor account: " + iban + "<br/>" +
     "Creditor name: " + creditor.name + "<br/>" +
+    "Creditor account: " + creditor.iban + "<br/>" +
     "Payment method: SEPA Direct Debit<br/>" +
     "Frequency: " + freqency_label + "<br/>" +
     "Annual amount: " + annual + " EUR<br/>" +
     "Installment amount: " + installment.toFixed(2) + " EUR<br/>" +
-    "Organisational account: " + creditor.iban + "<br/>" +
-    "Debitor account: " + iban + "<br/>" +
     "Next debit: " + first_collection + "<br/>"
     );
 }
