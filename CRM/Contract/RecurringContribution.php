@@ -41,7 +41,7 @@ class CRM_Contract_RecurringContribution {
 
     // load mandate
     $sepaMandates = civicrm_api3('SepaMandate', 'get', [
-      'contact_id'   => $cid,
+      'contact_id'   => $contact_id,
       'type'         => 'RCUR',
       'entity_table' => 'civicrm_contribution_recur',
       'entity_id'    => $recurring_contribution_id,

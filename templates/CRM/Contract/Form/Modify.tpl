@@ -244,9 +244,11 @@ function parseMoney(raw_value) {
   return parseFloat(stripped_value);
 }
 // call once for the UI to adjust
-cj("#payment_option").trigger('change');
-cj("div.payment-modify").change(updatePaymentSummaryText);
-cj("#activity_date").change(updatePaymentSummaryText);
+cj(document).ready(function() {
+  cj("#payment_option").trigger('change');
+  cj("div.payment-modify").change(updatePaymentSummaryText);
+  cj("#activity_date").parent().parent().change(updatePaymentSummaryText);
+});
 
 </script>
 {/literal}
