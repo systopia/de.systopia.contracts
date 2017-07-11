@@ -477,6 +477,6 @@ class CRM_Contract_SepaLogic {
     // prep script and inject
     $script = file_get_contents(__DIR__ . '/../../js/sepa_tools.js');
     $script = str_replace('SEPA_CREDITOR_PARAMETERS', json_encode($creditor_parameters), $script);
-    CRM_Core_Region::instance('page-footer')->add(array('script' => $script));
+    CRM_Core_Region::instance('page-header')->add(array('script' => $script));
   }
 }

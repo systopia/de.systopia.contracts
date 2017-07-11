@@ -25,9 +25,11 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array(
       'cid'                     => $this->get('cid'),
       'creditor'                => CRM_Contract_SepaLogic::getCreditor(),
-      'next_collections'        => CRM_Contract_SepaLogic::getNextCollections(),
+      // 'next_collections'        => CRM_Contract_SepaLogic::getNextCollections(),
       'frequencies'             => CRM_Contract_SepaLogic::getPaymentFrequencies(),
+      'grace_end'               => NULL,
       'recurring_contributions' => CRM_Contract_RecurringContribution::getAllForContact($this->get('cid'))));
+    CRM_Contract_SepaLogic::addJsSepaTools();
 
     // Payment dates
     $this->add('select', 'payment_option', ts('Payment'), array('create' => 'create new mandate', 'select' => 'select existing contract'));

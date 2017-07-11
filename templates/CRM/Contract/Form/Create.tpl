@@ -168,8 +168,9 @@ function updatePaymentSummaryText() {
     var installment     = parseMoney(cj('[name=payment_amount]').val());
     var freqency        = cj('[name=payment_frequency]').val();
     var freqency_label  = CRM.vars['de.systopia.contract'].frequencies[freqency];
-    var next_collection = CRM.vars['de.systopia.contract'].next_collections[cycle_day];
+    var start_date      = cj('[name=start_date]').val();
     var annual          = 0.0;
+    var first_collection = nextCollectionDate(cycle_day, start_date);
 
     // caculcate the installment
     if (!isNaN(installment)) {
@@ -185,7 +186,7 @@ function updatePaymentSummaryText() {
       "Installment amount: " + installment.toFixed(2) + " EUR<br/>" +
       "Organisational account: " + creditor.iban + "<br/>" +
       "Debitor account: " + iban + "<br/>" +
-      "Next debit: " + next_collection + "<br/>"
+      "Next debit: " + first_collection + "<br/>"
       );
   }
 }
@@ -220,7 +221,12 @@ function parseMoney(raw_value) {
 }
 
 // call once for the UI to adjust
-cj("#payment_option").trigger('change');
-cj("div.payment-create").change(updatePaymentSummaryText);
+// call once for the UI to adjust
+cj(document).ready(function() {
+  cj("#payment_option").trigger('change');
+  cj("div.payment-create").change(updatePaymentSummaryText);
+  cj("#start_date").parent().parent().change(updatePaymentSummaryText);
+});
+
 </script>
 {/literal}
