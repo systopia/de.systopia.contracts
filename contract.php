@@ -134,10 +134,19 @@ function contract_civicrm_buildForm($formName, &$form) {
     // Membership form in view mode
     case 'CRM_Member_Form_MembershipView':
       $contactId = CRM_Utils_Request::retrieve('cid', 'Positive', $form);
+
       $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
       $formUtils->replaceIdWithLabel('membership_payment.membership_recurring_contribution', 'ContributionRecur');
       $formUtils->replaceIdWithLabel('membership_payment.to_ba', 'BankAccountReference');
       $formUtils->replaceIdWithLabel('membership_payment.from_ba', 'BankAccountReference');
+
+      // add download link (GP-468)
+      // Add link for contract download
+      $membershipId = CRM_Utils_Request::retrieve('id', 'Positive', $form);
+      $modifyForm = new CRM_Contract_FormUtils($form, 'Membership');
+      $modifyForm->showPaymentContractDetails();
+      $modifyForm->addMembershipContractFileDownloadLink($membershipId);
+
       break;
 
     // Membership form in add mode
@@ -284,8 +293,10 @@ function contract_civicrm_post($op, $objectName, $id, &$objectRef){
   }
 }
 
+/**
+ * Add config link
+ */
 function contract_civicrm_navigationMenu(&$menus){
-
   // Find the mailing menu
   foreach($menus as &$menu){
     if($menu['attributes']['name'] == 'Memberships'){
