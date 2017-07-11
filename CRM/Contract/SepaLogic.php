@@ -187,8 +187,9 @@ class CRM_Contract_SepaLogic {
       } else {
         throw new Exception("Mandate is not active, cannot be paused");
       }
+
     } else {
-      // TODO: what to do with NO/NON-SEPA recurring contributions?
+      // NON-SEPA contributions not be changed, see GP-796
     }
   }
 
@@ -207,8 +208,9 @@ class CRM_Contract_SepaLogic {
       } else {
         throw new Exception(" Mandate is not paused, cannot be activated");
       }
+
     } else {
-      // TODO: what to do with NO/NON-SEPA recurring contributions?
+      // NON-SEPA contributions not be changed, see GP-796
     }
   }
 
