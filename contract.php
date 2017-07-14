@@ -154,7 +154,6 @@ function contract_civicrm_buildForm($formName, &$form) {
       $id = CRM_Utils_Request::retrieve('id', 'Positive', $form);
 
       if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
-
         // Use JS to hide form elements
         CRM_Core_Resources::singleton()->addScriptFile( 'de.systopia.contract', 'templates/CRM/Member/Form/Membership.js' );
         $filteredMembershipStatuses = civicrm_api3('MembershipStatus', 'get', ['name' => ['IN' => ['Current', 'Cancelled']]]);
@@ -186,13 +185,18 @@ function contract_civicrm_buildForm($formName, &$form) {
           $formUtils->removeMembershipEditDisallowedCustomFields();
         }
       }
+
       if($form->getAction() === CRM_Core_Action::ADD){
         if($cid = CRM_Utils_Request::retrieve('cid', 'Integer')){
           CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/contract/create', 'cid='.$cid, true));
         }else{
           CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/contract/rapidcreate', true));
-
         }
+      }
+
+      // workaround for GP-671
+      if ($form->getAction() === CRM_Core_Action::UPDATE) {
+        CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'js/membership_edit_protection.js' );
       }
       break;
 
