@@ -58,7 +58,7 @@ class CRM_Contract_SepaLogic {
     $mandate_relevant_changes = array();
     foreach ($mandate_relevant_fields as $desired_field_name => $current_field_name) {
       if (    isset($desired_state[$desired_field_name])
-           && $desired_state[$desired_field_name] != $current_state[$current_field_name]) {
+           && $desired_state[$desired_field_name] != CRM_Utils_Array::value($current_field_name, $current_state)) {
         $mandate_relevant_changes[] = $desired_field_name;
       }
     }
@@ -72,11 +72,44 @@ class CRM_Contract_SepaLogic {
       //  on the parameters. See GP-669 / GP-789
 
       // get the right values (desired first, else from current)
-      $from_ba       = CRM_Utils_Array::value('contract_updates.ch_from_ba', $desired_state, CRM_Utils_Array::value('membership_payment.from_ba', $current_state));
-      $cycle_day     = (int) CRM_Utils_Array::value('contract_updates.ch_cycle_day', $desired_state, CRM_Utils_Array::value('membership_payment.cycle_day', $current_state));
-      $annual_amount = CRM_Utils_Array::value('contract_updates.ch_annual', $desired_state, CRM_Utils_Array::value('membership_payment.membership_annual', $current_state));
-      $frequency     = (int) CRM_Utils_Array::value('contract_updates.ch_frequency', $desired_state, CRM_Utils_Array::value('membership_payment.membership_frequency', $current_state));
-      $campaign_id   = CRM_Utils_Array::value('campaign_id', $activity, CRM_Utils_Array::value('campaign_id', $current_state));
+      $from_ba       = CRM_Utils_Array::value('contract_updates.ch_from_ba', $desired_state,
+                        /* fallback: membership */ CRM_Utils_Array::value('membership_payment.from_ba', $current_state));
+      $cycle_day     = (int) CRM_Utils_Array::value('contract_updates.ch_cycle_day', $desired_state,
+                        /* fallback: membership */ CRM_Utils_Array::value('membership_payment.cycle_day', $current_state));
+      $annual_amount = CRM_Utils_Array::value('contract_updates.ch_annual', $desired_state,
+                        /* fallback: membership */ CRM_Utils_Array::value('membership_payment.membership_annual', $current_state));
+      $frequency     = (int) CRM_Utils_Array::value('contract_updates.ch_frequency',
+                        /* fallback: membership */ $desired_state, CRM_Utils_Array::value('membership_payment.membership_frequency', $current_state));
+      $campaign_id   = CRM_Utils_Array::value('campaign_id', $activity,
+                        /* fallback: membership */ CRM_Utils_Array::value('campaign_id', $current_state));
+
+      // fallback 2: take (still) missing from connected recurring contribution
+      if (empty($cycle_day) || empty($frequency) || empty($annual_amount) || empty($from_ba)) {
+        $recurring_contribution_id = (int) CRM_Utils_Array::value('membership_payment.membership_recurring_contribution', $current_state);
+        if ($recurring_contribution_id) {
+          $recurring_contribution = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $recurring_contribution_id));
+          if (empty($cycle_day)) {
+            $cycle_day = $recurring_contribution['cycle_day'];
+          }
+          if (empty($frequency)) {
+            if ($recurring_contribution['frequency_unit'] == 'month') {
+              $frequency = 12 / $recurring_contribution['frequency_interval'];
+            } if ($recurring_contribution['frequency_unit'] == 'year') {
+              $frequency = 1 / $recurring_contribution['frequency_interval'];
+            }
+          }
+          if (empty($annual_amount)) {
+            $annual_amount = self::formatMoney($recurring_contribution['amount'] * $frequency);
+          }
+          if (empty($from_ba)) {
+            $mandate = self::getMandateForRecurringContributionID($recurring_contribution_id);
+            if ($mandate) {
+              $from_ba = CRM_Contract_BankingLogic::getOrCreateBankAccount($current_state['contact_id'], $mandate['iban'], $mandate['bic']);
+            }
+          }
+        }
+      }
+
 
       // calculate some stuff
       if ($cycle_day < 1 || $cycle_day > 30) {
