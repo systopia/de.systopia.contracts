@@ -140,11 +140,10 @@ function contract_civicrm_buildForm($formName, &$form) {
       $formUtils->replaceIdWithLabel('membership_payment.to_ba', 'BankAccountReference');
       $formUtils->replaceIdWithLabel('membership_payment.from_ba', 'BankAccountReference');
 
-      // add download link (GP-468)
+      // Add link for contract download
       $membershipId = CRM_Utils_Request::retrieve('id', 'Positive', $form);
-      $modifyForm = new CRM_Contract_FormUtils($form, 'Membership');
-      $modifyForm->addMembershipContractFileDownloadLink($membershipId);
-
+      // removed: $formUtils->showPaymentContractDetails();
+      $formUtils->addMembershipContractFileDownloadLink($membershipId);
       break;
 
     // Membership form in add mode
