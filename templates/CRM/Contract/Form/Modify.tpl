@@ -184,7 +184,7 @@ function updatePaymentSummaryText() {
     // In case of an update (not revive), we need to respect the already paid period, see #771
     var next_collection = '';
     if (CRM.vars['de.systopia.contract'].action == 'update') {
-      next_collection = nextCollectionDate(cycle_day, start_date, CRM.vars['de.systopia.contract'].frequencies.grace_end);
+      next_collection = nextCollectionDate(cycle_day, start_date, CRM.vars['de.systopia.contract'].grace_end);
     } else {
       next_collection = nextCollectionDate(cycle_day, start_date, null);
     }

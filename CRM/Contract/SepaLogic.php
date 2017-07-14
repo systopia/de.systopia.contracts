@@ -270,7 +270,9 @@ class CRM_Contract_SepaLogic {
     // check if it is a proper update
     if ($contribution_recur_id && $activity['activity_type_id'] == $update_activity_type) {
       // load last successull collection for the recurring contribution
-      return self::getNextInstallmentDate($contribution_recur_id);
+      $calculated_date = self::getNextInstallmentDate($contribution_recur_id);
+      // re-format date (returned as 'Y-m-d H:i:s') and return
+      return date('YmdHis', strtotime($calculated_date));
     }
 
     return $now;
@@ -282,10 +284,10 @@ class CRM_Contract_SepaLogic {
    *  of the give recurring contribution
    * If no such contribution is found, the current date is returned
    *
-   * @return string date or NULL if not found
+   * @return string date ('Y-m-d H:i:s')
    */
   public static function getNextInstallmentDate($contribution_recur_id) {
-    $now = date('YmdHis');
+    $now = date('Y-m-d H:i:s');
 
     if (!$contribution_recur_id) {
       return $now;
@@ -309,7 +311,7 @@ class CRM_Contract_SepaLogic {
         'return' => 'frequency_unit,frequency_interval'));
 
       // now calculate the next collection date
-      $start_date = date('YmdHis', strtotime("{$last_collection['receive_date']} + {$contribution_recur['frequency_interval']} {$contribution_recur['frequency_unit']}"));
+      $start_date = date('Y-m-d H:i:s', strtotime("{$last_collection['receive_date']} + {$contribution_recur['frequency_interval']} {$contribution_recur['frequency_unit']}"));
       if ($start_date > $now) {
         // only makes sense if in the future
         return $start_date;
