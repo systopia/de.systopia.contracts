@@ -321,11 +321,15 @@ class CRM_Contract_SepaLogic {
     // check recurring contribution start date
     $contribution_recur = civicrm_api3('ContributionRecur', 'getsingle', array(
       'id'     => $contribution_recur_id,
-      'return' => 'start_date'));
-    if (!empty($contribution_recur['start_date'])) {
-      $start_date = date('Y-m-d H:i:s', strtotime($contribution_recur['start_date']));
-      if ($start_date > $now) {
-        return $start_date;
+      'return' => 'start_date,contribution_status_id'));
+    if (!empty($contribution_recur['start_date']) && !empty($contribution_recur['contribution_status_id'])) {
+      $status_id = (int) $contribution_recur['contribution_status_id'];
+      // only consider active recurring contributions (2=Pending, 5=in Progress)
+      if ($status_id == 2 || $status_id == 5) {
+        $start_date = date('Y-m-d H:i:s', strtotime($contribution_recur['start_date']));
+        if ($start_date > $now) {
+          return $start_date;
+        }
       }
     }
 
