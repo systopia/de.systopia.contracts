@@ -308,7 +308,7 @@ class CRM_Contract_SepaLogic {
       // load recurring contribution
       $contribution_recur = civicrm_api3('ContributionRecur', 'getsingle', array(
         'id'     => $contribution_recur_id,
-        'return' => 'frequency_unit,frequency_interval'));
+        'return' => 'frequency_unit,frequency_interval,start_date'));
 
       // now calculate the next collection date
       $next_collection = date('Y-m-d H:i:s', strtotime("{$last_collection['receive_date']} + {$contribution_recur['frequency_interval']} {$contribution_recur['frequency_unit']}"));
