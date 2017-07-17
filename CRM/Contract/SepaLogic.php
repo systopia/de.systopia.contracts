@@ -311,10 +311,15 @@ class CRM_Contract_SepaLogic {
         'return' => 'frequency_unit,frequency_interval'));
 
       // now calculate the next collection date
-      $start_date = date('Y-m-d H:i:s', strtotime("{$last_collection['receive_date']} + {$contribution_recur['frequency_interval']} {$contribution_recur['frequency_unit']}"));
-      if ($start_date > $now) {
+      $next_collection = date('Y-m-d H:i:s', strtotime("{$last_collection['receive_date']} + {$contribution_recur['frequency_interval']} {$contribution_recur['frequency_unit']}"));
+      if ($next_collection > $now) {
         // only makes sense if in the future
-        return $start_date;
+        return $next_collection;
+      } else {
+        $start_date = date('Y-m-d H:i:s', strtotime($contribution_recur['start_date']));
+        if ($start_date > $now) {
+          return $start_date;
+        }
       }
     }
 
