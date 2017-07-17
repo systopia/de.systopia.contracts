@@ -308,18 +308,24 @@ class CRM_Contract_SepaLogic {
       // load recurring contribution
       $contribution_recur = civicrm_api3('ContributionRecur', 'getsingle', array(
         'id'     => $contribution_recur_id,
-        'return' => 'frequency_unit,frequency_interval,start_date'));
+        'return' => 'frequency_unit,frequency_interval'));
 
       // now calculate the next collection date
       $next_collection = date('Y-m-d H:i:s', strtotime("{$last_collection['receive_date']} + {$contribution_recur['frequency_interval']} {$contribution_recur['frequency_unit']}"));
       if ($next_collection > $now) {
         // only makes sense if in the future
         return $next_collection;
-      } else {
-        $start_date = date('Y-m-d H:i:s', strtotime($contribution_recur['start_date']));
-        if ($start_date > $now) {
-          return $start_date;
-        }
+      }
+    }
+
+    // check recurring contribution start date
+    $contribution_recur = civicrm_api3('ContributionRecur', 'getsingle', array(
+      'id'     => $contribution_recur_id,
+      'return' => 'start_date'));
+    if (!empty($contribution_recur['start_date'])) {
+      $start_date = date('Y-m-d H:i:s', strtotime($contribution_recur['start_date']));
+      if ($start_date > $now) {
+        return $start_date;
       }
     }
 
