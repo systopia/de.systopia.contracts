@@ -49,6 +49,8 @@ class CRM_Contract_FormUtils
             $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = $this->recurringContribution->writePaymentContractLabel($entityResult);
           }elseif($entity == 'BankAccountReference'){
             $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = CRM_Contract_BankingLogic::getIBANforBankAccount($entityId);
+          }elseif($entity == 'PaymentInstrument'){
+            $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $entityId, 'option_group_id' => "payment_instrument" ]);
           }
           // Write nice text and return this to the template
           $this->form->assign('viewCustomData', $details);
@@ -147,4 +149,3 @@ class CRM_Contract_FormUtils
       }
     }
 }
-

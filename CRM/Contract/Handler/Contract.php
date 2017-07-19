@@ -222,6 +222,7 @@ class CRM_Contract_Handler_Contract{
       $params['membership_payment.membership_annual']    = $this->calcAnnualAmount($contributionRecur);
       $params['membership_payment.membership_frequency'] = $this->calcPaymentFrequency($contributionRecur);
       $params['membership_payment.cycle_day'] = $contributionRecur['cycle_day'];
+      $params['membership_payment.payment_instrument'] = $contributionRecur['payment_instrument_id'];
 
       //If this is a sepa payment, get the 'to' and 'from' bank account
       $sepaMandateResult = civicrm_api3('SepaMandate', 'get', array(
