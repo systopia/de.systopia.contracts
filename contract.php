@@ -201,6 +201,8 @@ function contract_civicrm_buildForm($formName, &$form) {
 
     //Activity form in view mode
     case 'CRM_Activity_Form_Activity':
+    case 'CRM_Fastactivity_Form_Add':
+    case 'CRM_Fastactivity_Form_View':
       if($form->getAction() == CRM_Core_Action::VIEW){
 
         // Show recurring contribution details
