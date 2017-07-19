@@ -301,6 +301,11 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
       $tshirtActivityParams['custom_'.$webshopCustomFields['shirt_size']] = $submitted['shirt_size'];
       $tshirtActivityParams['custom_'.$webshopCustomFields['linked_membership']] = $contract['id'];
 
+      // write subject line for tshirt order
+      $shirtSizeLabel = civicrm_api3('OptionValue', 'getvalue', ['option_group_id' => 'shirt_size', 'value' => $submitted['shirt_size'], 'return' => 'label']);
+      $shirtTypeLabel = civicrm_api3('OptionValue', 'getvalue', ['option_group_id' => 'shirt_type', 'value' => $submitted['shirt_type'], 'return' => 'label']);
+      $tshirtActivityParams['subject_line'] = "order type T-Shirt AND t-shirt type {$shirtTypeLabel} AND t-shirt size {$shirtSizeLabel} AND number of items 1";
+
       $tshirtResult = civicrm_api3('Activity', 'create', $tshirtActivityParams);
     }
 
