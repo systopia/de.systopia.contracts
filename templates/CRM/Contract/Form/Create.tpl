@@ -162,14 +162,16 @@ function updatePaymentSummaryText() {
     }
   } else if (mode == "create") {
     // render the current SEPA values
-    var creditor = CRM.vars['de.systopia.contract'].creditor;
+    var creditor        = CRM.vars['de.systopia.contract'].creditor;
+    var debitor_name    = CRM.vars['de.systopia.contract'].debitor_name;
     var cycle_day       = cj('[name=cycle_day]').val();
     var iban            = cj('[name=iban]').val();
     var installment     = parseMoney(cj('[name=payment_amount]').val());
     var freqency        = cj('[name=payment_frequency]').val();
     var freqency_label  = CRM.vars['de.systopia.contract'].frequencies[freqency];
-    var next_collection = CRM.vars['de.systopia.contract'].next_collections[cycle_day];
+    var start_date      = cj('[name=start_date]').val();
     var annual          = 0.0;
+    var first_collection = nextCollectionDate(cycle_day, start_date);
 
     // caculcate the installment
     if (!isNaN(installment)) {
@@ -178,49 +180,25 @@ function updatePaymentSummaryText() {
 
     // TODO: use template
     cj('.recurring-contribution-summary-text').html(
+      "Debitor name: " + debitor_name + "<br/>" +
+      "Debitor account: " + iban + "<br/>" +
       "Creditor name: " + creditor.name + "<br/>" +
+      "Creditor account: " + creditor.iban + "<br/>" +
       "Payment method: SEPA Direct Debit<br/>" +
       "Frequency: " + freqency_label + "<br/>" +
       "Annual amount: " + annual + " EUR<br/>" +
       "Installment amount: " + installment.toFixed(2) + " EUR<br/>" +
-      "Organisational account: " + creditor.iban + "<br/>" +
-      "Debitor account: " + iban + "<br/>" +
-      "Next debit: " + next_collection + "<br/>"
+      "Next debit: " + first_collection + "<br/>"
       );
   }
 }
 
-/**
- * formats a value to the CiviCRM failsafe format: 0.00 (e.g. 999999.90)
- * even if there are ',' in there, which are used in some countries
- * (e.g. Germany, Austria,) as a decimal point.
- * @see CRM_Contract_SepaLogic::formatMoney
- */
-function parseMoney(raw_value) {
-  if (raw_value.length == 0) {
-    return 0.0;
-  }
-
-  // find out if there's a problem with ','
-  var stripped_value = raw_value.replace(' ', '');
-  if (stripped_value.includes(',')) {
-    // if there are at least three digits after the ','
-    //  it's a thousands separator
-    if (stripped_value.match('#,\d{3}#')) {
-      // it's a thousands separator -> just strip
-      stripped_value = stripped_value.replace(',', '');
-    } else {
-      // it has to be interpreted as a decimal
-      // first remove all other decimals
-      stripped_value = stripped_value.replace('.', '');
-      stripped_value = stripped_value.replace(',', '.');
-    }
-  }
-  return parseFloat(stripped_value);
-}
-
 // call once for the UI to adjust
-cj("#payment_option").trigger('change');
-cj("div.payment-create").change(updatePaymentSummaryText);
+cj(document).ready(function() {
+  cj("#payment_option").trigger('change');
+  cj("div.payment-create").change(updatePaymentSummaryText);
+  cj("#start_date").parent().parent().change(updatePaymentSummaryText);
+});
+
 </script>
 {/literal}

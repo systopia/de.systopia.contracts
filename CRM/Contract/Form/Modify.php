@@ -11,6 +11,18 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
   function preProcess(){
 
+    // If we requested a contract file download
+    $download = CRM_Utils_Request::retrieve('ct_dl', 'String', CRM_Core_DAO::$_nullObject, FALSE, '', 'GET');
+    if (!empty($download)) {
+      // FIXME: Could use CRM_Utils_System::download but it still requires you to do all the work (load file to stream etc) before calling.
+      if (CRM_Contract_Utils::downloadContractFile($download)) {
+        CRM_Utils_System::civiExit();
+      }
+      // If the file didn't exist
+      echo "File does not exist";
+      CRM_Utils_System::civiExit();
+    }
+
     // Not sure why this isn't simpler but here is my way of ensuring that the
     // id parameter is available throughout this forms life
     $this->id = CRM_Utils_Request::retrieve('id', 'Integer');
@@ -98,17 +110,29 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
   // Note: also used for revive
   function addUpdateFields(){
 
+    // load contact
+    if (empty($this->membership['contact_id'])) {
+      $this->contact = array('display_name' => 'Error');
+    } else {
+      $this->contact = civicrm_api3('Contact', 'getsingle', array(
+        'id'     => $this->membership['contact_id'],
+        'return' => 'display_name'));
+    }
+
     // JS for the pop up
     CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array(
       'cid'                     => $this->membership['contact_id'],
       'current_recurring'       => $this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')],
+      'debitor_name'            => $this->contact['display_name'],
       'creditor'                => CRM_Contract_SepaLogic::getCreditor(),
-      'next_collections'        => CRM_Contract_SepaLogic::getNextCollections(),
+      // 'next_collections'        => CRM_Contract_SepaLogic::getNextCollections(),
       'frequencies'             => CRM_Contract_SepaLogic::getPaymentFrequencies(),
-      'graceful_collections'    => CRM_Contract_SepaLogic::getNextCollections(CRM_Contract_SepaLogic::getNextInstallmentDate($this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')])),
+      'grace_end'               => CRM_Contract_SepaLogic::getNextInstallmentDate($this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')]),
+      // 'graceful_collections'    => CRM_Contract_SepaLogic::getNextCollections(),
       'action'                  => $this->modificationActivity->getAction(),
       'current_contract'        => CRM_Contract_RecurringContribution::getCurrentContract($this->membership['contact_id'], $this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')]),
       'recurring_contributions' => CRM_Contract_RecurringContribution::getAllForContact($this->membership['contact_id'], TRUE, $this->get('id'))));
+    CRM_Contract_SepaLogic::addJsSepaTools();
 
     // add a generic switch to clean up form
     $payment_options = array(

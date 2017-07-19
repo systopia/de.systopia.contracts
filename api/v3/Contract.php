@@ -297,7 +297,9 @@ function civicrm_api3_Contract_process_scheduled_modifications($params){
 
   // Going old school and sorting by timestamp //TODO can remove *IF* the above sort by activity date time is actually working
   foreach($scheduledActivities['values'] as $k => $scheduledActivity){
-    $scheduledActivities['values'][$k]['activity_date_unixtime'] = strtotime($scheduledModification['activity_date_time']);
+    // TODO: Michael: please check this change
+    //  also: the "above sort by activity date time" is working in my tests
+    $scheduledActivities['values'][$k]['activity_date_unixtime'] = strtotime($scheduledActivity['activity_date_time']);
   }
   usort($scheduledActivities['values'], function($a, $b){
     return $a['activity_date_unixtime'] - $b['activity_date_unixtime'];

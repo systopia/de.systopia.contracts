@@ -41,4 +41,10 @@
     <title>Contract Settings</title>
     <access_arguments>administer CiviCRM</access_arguments>
   </item>
+  <item>
+    <path>civicrm/contract/download</path>
+    <page_callback>CRM_Contract_FormUtils::downloadMembershipContract</page_callback>
+    <title>Contract Download</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
 </menu>

@@ -30,7 +30,11 @@ class CRM_Contract_BankingLogic {
     if (!empty($account['data_parsed'])) {
       $data_parsed = json_decode($account['data_parsed'], TRUE);
       if ($data_parsed) {
-        $data += $data_parsed;
+        foreach ($data_parsed as $key => $value) {
+          $data[$key] = $value;
+          // also add in lower case to avoid stuff like bic/BIC confusion
+          $data[strtolower($key)] = $value;
+        }
       }
     }
 

@@ -13,21 +13,31 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
 
 
     $this->cid = CRM_Utils_Request::retrieve('cid', 'Integer');
+    if (empty($this->cid)) {
+      $this->cid = $this->get('cid');
+    }
     if($this->cid){
       $this->set('cid', $this->cid);
+    } else {
+      CRM_Core_Error::statusBounce('You have to specify a contact ID to create a new contract');
     }
+    $this->controller->_destination = CRM_Utils_System::url('civicrm/contact/view', "reset=1&cid={$this->get('cid')}&selectedChild=member");
 
     $this->assign('cid', $this->get('cid'));
-    $this->assign('contact', civicrm_api3('Contact', 'getsingle', ['id' => $this->get('cid')]));
+    $this->contact = civicrm_api3('Contact', 'getsingle', ['id' => $this->get('cid')]);
+    $this->assign('contact', $this->contact);
 
     $formUtils = new CRM_Contract_FormUtils($this, 'Membership');
     $formUtils->addPaymentContractSelect2('recurring_contribution', $this->get('cid'), false, null);
     CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array(
       'cid'                     => $this->get('cid'),
+      'debitor_name'            => $this->contact['display_name'],
       'creditor'                => CRM_Contract_SepaLogic::getCreditor(),
-      'next_collections'        => CRM_Contract_SepaLogic::getNextCollections(),
+      // 'next_collections'        => CRM_Contract_SepaLogic::getNextCollections(),
       'frequencies'             => CRM_Contract_SepaLogic::getPaymentFrequencies(),
+      'grace_end'               => NULL,
       'recurring_contributions' => CRM_Contract_RecurringContribution::getAllForContact($this->get('cid'))));
+    CRM_Contract_SepaLogic::addJsSepaTools();
 
     // Payment dates
     $this->add('select', 'payment_option', ts('Payment'), array('create' => 'create new mandate', 'select' => 'select existing contract'));

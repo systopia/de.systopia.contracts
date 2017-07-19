@@ -64,6 +64,10 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
 
 
     // ### Mandate information ###
+    CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array(
+      'creditor'    => CRM_Contract_SepaLogic::getCreditor(),
+      'frequencies' => CRM_Contract_SepaLogic::getPaymentFrequencies()));
+    CRM_Contract_SepaLogic::addJsSepaTools();
 
     $this->add('select', 'cycle_day', ts('Cycle day'), CRM_Contract_SepaLogic::getCycleDays());
     $this->add('text',   'iban', ts('IBAN'), array('class' => 'huge'), true);
@@ -152,7 +156,6 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
 
     // sepa defaults
     $defaults['payment_frequency'] = '12'; // monthly
-    $defaults['payment_option'] = 'create';
     $defaults['cycle_day'] = CRM_Contract_SepaLogic::nextCycleDay();
 
     parent::setDefaults($defaults);

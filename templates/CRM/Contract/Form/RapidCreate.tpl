@@ -68,16 +68,8 @@
   <hr/>
 
   <div class="crm-section">
-    <div class="label">{$form.payment_option.label}</div>
-    <div class="content">{$form.payment_option.html}</div>
-    <div class="clear"></div>
-  </div>
-
-  <div class="crm-section payment-select">
-    <div class="label">{$form.recurring_contribution.label}</div>
-    <div class="content">{$form.recurring_contribution.html}</div>
-    <div class="clear"></div>
-    <div class="label"></div>
+    <div class="label">Payment Preview</div>
+    <div class="content recurring-contribution-summary-text">None</div>
     <div class="clear"></div>
   </div>
 
@@ -230,3 +222,49 @@
 {if $bic_lookup_accessible}
   {include file="CRM/Contract/Form/bic_lookup.tpl" location="bottom"}
 {/if}
+
+{literal}
+<script type="text/javascript">
+/**
+ * update the payment info shown
+ */
+function updatePaymentSummaryText() {
+  // render the current SEPA values
+  var creditor        = CRM.vars['de.systopia.contract'].creditor;
+  var cycle_day       = cj('[name=cycle_day]').val();
+  var iban            = cj('[name=iban]').val();
+  var installment     = parseMoney(cj('[name=payment_amount]').val());
+  var freqency        = cj('[name=payment_frequency]').val();
+  var freqency_label  = CRM.vars['de.systopia.contract'].frequencies[freqency];
+  var start_date      = cj('[name=start_date]').val();
+  var annual          = 0.0;
+  var first_collection = nextCollectionDate(cycle_day, start_date);
+
+  // caculcate the installment
+  if (!isNaN(installment)) {
+    annual = (installment.toFixed(2) * parseFloat(freqency)).toFixed(2);
+  }
+
+  // TODO: use template
+  cj('.recurring-contribution-summary-text').html(
+    // "Debitor name: " + debitor_name + "<br/>" +
+    // "Debitor account: " + iban + "<br/>" +
+    "Creditor name: " + creditor.name + "<br/>" +
+    "Creditor account: " + creditor.iban + "<br/>" +
+    "Payment method: SEPA Direct Debit<br/>" +
+    "Frequency: " + freqency_label + "<br/>" +
+    "Annual amount: " + annual + " EUR<br/>" +
+    "Installment amount: " + installment.toFixed(2) + " EUR<br/>" +
+    "Next debit: " + first_collection + "<br/>"
+    );
+}
+
+// call once for the UI to adjust
+cj(document).ready(function() {
+  updatePaymentSummaryText();
+  cj("div.payment-create").change(updatePaymentSummaryText);
+  cj("#start_date").parent().parent().change(updatePaymentSummaryText);
+});
+
+</script>
+{/literal}

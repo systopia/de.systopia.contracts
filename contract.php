@@ -134,10 +134,16 @@ function contract_civicrm_buildForm($formName, &$form) {
     // Membership form in view mode
     case 'CRM_Member_Form_MembershipView':
       $contactId = CRM_Utils_Request::retrieve('cid', 'Positive', $form);
+
       $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
       $formUtils->replaceIdWithLabel('membership_payment.membership_recurring_contribution', 'ContributionRecur');
       $formUtils->replaceIdWithLabel('membership_payment.to_ba', 'BankAccountReference');
       $formUtils->replaceIdWithLabel('membership_payment.from_ba', 'BankAccountReference');
+
+      // Add link for contract download
+      $membershipId = CRM_Utils_Request::retrieve('id', 'Positive', $form);
+      // removed: $formUtils->showPaymentContractDetails();
+      $formUtils->addMembershipContractFileDownloadLink($membershipId);
       break;
 
     // Membership form in add mode
@@ -147,7 +153,6 @@ function contract_civicrm_buildForm($formName, &$form) {
       $id = CRM_Utils_Request::retrieve('id', 'Positive', $form);
 
       if(in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
-
         // Use JS to hide form elements
         CRM_Core_Resources::singleton()->addScriptFile( 'de.systopia.contract', 'templates/CRM/Member/Form/Membership.js' );
         $filteredMembershipStatuses = civicrm_api3('MembershipStatus', 'get', ['name' => ['IN' => ['Current', 'Cancelled']]]);
@@ -179,13 +184,18 @@ function contract_civicrm_buildForm($formName, &$form) {
           $formUtils->removeMembershipEditDisallowedCustomFields();
         }
       }
+
       if($form->getAction() === CRM_Core_Action::ADD){
         if($cid = CRM_Utils_Request::retrieve('cid', 'Integer')){
           CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/contract/create', 'cid='.$cid, true));
         }else{
           CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/contract/rapidcreate', true));
-
         }
+      }
+
+      // workaround for GP-671
+      if ($form->getAction() === CRM_Core_Action::UPDATE) {
+        CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'js/membership_edit_protection.js' );
       }
       break;
 
@@ -284,8 +294,10 @@ function contract_civicrm_post($op, $objectName, $id, &$objectRef){
   }
 }
 
+/**
+ * Add config link
+ */
 function contract_civicrm_navigationMenu(&$menus){
-
   // Find the mailing menu
   foreach($menus as &$menu){
     if($menu['attributes']['name'] == 'Memberships'){
