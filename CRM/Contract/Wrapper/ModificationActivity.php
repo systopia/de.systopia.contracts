@@ -119,43 +119,72 @@ class CRM_Contract_Wrapper_ModificationActivity{
   }
 
   function getScheduledSubjectLine($params){
+
     foreach($params as $key => $param){
       if(substr($key, 0,7) == 'custom_'){
         $params[CRM_Contract_Utils::getCustomFieldName($key)] = $param;
         unset($params[$key]);
       }
     }
-
     $deltas = [];
-    if(isset($params['contract_updates.ch_annual'])){
-      $deltas[] = 'amt. to '.$params['contract_updates.ch_annual'];
+
+    $ma = CRM_Contract_ModificationActivity::findById($params['activity_type_id']);
+
+    switch($ma->getAction()){
+      case 'update':
+      case 'revive':{
+        if(isset($params['contract_updates.ch_annual'])){
+          $deltas[] = 'amt. to '.$params['contract_updates.ch_annual'];
+        }
+        if(isset($params['contract_updates.ch_frequency'])){
+          $deltas[] = 'freq. to '.civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $params['contract_updates.ch_frequency'], 'option_group_id' => "payment_frequency" ]);
+        }
+        if(isset($params['contract_updates.ch_to_ba'])){
+          $deltas[] = 'gp iban to '.CRM_Contract_BankingLogic::getIBANforBankAccount($params['contract_updates.ch_to_ba']);
+        }
+        if(isset($params['contract_updates.ch_from_ba'])){
+          $deltas[] = 'member iban to '.CRM_Contract_BankingLogic::getIBANforBankAccount($params['contract_updates.ch_from_ba']);
+        }
+        if(isset($params['contract_updates.ch_membership_type'])){
+          $deltas[] = 'type to '.civicrm_api3('MembershipType', 'getvalue', [ 'return' => "name", 'id' => $params['contract_updates.ch_membership_type']]);
+        }
+        if(isset($params['contract_updates.ch_cycle_day'])){
+          $deltas[] = 'cyle day to '.$params['contract_updates.ch_cycle_day'];
+        }
+        if(isset($params['contract_updates.ch_payment_instrument'])){
+          $deltas[] = 'payment method to '.$params['contract_updates.ch_payment_instrument'];
+        }
+        $subject = "id{$params['source_record_id']}: ".implode(' AND ', $deltas);
+        break;
+      }
+      case 'cancel':
+        $subject = "id{$params['source_record_id']}: ";
+        $cancelText[] = 'cancel reason '.civicrm_api3('OptionValue', 'getvalue', [ 'return' => "label", 'value' => $params['contract_cancellation.contact_history_cancel_reason']]);
+        $subject .= implode(' AND ', $cancelText);
+        break;
+      case 'pause':
+        if(isset($params['resume_date'])){
+          $resumeDate = DateTime::createFromFormat('Y-m-d', $params['resume_date']);
+          $subject = "id{$params['source_record_id']}: resume scheduled {$resumeDate->format('d/m/Y')}";
+        }else{
+          $subject = "id{$params['source_record_id']}.";
+        }
+        break;
+      case 'resume':
+        // var_dump($this->modificationActivity['activity_date_time']);
+        $subject = "id{$params['source_record_id']}.";
+        break;
     }
-    if(isset($params['contract_updates.ch_frequency'])){
-      $deltas[] = 'freq. to '.civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $params['contract_updates.ch_frequency'], 'option_group_id' => "payment_frequency" ]);
-    }
-    if(isset($params['contract_updates.ch_to_ba'])){
-      $deltas[] = 'gp iban to '.CRM_Contract_BankingLogic::getIBANforBankAccount($params['contract_updates.ch_to_ba']);
-    }
-    if(isset($params['contract_updates.ch_from_ba'])){
-      $deltas[] = 'member iban to '.CRM_Contract_BankingLogic::getIBANforBankAccount($params['contract_updates.ch_from_ba']);
-    }
-    if(isset($params['contract_updates.ch_membership_type'])){
-      $deltas[] = 'type to '.civicrm_api3('MembershipType', 'getvalue', [ 'return' => "name", 'id' => $params['contract_updates.ch_membership_type']]);;
-    }
-    if(isset($params['contract_updates.ch_cycle_day'])){
-      $deltas[] = 'cyle day to '.$params['contract_updates.ch_cycle_day'];
-    }
-    if(isset($params['contract_updates.ch_payment_instrument'])){
-      $deltas[] = 'payment method to '.$params['contract_updates.ch_payment_instrument'];
-    }
-    $subject = "id{$params['source_record_id']}: ".implode(' AND ', $deltas);
+
     return $subject;
   }
 
-  // It feels prudent to unset all values of this wrapper once we are finished
-  // with it so ensure that if and when it is run multiple times in one
-  // execution, it is not polluted with details from previous runs
-  // information from previous
+  /**
+   * It feels prudent to unset all values of this wrapper once we are finished
+   * with it so ensure that if and when it is run multiple times in one
+   * execution, it is not polluted with details from previous runs
+   * information from previous
+   */
   function reset(){
     unset($this->op);
     unset($this->startState);
