@@ -306,6 +306,10 @@ class CRM_Contract_Handler_Contract{
     unset($params['campaign_id']);
     $params['skip_handler'] = true;
 
+    if($this->modificationClass->getAction() == 'revive'){
+      unset($params[CRM_Contract_Utils::getCustomFieldId('contract_cancellation.contact_history_cancel_reason')]);
+    }
+
     // Reload the entity so that we use its values later (e.g. in setting the
     // contract cancel date)
     $params['options']['reload'] = true;
