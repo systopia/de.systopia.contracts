@@ -35,6 +35,7 @@ function civicrm_api3_Contract_create($params){
     $activity = civicrm_api3('Activity', 'create', [
       'id' => $activity['id'],
       'details' => $params['note'],
+      'activity_date_time' => date('YmdHi00'),
       'medium_id' => $params['medium_id']
     ]);
     return $membership;
@@ -97,7 +98,7 @@ function civicrm_api3_Contract_modify($params){
   // Start populating the activity parameters
   $activityParams['status_id'] = 'scheduled';
   $activityParams['activity_type_id'] = $class->getActivityType();
-  $activityParams['activity_date_time'] = $date->format('Y-m-d H:i:s');
+  $activityParams['activity_date_time'] = $date->format('Y-m-d H:i:00');
   $activityParams['source_record_id'] = $params['id'];
   $activityParams['medium_id'] = $params['medium_id'];
   $activityParams['details'] = $params['note'];
@@ -197,7 +198,7 @@ function civicrm_api3_Contract_modify($params){
       'activity_type_id' => 'Contract_Resumed',
       'target_contact_id' => $membershipParams['contact_id'],
       'source_contact_id' => $sourceContactId,
-      'activity_date_time' => $resumeDate->format('Y-m-d H:i:s')
+      'activity_date_time' => $resumeDate->format('Y-m-d H:i:00')
     ]);
   }
   $result['membership'] = civicrm_api3('membership', 'getsingle', ['id' => $params['id']]);

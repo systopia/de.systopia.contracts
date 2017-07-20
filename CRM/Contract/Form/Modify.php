@@ -201,7 +201,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     $defaults['membership_type_id'] = $this->membership['membership_type_id'];
 
-    list($defaults['activity_date'], $defaults['activity_date_time']) = CRM_Utils_Date::setDateDefaults(date('Y-m-d H:i:s'), 'activityDateTime');
+    list($defaults['activity_date'], $defaults['activity_date_time']) = CRM_Utils_Date::setDateDefaults(date('Y-m-d H:i:00'), 'activityDateTime');
 
 
     parent::setDefaults($defaults);
