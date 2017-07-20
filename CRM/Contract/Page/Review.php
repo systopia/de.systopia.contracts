@@ -29,7 +29,7 @@ class CRM_Contract_Page_Review extends CRM_Core_Page {
         'campaign_id',
         'medium_id'
       ],
-      'option.sort'        => 'activity_date_time DESC',
+      'option.sort'        => ['activity_date_time DESC', 'id DESC'],
 
     ];
     foreach(civicrm_api3('CustomField', 'get', [ 'custom_group_id' => ['IN' => ['contract_cancellation', 'contract_updates']]])['values'] as $customField){

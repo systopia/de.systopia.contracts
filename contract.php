@@ -137,6 +137,7 @@ function contract_civicrm_buildForm($formName, &$form) {
 
       $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
       $formUtils->replaceIdWithLabel('membership_payment.membership_recurring_contribution', 'ContributionRecur');
+      $formUtils->replaceIdWithLabel('membership_payment.payment_instrument', 'PaymentInstrument');
       $formUtils->replaceIdWithLabel('membership_payment.to_ba', 'BankAccountReference');
       $formUtils->replaceIdWithLabel('membership_payment.from_ba', 'BankAccountReference');
 
@@ -209,6 +210,7 @@ function contract_civicrm_buildForm($formName, &$form) {
         $id =  CRM_Utils_Request::retrieve('id', 'Positive', $form);
         $formUtils = new CRM_Contract_FormUtils($form, 'Activity');
         $formUtils->replaceIdWithLabel('contract_updates.ch_recurring_contribution', 'ContributionRecur');
+        $formUtils->replaceIdWithLabel('contract_updates.ch_payment_instrument', 'PaymentInstrument');
         $formUtils->replaceIdWithLabel('contract_updates.ch_from_ba', 'BankAccountReference');
         $formUtils->replaceIdWithLabel('contract_updates.ch_to_ba', 'BankAccountReference');
 

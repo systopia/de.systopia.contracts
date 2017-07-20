@@ -131,6 +131,10 @@
 // add listener to payment_option selector
 cj("#payment_option").change(function() {
   updatePaymentSummaryText();
+  showHidePaymentElements();
+});
+
+function showHidePaymentElements(){
   var new_mode = cj("#payment_option").val();
   if (new_mode == "select") {
     cj("div.payment-select").show(300);
@@ -142,7 +146,8 @@ cj("#payment_option").change(function() {
     cj("div.payment-select").hide(300);
     cj("div.payment-modify").hide(300);
   }
-});
+}
+
 
 
 /**
@@ -219,10 +224,10 @@ function updatePaymentSummaryText() {
 
 // call once for the UI to adjust
 cj(document).ready(function() {
+  showHidePaymentElements();
   cj('[name=recurring_contribution]').change(updatePaymentSummaryText);
   cj("div.payment-modify").change(updatePaymentSummaryText);
   cj("#activity_date").parent().parent().change(updatePaymentSummaryText);
-  updatePaymentSummaryText();
 });
 
 </script>

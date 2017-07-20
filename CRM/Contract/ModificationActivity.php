@@ -7,7 +7,7 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-class CRM_Contract_ModificationActivity{
+abstract class CRM_Contract_ModificationActivity{
 
   var $errors = array();
 
@@ -41,6 +41,12 @@ class CRM_Contract_ModificationActivity{
 
   }
 
+  /**
+   * finds an appropriate child of the CRM_Contract_ModificationActivity when
+   * given the activityTypeId of the corresponding activity type
+   * @param int $id the activityTypeId of the corresponding activity type
+   * @return CRM_Contract_ModificationActivity
+   */
   static function findById($id){
     $name = civicrm_api3('OptionValue', 'getsingle', ['option_group_id' => 'activity_type', 'value' => $id, 'return' => 'name'])['name'];
     foreach (self::$modificationActivityClasses as $class) {
@@ -161,5 +167,6 @@ class CRM_Contract_ModificationActivity{
     return $this->errors;
   }
 
+  abstract function getAction();
 
 }

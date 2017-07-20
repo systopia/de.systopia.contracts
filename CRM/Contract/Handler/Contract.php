@@ -222,6 +222,7 @@ class CRM_Contract_Handler_Contract{
       $params['membership_payment.membership_annual']    = $this->calcAnnualAmount($contributionRecur);
       $params['membership_payment.membership_frequency'] = $this->calcPaymentFrequency($contributionRecur);
       $params['membership_payment.cycle_day'] = $contributionRecur['cycle_day'];
+      $params['membership_payment.payment_instrument'] = $contributionRecur['payment_instrument_id'];
 
       //If this is a sepa payment, get the 'to' and 'from' bank account
       $sepaMandateResult = civicrm_api3('SepaMandate', 'get', array(
@@ -305,6 +306,10 @@ class CRM_Contract_Handler_Contract{
     // create another membership.
     unset($params['campaign_id']);
     $params['skip_handler'] = true;
+
+    if($this->modificationClass->getAction() == 'revive'){
+      unset($params[CRM_Contract_Utils::getCustomFieldId('contract_cancellation.contact_history_cancel_reason')]);
+    }
 
     // Reload the entity so that we use its values later (e.g. in setting the
     // contract cancel date)
