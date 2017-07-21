@@ -172,7 +172,9 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
   function addCancelFields(){
 
     // Cancel reason
-    foreach(civicrm_api3('OptionValue', 'get', ['option_group_id' => "contract_cancel_reason"])['values'] as $cancelReason){
+    foreach(civicrm_api3('OptionValue', 'get', array(
+      'option_group_id' => 'contract_cancel_reason',
+      'is_active'       => 1))['values'] as $cancelReason){
       $cancelOptions[$cancelReason['value']] = $cancelReason['label'];
     };
     $this->addRule('activity_date', 'Scheduled date is required for a cancellation', 'required');
