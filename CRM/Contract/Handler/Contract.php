@@ -307,7 +307,7 @@ class CRM_Contract_Handler_Contract{
     unset($params['campaign_id']);
     $params['skip_handler'] = true;
 
-    if($this->modificationClass->getAction() == 'revive'){
+    if($this->modificationClass->getAction() != 'cancel'){
       unset($params[CRM_Contract_Utils::getCustomFieldId('contract_cancellation.contact_history_cancel_reason')]);
     }
 
