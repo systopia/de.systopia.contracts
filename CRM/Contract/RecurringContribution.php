@@ -28,6 +28,11 @@ class CRM_Contract_RecurringContribution {
    * for the given contact
    */
   public static function getCurrentContract($contact_id, $recurring_contribution_id) {
+    // make sure we have the necessary information
+    if (empty($contact_id) || empty($recurring_contribution_id)) {
+      return array();
+    }
+
     // load contact
     $contact = civicrm_api3('Contact', 'getsingle', array(
       'id'     => $contact_id,
