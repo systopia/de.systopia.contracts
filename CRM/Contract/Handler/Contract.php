@@ -184,8 +184,9 @@ class CRM_Contract_Handler_Contract{
       CRM_Contract_SepaLogic::terminateSepaMandate(
         $this->startState['membership_payment.membership_recurring_contribution'],
         $this->modificationActivity[CRM_Contract_Utils::getCustomFieldId('contract_cancellation.contact_history_cancel_reason')]);
-      // clear all membership payment information (GP-790)
-      $this->clearMembershipPaymentInformation($this->endState['id']);
+
+      // DON'T clear all membership payment information (GP-790)
+      // $this->clearMembershipPaymentInformation($this->endState['id']);
     }
 
     // if this is a revive action, clear any end date that has been set
