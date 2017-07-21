@@ -80,7 +80,9 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     $this->addEntityRef('membership_dialoger', ts('DD-Fundraiser'), array('api' => array('params' => array('contact_type' => 'Individual', 'contact_sub_type' => 'Dialoger'))));
 
     // Membership channel
-    foreach(civicrm_api3('OptionValue', 'get', ['option_group_id' => "campaign_subtype"])['values'] as $optionValue){
+    foreach(civicrm_api3('OptionValue', 'get', array(
+      'option_group_id' => 'contact_channel',
+      'is_active'       => 1))['values'] as $optionValue){
       $membershipChannelOptions[$optionValue['value']] = $optionValue['label'];
     };
     $this->add('select', 'membership_channel', ts('Membership channel'), array('' => '- none -') + $membershipChannelOptions, false, array('class' => 'crm-select2'));
