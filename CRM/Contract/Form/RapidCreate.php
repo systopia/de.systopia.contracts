@@ -98,7 +98,7 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     // Contract number text
     $this->add('text', 'membership_contract', ts('Contract number'), null, true);
     // DD-Fundraiser
-    $this->addEntityRef('membership_dialoger', ts('DD-Fundraiser'), array('api' => array('params' => array('contact_type' => 'Dialoger'))), true);
+    $this->addEntityRef('membership_dialoger', ts('DD-Fundraiser'), array('api' => array('params' => array('contact_type' => 'Individual', 'contact_sub_type' => 'Dialoger'))), true);
     // Membership channel
     foreach(civicrm_api3('OptionValue', 'get', array(
       'option_group_id' => 'contact_channel',
