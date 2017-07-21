@@ -184,6 +184,8 @@ class CRM_Contract_Handler_Contract{
       CRM_Contract_SepaLogic::terminateSepaMandate(
         $this->startState['membership_payment.membership_recurring_contribution'],
         $this->modificationActivity[CRM_Contract_Utils::getCustomFieldId('contract_cancellation.contact_history_cancel_reason')]);
+      // clear all membership payment information (GP-790)
+      $this->clearMembershipPaymentInformation($this->endState['id']);
     }
 
     // if this is a revive action, clear any end date that has been set
@@ -447,6 +449,21 @@ class CRM_Contract_Handler_Contract{
     $params['id'] = $this->endState['id'];
     $params['skip_handler'] = true;
     civicrm_api3('Membership', 'create', $params);
+  }
+
+  /**
+   * clear all payment information for the given membership
+   */
+  private function clearMembershipPaymentInformation($membership_id) {
+    $membership_id = (int) $membership_id;
+
+    // get custom group
+    $payment_custom_group = civicrm_api3('CustomGroup', 'getsingle', array(
+      'name'   => 'membership_payment',
+      'return' => 'table_name'));
+    if ($membership_id && !empty($payment_custom_group['table_name'])) {
+      CRM_Core_DAO::executeQuery("DELETE FROM {$payment_custom_group['table_name']} WHERE entity_id = {$membership_id}");
+    }
   }
 
   private function convertCustomIds($params){
