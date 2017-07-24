@@ -20,10 +20,16 @@ CRM.$(function($) {
   $( "#memberships tr.crm-membership, #inactive-memberships tr.crm-membership" ).each( function(){
     var elementId = $(this).attr('id');
     var membershipId = elementId.substr(elementId.indexOf("_") + 1);
-    var link = " <a class='toggle-review' id='crm-membership-review-link_" + membershipId + "' href='/civicrm/contract/review?reset=&snippet=1&id=" + membershipId + "'>" + getReviewLinkText(membershipId) + "</a>";
-    $(this).after("<tr class='crm-membership crm-membership-review odd odd-row' id='crm-membership-review_" + membershipId + "'><td colspan='" + $(this).find('td').length + "'></td></tr>");
-    $(this).find('td.crm-membership-status').append(link);
     decorateRow(membershipId);
+
+    // update/create the review link
+    var link = $(document).find('#crm-membership-review-link_' + membershipId);
+    if (link.length == 0) {
+      var queryURL = CRM.url('civicrm/contract/review', 'reset=&snippet=1&id=' + membershipId);
+      link = " <a class='toggle-review' id='crm-membership-review-link_" + membershipId + "' href='" + queryURL + "'>" + getReviewLinkText(membershipId) + "</a>";
+      $(this).after("<tr class='crm-membership crm-membership-review odd odd-row' id='crm-membership-review_" + membershipId + "'><td colspan='" + $(this).find('td').length + "'></td></tr>");
+      $(this).find('td.crm-membership-status').append(link);
+    }
   });
 
   // hide the .membership-review tr by default
@@ -62,7 +68,8 @@ CRM.$(function($) {
       reviewRow.hide();
       reviewLink.html(getReviewLinkText(membershipId));
     }else{
-      reviewRow.find('td').load('/civicrm/contract/review?reset=&snippet=1&id=' + membershipId, function(){
+      var queryURL = CRM.url('civicrm/contract/review', 'reset=&snippet=1&id=' + membershipId);
+      reviewRow.find('td').load(queryURL, function(){
         reviewRow.show();
         reviewLink.html('hide');
       });
@@ -71,7 +78,8 @@ CRM.$(function($) {
 
   function updateReviewPane(membershipId){
     var reviewRow = $(document).find('#crm-membership-review_' + membershipId);
-    reviewRow.find('td').load('/civicrm/contract/review?reset=&snippet=1&id=' + membershipId);
+    var queryURL = CRM.url('civicrm/contract/review', 'reset=&snippet=1&id=' + membershipId);
+    reviewRow.find('td').load(queryURL);
   }
 
   function updateMembershipRow(membershipId){
