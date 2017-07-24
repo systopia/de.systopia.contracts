@@ -119,7 +119,8 @@ CRM.$(function($) {
     $(document).on( 'crmPopupFormSuccess', '.action-item', function(){
       var elementId = $(this).parents('.crm-membership').attr('id');
       var membershipId = elementId.substr(elementId.indexOf("_") + 1);
-      console.log(membershipId);
+      // console.log(membershipId);
+      // TODO: anything to do here?
     });
 
     CRM.vars['de.systopia.contract'].listenersLoaded = true;
