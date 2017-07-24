@@ -167,10 +167,11 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     $submitted = $this->exportValues();
 
     // Create contact
-    $contactParams['prefix_id'] = $submitted['prefix_id'];
-    $contactParams['first_name'] = $submitted['first_name'];
-    $contactParams['last_name'] = $submitted['last_name'];
-    $contactParams['birth_date'] = $submitted['birth_date'];
+    $contactParams['prefix_id']    = $submitted['prefix_id'];
+    $contactParams['gender_id']    = CRM_Contract_Configuration::getGenderID($submitted['prefix_id']);
+    $contactParams['first_name']   = $submitted['first_name'];
+    $contactParams['last_name']    = $submitted['last_name'];
+    $contactParams['birth_date']   = $submitted['birth_date'];
     $contactParams['contact_type'] = 'Individual';
     $contact = civicrm_api3('Contact', 'create', $contactParams);
 
