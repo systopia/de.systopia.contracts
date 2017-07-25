@@ -122,7 +122,7 @@ class CRM_Contract_FormUtils
         $contractFile = CRM_Contract_Utils::contractFileExists($membershipContract);
         if ($contractFile) {
           $script = file_get_contents(CRM_Core_Resources::singleton()->getUrl('de.systopia.contract', 'templates/CRM/Member/Form/MembershipView.js'));
-          $url = CRM_Utils_System::url('civicrm/contract/modify', "contract=".urlencode($membershipContract));
+          $url = CRM_Utils_System::url('civicrm/contract/download', "contract=".urlencode($membershipContract));
           $script = str_replace('CONTRACT_FILE_DOWNLOAD', $url, $script);
           CRM_Core_Region::instance('page-footer')->add(array(
             'script' => $script,
