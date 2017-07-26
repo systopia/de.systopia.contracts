@@ -101,11 +101,14 @@ function civicrm_api3_Contract_modify($params){
   $activityParams['activity_date_time'] = $date->format('Y-m-d H:i:00');
   $activityParams['source_record_id'] = $params['id'];
   $activityParams['medium_id'] = $params['medium_id'];
-  $activityParams['details'] = $params['note'];
+
+  if (!empty($params['note'])) {
+    $activityParams['details'] = $params['note'];
+  }
 
   // Get the membership that is associated with the contract so we can
   // associate the activity with the contact.
-  $membershipParams = civicrm_api3('membership', 'getsingle', ['id' => $params['id']]);
+  $membershipParams = civicrm_api3('Membership', 'getsingle', ['id' => $params['id']]);
   $activityParams['target_contact_id'] = $membershipParams['contact_id'];
 
   // TODO is this the best way to get the authorised user?
@@ -204,7 +207,7 @@ function civicrm_api3_Contract_modify($params){
       'activity_date_time' => $resumeDate->format('Y-m-d H:i:00')
     ]);
   }
-  $result['membership'] = civicrm_api3('membership', 'getsingle', ['id' => $params['id']]);
+  $result['membership'] = civicrm_api3('Membership', 'getsingle', ['id' => $params['id']]);
   return civicrm_api3_create_success($result);
 }
 

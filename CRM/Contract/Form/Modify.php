@@ -225,7 +225,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       }
     }
 
-    if ($submitted['payment_option'] == 'modify') {
+    if (isset($submitted['payment_option']) && $submitted['payment_option'] == 'modify') {
       if($submitted['payment_amount'] && !$submitted['payment_frequency']){
         HTML_QuickForm::setElementError ( 'payment_frequency', 'Please specify a frequency when specifying an amount');
       }
@@ -294,7 +294,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       $params['resume_date'] = CRM_Utils_Date::processDate($submitted['resume_date'], false, false, 'Y-m-d');
 
     }
-    civicrm_api3('contract', 'modify', $params);
-    civicrm_api3('contract', 'process_scheduled_modifications', ['id' => $params['id']]);
+    civicrm_api3('Contract', 'modify', $params);
+    civicrm_api3('Contract', 'process_scheduled_modifications', ['id' => $params['id']]);
   }
 }
