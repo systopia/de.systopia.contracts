@@ -15,9 +15,14 @@
 
 class CRM_Contract_Wrapper_ModificationActivity{
 
+  private static $recursion = 0;
   private static $_singleton;
 
-  public static function singleton() {
+  /**
+   * this is a singleton, but it will be destroyed when
+   * calling the post method
+   */
+  public static function one_shot_singleton() {
     if (!self::$_singleton) {
       self::$_singleton = new CRM_Contract_Wrapper_ModificationActivity();
     }
@@ -25,6 +30,10 @@ class CRM_Contract_Wrapper_ModificationActivity{
   }
 
   public function pre($op, &$params){
+    self::$recursion += 1;
+    if (self::$recursion > 1) {
+      error_log("WARNING: CONTRACT ACTIVITY RECURSION DEPTH: " . self::$recursion);
+    }
 
     if(isset($params['resume_date'])){
       $this->resumeDate = $params['resume_date'];
@@ -65,6 +74,10 @@ class CRM_Contract_Wrapper_ModificationActivity{
 
 
   public function post($id, $objectRef){
+    self::$recursion -= 1;
+
+    // destroy singleton after post command, caused problems
+    self::$_singleton = NULL;
 
     // Return early if we can.
     if($this->skip){

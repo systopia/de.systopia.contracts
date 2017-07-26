@@ -254,7 +254,7 @@ function contract_civicrm_pre($op, $objectName, $id, &$params){
   // Wrap calls to the Membership BAO so we can reverse engineer modification
   // activities if necessary
   if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
-    $wrapperMembership = CRM_Contract_Wrapper_Membership::singleton();
+    $wrapperMembership = CRM_Contract_Wrapper_Membership::one_shot_singleton();
     $wrapperMembership->pre($op, $id, $params);
   }
 
@@ -269,7 +269,7 @@ function contract_civicrm_pre($op, $objectName, $id, &$params){
     if($op == 'delete' && is_null($id)){
       return;
     }
-    $wrapperModificationActivity = CRM_Contract_Wrapper_ModificationActivity::singleton();
+    $wrapperModificationActivity = CRM_Contract_Wrapper_ModificationActivity::one_shot_singleton();
     $wrapperModificationActivity->pre($op, $params);
   }
 }
@@ -279,14 +279,14 @@ function contract_civicrm_post($op, $objectName, $id, &$objectRef){
   // Wrap calls to the Membership BAO so we can reverse engineer modification
   // activities if necessary
   if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
-    $wrapperMembership = CRM_Contract_Wrapper_Membership::singleton();
+    $wrapperMembership = CRM_Contract_Wrapper_Membership::one_shot_singleton();
     $wrapperMembership->post($id);
   }
 
   // Wrap calles to the Activity BAO to execute contract
   // modifications and check when appropriate
   if($objectName == 'Activity'){
-    $wrapperModificationActivity = CRM_Contract_Wrapper_ModificationActivity::singleton();
+    $wrapperModificationActivity = CRM_Contract_Wrapper_ModificationActivity::one_shot_singleton();
     $wrapperModificationActivity->post($id, $objectRef);
   }
 

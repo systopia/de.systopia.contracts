@@ -24,13 +24,18 @@
 */
 class CRM_Contract_Wrapper_Membership{
 
+  private static $recursion = 0;
   private static $_singleton;
 
   private function __construct(){
     $this->handler = new CRM_Contract_Handler_Contract;
   }
 
-  public static function singleton() {
+  /**
+   * this is a singleton, but it will be destroyed when
+   * calling the post method
+   */
+  public static function one_shot_singleton() {
     if (!self::$_singleton) {
       self::$_singleton = new CRM_Contract_Wrapper_Membership();
     }
@@ -38,6 +43,10 @@ class CRM_Contract_Wrapper_Membership{
   }
 
   public function pre($op, $id, $params){
+    self::$recursion += 1;
+    if (self::$recursion > 1) {
+      error_log("WARNING: CONTRACT MEMBERSHIP RECURSION DEPTH: " . self::$recursion);
+    }
 
     $this->op = $op;
     $this->skip = isset($params['skip_handler']) && $params['skip_handler'];
@@ -61,6 +70,10 @@ class CRM_Contract_Wrapper_Membership{
   }
 
   public function post($id){
+    self::$recursion -= 1;
+
+    // destroy singleton after post command, caused problems
+    self::$_singleton = NULL;
 
     if($this->skip){
       return;
