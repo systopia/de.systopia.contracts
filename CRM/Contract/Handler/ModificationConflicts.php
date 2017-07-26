@@ -58,18 +58,29 @@ class CRM_Contract_Handler_ModificationConflicts{
 
   }
 
-  function markForReview($id){
+  /**
+   * Mark a given activity as "Needs Review"
+   */
+  function markForReview($id) {
+    $update_activity = [
+      'id'           => $id,
+      'status_id'    => 'Needs Review',
+      'skip_handler' => true,
+    ];
+
+    // assign to reviewers
     $reviewers = civicrm_api3('Setting', 'GetValue', [
       'name' => 'contract_modification_reviewers',
       'group' => 'Contract preferences'
     ]);
-    civicrm_api3('activity', 'create', [
-      'id' => $id,
-      'status_id' => 'Needs Review',
-      'assignee_id' => explode(',', $reviewers),
-      'skip_handler' => true,
-    ]);
+    if ($reviewers) {
+      $assignees = explode(',', $reviewers);
+      if (!empty($assignees)) {
+        $update_activity['assignee_id'] = $assignees;
+      }
+    }
 
+    civicrm_api3('Activity', 'create', $update_activity);
   }
 
   function whitelistOneActivity(){
