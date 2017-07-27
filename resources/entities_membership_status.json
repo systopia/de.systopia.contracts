@@ -9,7 +9,7 @@
       "is_current_member": "1",
       "is_default": "0",
       "is_active": "1",
-      "is_reserved": "1"
+      "is_reserved": "0"
     },
     {
       "_lookup": ["name"],
@@ -19,7 +19,7 @@
       "is_current_member": "1",
       "is_default": "0",
       "is_active": "0",
-      "is_reserved": "1"
+      "is_reserved": "0"
     },
     {
       "_lookup": ["name"],
@@ -29,7 +29,7 @@
       "is_current_member": "1",
       "is_default": "0",
       "is_active": "0",
-      "is_reserved": "1"
+      "is_reserved": "0"
     },
     {
       "_lookup": ["name"],
@@ -40,7 +40,7 @@
       "start_event": "join_date",
       "is_default": "0",
       "is_active": "1",
-      "is_reserved": "1"
+      "is_reserved": "0"
     },
     {
       "_lookup": ["name"],
@@ -49,7 +49,7 @@
       "label": "Pending",
       "is_current_member": "1",
       "is_default": "0",
-      "is_active": "0",
+      "is_active": "1",
       "is_reserved": "1"
     }
   ]
