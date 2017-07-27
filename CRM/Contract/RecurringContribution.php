@@ -60,6 +60,8 @@ class CRM_Contract_RecurringContribution {
    * Render all recurring contributions for that contact
    */
   public function getAll($cid, $thatAreNotAssignedToOtherContracts = true, $contractId = null){
+    $return = array();
+
     // see if we have that cached (it's getting called multiple times)
     $cache_key = "{$cid}-{$thatAreNotAssignedToOtherContracts}-{$contractId}";
     if (isset(self::$cached_results[$cache_key])) {
