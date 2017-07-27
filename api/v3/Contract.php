@@ -28,15 +28,17 @@ function civicrm_api3_Contract_create($params){
     }
     $membership = civicrm_api3('Membership', 'create', $params);
 
+    // update the generated activity
     $activity = civicrm_api3('Activity', 'getsingle', [
       'source_record_id' => $membership['id'],
       'activity_type_id' => 'Contract_Signed',
     ]);
     $activity = civicrm_api3('Activity', 'create', [
-      'id' => $activity['id'],
-      'details' => $params['note'],
+      'id'                 => $activity['id'],
+      'details'            => $params['note'],
       'activity_date_time' => date('YmdHi00'),
-      'medium_id' => $params['medium_id']
+      'medium_id'          => $params['medium_id'],
+      'campaign_id'        => CRM_Utils_Array::value('campaign_id', $params),
     ]);
     return $membership;
 }
