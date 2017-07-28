@@ -156,10 +156,11 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     $this->add('select', 'membership_type_id', ts('Membership type'), array('' => '- none -') + $MembershipTypeOptions, true, array('class' => 'crm-select2'));
 
     // Campaign
-    $this->addEntityRef('campaign_id', ts('Campaign'), [
-      'entity' => 'campaign',
-      'placeholder' => ts('- none -'),
-    ]);
+    $this->add('select', 'campaign_id', ts('Campaign'), CRM_Contract_Configuration::getCampaignList(), FALSE, array('class' => 'crm-select2'));
+    // $this->addEntityRef('campaign_id', ts('Campaign'), [
+    //   'entity' => 'campaign',
+    //   'placeholder' => ts('- none -'),
+    // ]);
 
     $this->add('select', 'cycle_day', ts('Cycle day'), CRM_Contract_SepaLogic::getCycleDays());
     $this->add('text',   'iban', ts('IBAN'), array('class' => 'huge'));

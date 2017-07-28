@@ -79,10 +79,11 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     // ### Contract information ###
     $this->addDate('join_date', ts('Member since'), TRUE, array('formatType' => 'activityDate'));
     $this->addDate('start_date', ts('Membership start date'), TRUE, array('formatType' => 'activityDate'));
-    $this->addEntityRef('campaign_id', ts('Campaign'), [
-      'entity' => 'campaign',
-      'placeholder' => ts('- none -')
-    ], true);
+    $this->add('select', 'campaign_id', ts('Campaign'), CRM_Contract_Configuration::getCampaignList(), TRUE, array('class' => 'crm-select2'));
+    // $this->addEntityRef('campaign_id', ts('Campaign'), [
+    //   'entity' => 'campaign',
+    //   'placeholder' => ts('- none -')
+    // ], true);
     // Membership type (membership)
     foreach(civicrm_api3('MembershipType', 'get', [])['values'] as $MembershipType){
       $MembershipTypeOptions[$MembershipType['id']] = $MembershipType['name'];
