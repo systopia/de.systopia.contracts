@@ -7,3 +7,6 @@ This contract reference is matched to a file located in:
 ```sites/default/files/civicrm/custom/contracts/{reference}.tif```
 
 If the file does not exist, it will not be available for download and the contract reference will not be shown as a link.
+
+### Config
+You must create a directory or symlink in CiviCRM customFilesUploadDir "contracts". eg. `sites/default/files/civicrm/custom/contracts`
