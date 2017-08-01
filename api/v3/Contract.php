@@ -85,6 +85,13 @@ function civicrm_api3_Contract_modify($params){
     $params['action'] = $params['modify_action'];
   }
 
+  // also: revert REST-like '.' -> '_' conversion
+  foreach (array_keys($params) as $key) {
+    $new_key = preg_replace('#^membership_payment_#', 'membership_payment.', $key);
+    $new_key = preg_replace('#^membership_cancellation_#', 'membership_cancellation.', $new_key);
+    $params[$new_key] = $params[$key];
+  }
+
   //Throw an exception is $params['action'] is not set
   if(!isset($params['action'])){
     throw new Exception('Please include an action/modify_action parameter with this API call');

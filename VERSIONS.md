@@ -1,7 +1,7 @@
 # Version History
 
 ## 1.0.beta2 (2017-08-01)
-* Added alternative modify_action parameter for Contract.modify
+* REST compatibility for Contract.modify
 
 ## 1.0.beta1 (2017-08-01)
 * Fixed API metadata specfications
