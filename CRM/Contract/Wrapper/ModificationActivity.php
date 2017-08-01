@@ -67,7 +67,12 @@ class CRM_Contract_Wrapper_ModificationActivity{
 
     //Create a subject line for scheduled activities
     if($this->op == 'create' && in_array($params['activity_type_id'], CRM_Contract_ModificationActivity::getModificationActivityTypeIds())){
-      $params['subject'] = $this->getScheduledSubjectLine($params);
+      try {
+        // use exception handler, as Michael's code is not very robust
+        $params['subject'] = $this->getScheduledSubjectLine($params);
+      } catch (Exception $e) {
+        $params['subject'] = ts('Cancel Contract');
+      }
     }
   }
 
