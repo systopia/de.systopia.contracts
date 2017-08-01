@@ -57,14 +57,26 @@ function _civicrm_api3_Contract_modify_spec(&$params){
   $params['action'] = array(
     'name'         => 'action',
     'title'        => 'Action',
-    'api.required' => 1,
-    'description'  => 'Action to be executed',
+    'api.required' => 0,
+    'description'  => 'Action to be executed (same as "modify_action")',
+    );
+  $params['modify_action'] = array(
+    'name'         => 'modify_action',
+    'title'        => 'Action',
+    'api.required' => 0,
+    'description'  => 'Action to be executed (same as "action")',
     );
   $params['id'] = array(
     'name'         => 'id',
     'title'        => 'Contract ID',
     'api.required' => 1,
     'description'  => 'Contract (Membership) ID of the contract to be modified',
+    );
+  $params['date'] = array(
+    'name'         => 'date',
+    'title'        => 'Date',
+    'api.required' => 0,
+    'description'  => 'Scheduled execution date (not in the past, and in format Y-m-d H:i:s)',
     );
 }
 
@@ -73,9 +85,15 @@ function _civicrm_api3_Contract_modify_spec(&$params){
  * Schedule a Contract modification
  */
 function civicrm_api3_Contract_modify($params){
+  // copy 'modify_action' into 'action' param
+  //   to avoid clashes with entity/action parameters in REST calls
+  if (!empty($params['modify_action'])) {
+    $params['action'] = $params['modify_action'];
+  }
+
   //Throw an exception is $params['action'] is not set
   if(!isset($params['action'])){
-    throw new Exception('Please include an action parameter with this API call');
+    throw new Exception('Please include an action/modify_action parameter with this API call');
   }
 
   // Throw an exception if the date is < today, i.e. any time yesterday or
