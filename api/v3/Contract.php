@@ -54,12 +54,6 @@ function civicrm_api3_Contract_create($params){
  * Schedule a Contract modification
  */
 function _civicrm_api3_Contract_modify_spec(&$params){
-  $params['action'] = array(
-    'name'         => 'action',
-    'title'        => 'Action',
-    'api.required' => 0,
-    'description'  => 'Action to be executed (same as "modify_action")',
-    );
   $params['modify_action'] = array(
     'name'         => 'modify_action',
     'title'        => 'Action',
