@@ -55,14 +55,16 @@ function civicrm_api3_Contract_create($params){
  */
 function _civicrm_api3_Contract_modify_spec(&$params){
   $params['action'] = array(
-    'name'         => 'Action',
+    'name'         => 'action',
+    'title'        => 'Action',
     'api.required' => 1,
-    'title'        => 'Action to be executed',
+    'description'  => 'Action to be executed',
     );
   $params['id'] = array(
-    'name'         => 'Contract ID',
+    'name'         => 'id',
+    'title'        => 'Contract ID',
     'api.required' => 1,
-    'title'        => 'Contract (Membership) ID of the contract to be modified',
+    'description'  => 'Contract (Membership) ID of the contract to be modified',
     );
 }
 
@@ -224,9 +226,10 @@ function civicrm_api3_Contract_modify($params){
  */
 function _civicrm_api3_Contract_get_open_modification_counts_spec(&$params){
   $params['id'] = array(
-    'name'         => 'Contract ID',
+    'name'         => 'id',
+    'title'        => 'Contract ID',
     'api.required' => 1,
-    'title'        => 'Contract (Membership) ID of the contract to be modified',
+    'description'  => 'Contract (Membership) ID of the contract to be modified',
     );
 }
 
@@ -260,19 +263,22 @@ function civicrm_api3_Contract_get_open_modification_counts($params){
  */
   function _civicrm_api3_Contract_process_scheduled_modifications_spec(&$params){
   $params['id'] = array(
-    'name'         => 'Contract ID',
+    'name'         => 'id',
+    'title'        => 'Contract ID',
     'api.required' => 0,
-    'title'        => 'If given, only pending modifications for this contract will be processed',
+    'description'  => 'If given, only pending modifications for this contract will be processed',
     );
   $params['now'] = array(
-    'name'         => 'NOW Time',
+    'name'         => 'now',
+    'title'        => 'NOW Time',
     'api.required' => 0,
-    'title'        => 'You can provide another datetime for what the algorithm considers to be now',
+    'description'  => 'You can provide another datetime for what the algorithm considers to be now',
     );
   $params['limit'] = array(
-    'name'         => 'Limit',
+    'name'         => 'limit',
+    'title'        => 'Limit',
     'api.required' => 0,
-    'title'        => 'Max count of modifications to be processed',
+    'description'  => 'Max count of modifications to be processed',
     );
 }
 

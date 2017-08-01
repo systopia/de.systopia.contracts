@@ -22,8 +22,8 @@ function civicrm_api3_contribution_recur_getdetails($params) {
 function _civicrm_api3_contribution_recur_getdetails_spec(&$params) {
   $params['contact_id'] = array(
     'name'         => 'contact_id',
+    'title'        => 'CiviCRM Contact ID',
     'api.required' => 1,
     'type'         => 1,
-    'title'        => 'CiviCRM Contact ID',
     );
 }
