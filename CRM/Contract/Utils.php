@@ -186,7 +186,11 @@ class CRM_Contract_Utils{
     // Use the custom file upload dir as it's protected by a Deny from All in htaccess
     $config = CRM_Core_Config::singleton();
     if (!empty($config->customFileUploadDir)) {
-      $fullPath = $config->customFileUploadDir . "/contracts/" . self::contractFileName($file);
+      $fullPath = $config->customFileUploadDir . '/contracts/';
+      if (!is_dir($fullPath)) {
+        CRM_Core_Error::debug_log_message('Warning: Contract file path does not exist.  It should be at: ' . $fullPath);
+      }
+      $fullPathWithFilename = $fullPath . self::contractFileName($file);
       return $fullPath;
     }
     else {
