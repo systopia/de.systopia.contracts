@@ -116,6 +116,7 @@ function contract_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
 
 function contract_civicrm_pageRun( &$page ){
   if($page->getVar('_name') == 'CRM_Member_Page_Tab'){
+    $contractStatuses = array();
     foreach(civicrm_api3('Membership', 'get', ['contact_id' => $page->_contactId])['values'] as $contract){
       $contractStatuses[$contract['id']] = civicrm_api3('Contract', 'get_open_modification_counts', ['id' => $contract['id']]);
     }
