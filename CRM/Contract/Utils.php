@@ -191,7 +191,7 @@ class CRM_Contract_Utils{
         CRM_Core_Error::debug_log_message('Warning: Contract file path does not exist.  It should be at: ' . $fullPath);
       }
       $fullPathWithFilename = $fullPath . self::contractFileName($file);
-      return $fullPath;
+      return $fullPathWithFilename;
     }
     else {
       CRM_Core_Error::debug_log_message('Warning: Contract file path undefined! Did you set customFileUploadDir?');

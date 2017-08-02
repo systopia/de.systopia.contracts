@@ -1,5 +1,8 @@
 # Version History
 
+## 1.0.beta3 (2017-08-02)
+* Fixed contract download (broken in 1.0.beta2)
+
 ## 1.0.beta2 (2017-08-01)
 * REST compatibility for Contract.modify
 
