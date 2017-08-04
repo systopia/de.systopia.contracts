@@ -45,8 +45,12 @@ class CRM_Contract_FormUtils
         $entityId = $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'];
         if ($entityId) {
           if($entity == 'ContributionRecur'){
-            $entityResult = civicrm_api3($entity, 'getsingle', array('id' => $entityId));
-            $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = $this->recurringContribution->writePaymentContractLabel($entityResult);
+            try {
+              $entityResult = civicrm_api3($entity, 'getsingle', array('id' => $entityId));
+              $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = $this->recurringContribution->writePaymentContractLabel($entityResult);
+            } catch (Exception $e) {
+              $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = ts("NOT FOUND!");
+            }
           }elseif($entity == 'BankAccountReference'){
             $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = CRM_Contract_BankingLogic::getIBANforBankAccount($entityId);
           }elseif($entity == 'PaymentInstrument'){
