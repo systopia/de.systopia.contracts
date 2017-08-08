@@ -11,6 +11,7 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
 
   function buildQuickForm(){
     CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/RapidCreate.js');
+    CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'js/rapidcreate_address_autocomplete.js', 10, 'page-header');
     // ### Contact information ###
     $prefixes = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'individual_prefix', 'is_active' => 1])['values'], 'label', 'value');
     $this->add('select', 'prefix_id', 'Prefix', $prefixes, true);
