@@ -19,15 +19,16 @@ function rapidcreate_addressfields() {
   fields['postcode'] = CRM.$('#postal_code');
   fields['city'] = CRM.$('#city');
   fields['street'] = CRM.$('#street_address');
+  fields['country'] = CRM.$('#country_id');
   return fields;
 }
 
 /*
  * Function to retrieve the postcode and fill the fields
  */
-function rapidcreate_setstateprovince(blockId, postcode) {
+function rapidcreate_setstateprovince(postcode) {
   //check if country is AT.
-  if ((cj('#address_' + blockId + '_country_id').val()) != 1014) {
+  if ((CRM.$('#country_id').val()) != 1014) {
     return;
   }
 
@@ -38,7 +39,7 @@ function rapidcreate_setstateprovince(blockId, postcode) {
         var id = data.id;
         var obj = data.values[id];
         var state = data.values[id][0].state;
-        cj('#address_' + blockId + '_state_province_id').select2('data', {
+        CRM.$('#state_province_id').select2('data', {
           id: id,
           text: state
         });
@@ -50,7 +51,7 @@ function rapidcreate_setstateprovince(blockId, postcode) {
 function rapidcreate_autofill(currentField) {
   var fields = rapidcreate_addressfields();
 
-  cj.ajax( {
+  CRM.$.ajax( {
     url: CRM.url('civicrm/ajax/postcodeat/autocomplete'),
     dataType: "json",
     data: {
@@ -76,17 +77,21 @@ function rapidcreate_init_addressBlock() {
 
   fields['postcode'].focusout(function(e) {
     rapidcreate_autofill(0);
-    //postcodeat_setstateprovince(blockId, postcode_field.val());
+    rapidcreate_setstateprovince(fields['postcode'].val());
   });
 
   fields['city'].focusout(function(e) {
     rapidcreate_autofill(1);
-    //rapidcreate_setstateprovince(blockId, postcode_field.val());
+    rapidcreate_setstateprovince(fields['postcode'].val());
   });
 
   fields['street'].focusout(function(e) {
     rapidcreate_autofill(2);
-    //rapidcreate_setstateprovince(blockId, postcode_field.val());
+    rapidcreate_setstateprovince(fields['postcode'].val());
+  });
+
+  fields['country'].change(function(e) {
+    autocomplete();
   });
 }
 
@@ -99,10 +104,10 @@ function autocomplete() {
   fields['street'].autocomplete();
   fields['city'].autocomplete();
 
-  //if ((cj('#address_' + blockId + '_country_id').val()) == 1014) {
+  if ((fields['country'].val()) == 1014) {
     fields['postcode'].autocomplete({
       source: function( request, response ) {
-        cj.ajax( {
+        CRM.$.ajax( {
           url: CRM.url('civicrm/ajax/postcodeat/autocomplete'),
           dataType: "json",
           data: {
@@ -124,12 +129,12 @@ function autocomplete() {
       minLength: 0
     })
       .focus(function() {
-        cj(this).autocomplete("search", "");
+        CRM.$(this).autocomplete("search", "");
       });
 
     fields['city'].autocomplete({
       source: function( request, response ) {
-        cj.ajax( {
+        CRM.$.ajax( {
           url: CRM.url('civicrm/ajax/postcodeat/autocomplete'),
           dataType: "json",
           data: {
@@ -151,12 +156,12 @@ function autocomplete() {
       minLength: 0
     })
       .focus(function() {
-        cj(this).autocomplete("search", "");
+        CRM.$(this).autocomplete("search", "");
       });
 
     fields['street'].autocomplete({
       source: function( request, response ) {
-        cj.ajax( {
+        CRM.$.ajax( {
           url: CRM.url('civicrm/ajax/postcodeat/autocomplete'),
           dataType: "json",
           data: {
@@ -185,13 +190,13 @@ function autocomplete() {
     fields['street'].autocomplete("enable");
     fields['city'].autocomplete("enable");
 
-  /*}
+  }
   else {
     // Disable autocomplete
     fields['postcode'].autocomplete("disable");
     fields['street'].autocomplete("disable");
     fields['city'].autocomplete("disable");
-  }*/
+  }
 }
 
 CRM.$(function($) {

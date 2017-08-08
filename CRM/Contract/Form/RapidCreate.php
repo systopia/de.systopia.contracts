@@ -22,6 +22,12 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     $this->add('text', 'street_address', 'Address');
     $this->add('text', 'postal_code', 'Postcode');
     $this->add('text', 'city', 'City');
+
+    $this->addChainSelect('state_province_id');
+
+    $country = array('' => ts('- select -')) + CRM_Core_PseudoConstant::country();
+    $this->add('select', 'country_id', ts('Country'), $country, TRUE, array('class' => 'crm-select2'));
+
     $this->addDate('birth_date', 'Date of Birth', true, array('formatType' => 'birth'));
 
     $this->addCheckbox('community_newsletter', 'Add to Community newsletter', ['' => true]);
@@ -162,6 +168,13 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     $defaults['payment_frequency'] = '12'; // monthly
     $defaults['cycle_day'] = CRM_Contract_SepaLogic::nextCycleDay();
 
+    $config = CRM_Core_Config::singleton();
+    $countryDefault = $config->defaultContactCountry;
+
+    if ($countryDefault) {
+      $defaults['country_id'] = $countryDefault;
+    }
+
     parent::setDefaults($defaults);
   }
 
@@ -196,7 +209,9 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
         'street_address' => $submitted['street_address'],
         'city' => $submitted['city'],
         'postal_code' => $submitted['postal_code'],
-        'location_type_id' => 'home'
+        'state_province_id' => $submitted['state_province_id'],
+        'country_id' => $submitted['country_id'],
+        'location_type_id' => 'home',
       ]);
     }
 
