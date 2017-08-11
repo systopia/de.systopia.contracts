@@ -117,7 +117,7 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     $this->add('select', 'membership_channel', ts('Membership channel'), array('' => '- none -') + $membershipChannelOptions, true, array('class' => 'crm-select2'));
 
     // Notes
-    $this->addWysiwyg('activity_details', ts('Notes'), []);
+    $this->addWysiwyg('activity_details', ts('Notes'), ['class' => 'huge'], TRUE);
 
 
     $this->addButtons([

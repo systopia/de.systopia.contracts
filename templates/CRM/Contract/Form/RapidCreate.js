@@ -10,6 +10,7 @@
 CRM.$(function($) {
 
   $('.tshirt_order_fields').hide();
+  $('#activity_details').val('');
 
   function toggleTshirtOrderFields(){
     if($('#tshirt_order_1:checked').length){
