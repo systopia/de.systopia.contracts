@@ -307,6 +307,12 @@ function civicrm_api3_Contract_get_open_modification_counts($params){
  */
 function civicrm_api3_Contract_process_scheduled_modifications($params){
 
+  // make sure that the time machine only works with individual contracts
+  //  see GP-936
+  if (isset($params['now']) && empty($params['id'])) {
+    return civicrm_api3_create_error("You can only use the time machine for specific contract! set the 'id' parameter.");
+  }
+
   // Passing the now param is useful for testing
   $now = new DateTime(isset($params['now']) ? $params['now'] : '');
 
