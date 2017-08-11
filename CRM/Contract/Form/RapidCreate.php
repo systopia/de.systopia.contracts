@@ -15,6 +15,7 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     // ### Contact information ###
     $prefixes = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'individual_prefix', 'is_active' => 1])['values'], 'label', 'value');
     $this->add('select', 'prefix_id', 'Prefix', $prefixes, true);
+    $this->add('text', 'formal_title', 'Title');
     $this->add('text', 'first_name', 'First name');
     $this->add('text', 'last_name', 'Last name', null, true);
     $this->add('text', 'phone', 'Phone');
@@ -185,6 +186,7 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     $contactParams['prefix_id']    = $submitted['prefix_id'];
     $contactParams['gender_id']    = CRM_Contract_Configuration::getGenderID($submitted['prefix_id']);
     $contactParams['first_name']   = $submitted['first_name'];
+    $contactParams['formal_title'] = $submitted['formal_title'];
     $contactParams['last_name']    = $submitted['last_name'];
     $contactParams['birth_date']   = $submitted['birth_date'];
     $contactParams['contact_type'] = 'Individual';

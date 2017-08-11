@@ -19,6 +19,12 @@
   </div>
 
   <div class="crm-section">
+    <div class="label">{$form.formal_title.label}</div>
+    <div class="content">{$form.formal_title.html}</div>
+    <div class="clear"></div>
+  </div>
+
+  <div class="crm-section">
     <div class="label">{$form.first_name.label}</div>
     <div class="content">{$form.first_name.html}</div>
     <div class="clear"></div>
