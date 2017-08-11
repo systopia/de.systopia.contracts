@@ -323,3 +323,18 @@ function contract_civicrm_navigationMenu(&$menus){
     }
   }
 }
+
+/**
+ * put a new rcontribution action in summary action list
+ */
+function contract_civicrm_summaryActions( &$actions, $contactID ) {
+  $actions['add_crcontribution'] = array(
+    'title'           => ts("Add Recurring Contribution"),
+    'weight'          => 3,
+    'ref'             => 'add-crecurring-contribution',
+    'key'             => 'add_crcontribution',
+    'component'       => 'CiviContribute',
+    'href'            => CRM_Utils_System::url('civicrm/contract/createrecur', "cid=$contactID"),
+    'permissions'     => array('access CiviContribute', 'edit contributions')
+  );
+}
