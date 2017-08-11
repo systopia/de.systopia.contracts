@@ -266,6 +266,10 @@ class CRM_Contract_Handler_Contract{
 
     // Update the activity
     $activityParams = $this->getModificationActivityParams();
+    // we don't want to change the source_contact_id (see GP-1018)
+    if (isset($activityParams['source_contact_id'])) {
+      unset($activityParams['source_contact_id']);
+    }
     $activityParams['id'] = $this->modificationActivity['id'];
     $activityResult = civicrm_api3('Activity', 'create', $activityParams);
 
