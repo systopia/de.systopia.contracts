@@ -61,6 +61,18 @@
   </div>
 
   <div class="crm-section">
+    <div class="label">{$form.state_province_id.label}</div>
+    <div class="content">{$form.state_province_id.html}</div>
+    <div class="clear"></div>
+  </div>
+
+  <div class="crm-section">
+    <div class="label">{$form.country_id.label}</div>
+    <div class="content">{$form.country_id.html}</div>
+    <div class="clear"></div>
+  </div>
+
+  <div class="crm-section">
     <div class="label">{$form.birth_date.label}</div>
     <div class="content">{include file="CRM/common/jcalendar.tpl" elementName=birth_date}</div>
     <div class="clear"></div>
