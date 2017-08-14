@@ -1,6 +1,9 @@
 # Version History
 
-## 1.0.beta4 (2017-08-11)
+## 1.0.beta6 (2017-08-14)
+* Rapid create form (GP-948)
+
+## 1.0.beta5 (2017-08-14)
 * Hotfix for missing channel (GP-1033)
 
 ## 1.0.beta4 (2017-08-11)
