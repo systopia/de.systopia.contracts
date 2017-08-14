@@ -298,8 +298,9 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
 
     // 'Custom' fields
     $contractParams['membership_general.membership_reference'] = $submitted['membership_reference']; // Reference number
-    $contractParams['membership_general.membership_contract'] = $submitted['membership_contract']; // Contract number
-    $contractParams['membership_general.membership_dialoger'] = $submitted['membership_dialoger']; // DD fundraiser
+    $contractParams['membership_general.membership_contract']  = $submitted['membership_contract'];  // Contract number
+    $contractParams['membership_general.membership_dialoger']  = $submitted['membership_dialoger'];  // DD fundraiser
+    $contractParams['membership_general.membership_channel']   = $submitted['membership_channel'];   // Membership Channel
 
     $contractParams['note'] = $submitted['activity_details']; // Membership channel
     $contractParams['medium_id'] = $submitted['activity_medium']; // Membership channel
