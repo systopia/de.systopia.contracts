@@ -49,14 +49,14 @@
   </div>
 
   <div class="crm-section">
-    <div class="label">{$form.street_address.label}</div>
-    <div class="content">{$form.street_address.html}</div>
+    <div class="label">{$form.postal_code.label}</div>
+    <div class="content">{$form.postal_code.html}</div>
     <div class="clear"></div>
   </div>
 
   <div class="crm-section">
-    <div class="label">{$form.postal_code.label}</div>
-    <div class="content">{$form.postal_code.html}</div>
+    <div class="label">{$form.street_address.label}</div>
+    <div class="content">{$form.street_address.html}</div>
     <div class="clear"></div>
   </div>
 

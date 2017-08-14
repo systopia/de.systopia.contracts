@@ -15,14 +15,14 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     // ### Contact information ###
     $prefixes = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'individual_prefix', 'is_active' => 1])['values'], 'label', 'value');
     $this->add('select', 'prefix_id', 'Prefix', $prefixes, true);
-    $this->add('text', 'formal_title', 'Title');
-    $this->add('text', 'first_name', 'First name');
-    $this->add('text', 'last_name', 'Last name', null, true);
-    $this->add('text', 'phone', 'Phone');
-    $this->add('text', 'email', 'Email');
-    $this->add('text', 'street_address', 'Address');
-    $this->add('text', 'postal_code', 'Postcode');
-    $this->add('text', 'city', 'City');
+    $this->add('text', 'formal_title', 'Title', array('class' => 'huge'));
+    $this->add('text', 'first_name', 'First name', array('class' => 'huge'));
+    $this->add('text', 'last_name', 'Last name', array('class' => 'huge'), true);
+    $this->add('text', 'phone', 'Phone', array('class' => 'huge'));
+    $this->add('text', 'email', 'Email', array('class' => 'huge'));
+    $this->add('text', 'street_address', 'Address', array('class' => 'huge'));
+    $this->add('text', 'postal_code', 'Postcode', array('class' => 'huge'));
+    $this->add('text', 'city', 'City', array('class' => 'huge'));
 
     $this->addChainSelect('state_province_id');
 
