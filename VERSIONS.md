@@ -1,6 +1,9 @@
 # Version History
 
 ## 1.0.beta4 (2017-08-11)
+* Hotfix for missing channel (GP-1033)
+
+## 1.0.beta4 (2017-08-11)
 * Time machine safety (GP-936)
 * UI changes (GP-948)
 * Fix: scheduled modification executer overwrites creator (GP-1018)
