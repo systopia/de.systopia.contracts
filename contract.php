@@ -146,6 +146,12 @@ function contract_civicrm_buildForm($formName, &$form) {
       $membershipId = CRM_Utils_Request::retrieve('id', 'Positive', $form);
       // removed: $formUtils->showPaymentContractDetails();
       $formUtils->addMembershipContractFileDownloadLink($membershipId);
+
+      // GP-814 - hide 'edit' button if 'delete in CiviMember' is not granted
+      if (!CRM_Core_Permission::check('delete in CiviMember')) {
+        CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'js/membership_view_hide_edit.js');
+      }
+
       break;
 
     // Membership form in add mode
