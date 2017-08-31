@@ -1,6 +1,9 @@
 # Version History
 
 ## 1.0.beta7 (2017-08-31)
+* Hide edit button (GP-814)
+
+## 1.0.beta7 (2017-08-31)
 * Fixed mandate edit form (GP-814)
 
 ## 1.0.beta6 (2017-08-14)
