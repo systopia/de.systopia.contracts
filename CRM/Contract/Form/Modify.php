@@ -175,6 +175,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     // Cancel reason
     foreach(civicrm_api3('OptionValue', 'get', array(
       'option_group_id' => 'contract_cancel_reason',
+      'filter'          => 0,
       'is_active'       => 1))['values'] as $cancelReason){
       $cancelOptions[$cancelReason['value']] = $cancelReason['label'];
     };
