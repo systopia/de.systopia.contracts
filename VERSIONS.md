@@ -1,6 +1,11 @@
 # Version History
 
-## 1.0.beta7 (2017-08-31)
+## 1.0.beta9 (2017-09-07)
+* Filter cancel reasons (GP-677)
+* Don't allow organisation's own IBANs (GP-1098)
+* Consider delayed collections when calculating next scheduled collection (GP-1094)
+
+## 1.0.beta8 (2017-08-31)
 * Hide edit button (GP-814)
 
 ## 1.0.beta7 (2017-08-31)
