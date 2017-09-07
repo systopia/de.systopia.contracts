@@ -13,6 +13,8 @@
  */
 class CRM_Contract_SepaLogic {
 
+  private static $organisation_ibans = NULL;
+
   /**
    * Create a new SEPA mandate
    */
@@ -455,6 +457,30 @@ class CRM_Contract_SepaLogic {
       }
     }
     return (int) date('d', $start_date);
+  }
+
+  /**
+   * check if this $iban is one of the organisation's own
+   */
+  public static function isOrganisationIBAN($iban) {
+    if (empty($iban)) return FALSE;
+
+    if (self::$organisation_ibans === NULL) {
+      // load organisation's IBANs
+      self::$organisation_ibans = array();
+      $query = CRM_Core_DAO::executeQuery("SELECT reference
+  FROM civicrm_bank_account_reference
+  LEFT JOIN civicrm_bank_account ON civicrm_bank_account_reference.ba_id = civicrm_bank_account.id
+  LEFT JOIN civicrm_option_value ON civicrm_bank_account_reference.reference_type_id = civicrm_option_value.id
+ WHERE civicrm_bank_account.contact_id = 1
+   AND civicrm_option_value.name = 'IBAN'");
+      while ($query->fetch()) {
+        self::$organisation_ibans[] = $query->reference;
+      }
+      $query->free();
+    }
+    // error_log("$iban vs. " . json_encode(self::$organisation_ibans));
+    return in_array($iban, self::$organisation_ibans);
   }
 
   /**

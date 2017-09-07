@@ -239,6 +239,9 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       if (!empty($submitted['iban']) && !CRM_Contract_SepaLogic::validateIBAN($submitted['iban'])) {
         HTML_QuickForm::setElementError ( 'iban', 'Please enter a valid IBAN');
       }
+      if (!empty($submitted['iban']) && CRM_Contract_SepaLogic::isOrganisationIBAN($submitted['iban'])) {
+        HTML_QuickForm::setElementError ( 'iban', "Do not use any of the organisation's own IBANs");
+      }
       if (!empty($submitted['bic']) && !CRM_Contract_SepaLogic::validateBIC($submitted['bic'])) {
         HTML_QuickForm::setElementError ( 'bic', 'Please enter a valid BIC');
       }
