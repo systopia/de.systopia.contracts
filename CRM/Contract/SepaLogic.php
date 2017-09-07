@@ -312,8 +312,21 @@ class CRM_Contract_SepaLogic {
         'id'     => $contribution_recur_id,
         'return' => 'frequency_unit,frequency_interval'));
 
+      // GP-1094: go back to last cycle day
+      $cycle_days = array_keys(self::getCycleDays());
+      $safety_counter = 35;
+      $last_collection_date = strtotime($last_collection['receive_date']);
+      while (!in_array(date('j', $last_collection_date), $cycle_days) && $safety_counter > 0) {
+        $last_collection_date = strtotime("-1 day", $last_collection_date);
+        $safety_counter -= 1;
+      }
+      if ($safety_counter == 0) {
+        // something went wrong, reset:
+        $last_collection_date = strtotime($last_collection['receive_date']);
+      }
+
       // now calculate the next collection date
-      $next_collection = date('Y-m-d H:i:s', strtotime("{$last_collection['receive_date']} + {$contribution_recur['frequency_interval']} {$contribution_recur['frequency_unit']}"));
+      $next_collection = date('Y-m-d H:i:s', strtotime("+{$contribution_recur['frequency_interval']} {$contribution_recur['frequency_unit']}", $last_collection_date));
       if ($next_collection > $now) {
         // only makes sense if in the future
         return $next_collection;
