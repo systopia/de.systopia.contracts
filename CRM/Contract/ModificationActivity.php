@@ -169,4 +169,71 @@ abstract class CRM_Contract_ModificationActivity{
 
   abstract function getAction();
 
+
+
+  /**
+   * Check if scheduling a new modification activity
+   * might be undesirable given the circumstances.
+   *
+   * @return TRUE if the activity should NOT be scheduled in this case
+   *
+   * @see GP-1190
+   */
+  public static function omitCreatingActivity($params, $date) {
+    $cancelActivity = new CRM_Contract_ModificationActivity_Cancel();
+
+    if ($params['action'] == $cancelActivity->getAction()) {
+      // IF another cancel activity already scheduled for the same date
+      $requested_day = date('Y-m-d', strtotime($date));
+      $scheduled_activities = civicrm_api3('Activity', 'get', array(
+        'source_record_id' => $params['id'],
+        'activity_type_id' => $cancelActivity->getActivityType(),
+        'status_id'        => 'Scheduled',
+        'option.limit'     => 0,
+        'sequential'       => 1,
+        'return'           => 'id,activity_date_time'));
+      foreach ($scheduled_activities['values'] as $scheduled_activity) {
+        $scheduled_for_day = date('Y-m-d', strtotime($scheduled_activity['activity_date_time']));
+        if ($scheduled_for_day == $requested_day) {
+          // there's already a scheduled 'cancel' activity for the same day
+          return TRUE;
+        }
+      }
+
+      // IF contract already cancelled (and not after scheduled 'revive' activity)
+      $contract = civicrm_api3('Membership', 'getsingle', array(
+        'id'     => $params['id'],
+        'return' => 'id,status_id'));
+      $contract_cancelled_status = civicrm_api3('MembershipStatus', 'get', array(
+        'name'   => 'Cancelled',
+        'return' => 'id'));
+      if ($contract['status_id'] == $contract_cancelled_status['id']) {
+        // contract is cancelled -> check if there are 'revive' modifications scheduled
+        $requested_modifiction_after_scheduled_revive = FALSE;
+        $requested_modifiction_datetime = date('YmdHiS', strtotime($date));
+        $reviveActivity = new CRM_Contract_ModificationActivity_Revive();
+        $scheduled_activities = civicrm_api3('Activity', 'get', array(
+          'source_record_id' => $params['id'],
+          'activity_type_id' => $reviveActivity->getActivityType(),
+          'status_id'        => 'Scheduled',
+          'option.limit'     => 0,
+          'sequential'       => 1,
+          'return'           => 'id,activity_date_time'));
+        foreach ($scheduled_activities['values'] as $scheduled_activity) {
+          $scheduled_revive_datetime = date('YmdHiS', strtotime($scheduled_activity['activity_date_time']));
+          if ($scheduled_revive_datetime <= $requested_modifiction_datetime) {
+            $requested_modifiction_after_scheduled_revive = TRUE;
+          }
+        }
+
+        if (!$requested_modifiction_after_scheduled_revive) {
+          // contract is already cancelled, and the new cancel request
+          // is NOT scheduled after a 'revive' request
+          return TRUE;
+        }
+      }
+
+      // TODO: other unwanted scenarios?
+    }
+  }
 }
