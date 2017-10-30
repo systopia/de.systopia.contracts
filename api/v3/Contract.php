@@ -325,7 +325,7 @@ function civicrm_api3_Contract_process_scheduled_modifications($params){
     'activity_date_time' => ['<=' => $now->format('Y-m-d H:i:s')], // execute everything scheduled in the past
     'option.limit'       => $limit,
     'sequential'         => 1, // in the scheduled order(!)
-    'option.sort'        => ['activity_date_time ASC', 'id ASC'],
+    'option.sort'        => 'activity_date_time ASC, id ASC',
   ];
   if(isset($params['id'])){
     $activityParams['source_record_id'] = $params['id'];
