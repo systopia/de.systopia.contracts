@@ -1,5 +1,9 @@
 # Version History
 
+## 1.1 (2017-10-30)
+* Don't generate undesired scheduled modifications (GP-1190)
+* Problems with ordering (GP-1230)
+
 ## 1.0.beta9 (2017-09-07)
 * Filter cancel reasons (GP-677)
 * Don't allow organisation's own IBANs (GP-1098)
