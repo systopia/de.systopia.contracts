@@ -131,6 +131,12 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
       if (!empty($submitted['bic']) && !CRM_Contract_SepaLogic::validateBIC($submitted['bic'])) {
         HTML_QuickForm::setElementError ( 'bic', 'Please enter a valid BIC');
       }
+
+      // contract number validation
+      if (!empty($submitted['membership_contract']) && !CRM_Contract_GeneralLogic::validateContractNumber($submitted['membership_contract'])) {
+        HTML_QuickForm::setElementError ( 'membership_contract', "");
+      }
+
     }
 
     return parent::validate();
