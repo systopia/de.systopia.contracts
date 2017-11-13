@@ -200,7 +200,9 @@ abstract class CRM_Contract_ModificationActivity{
         }
       }
 
-      // IF contract already cancelled (and not after scheduled 'revive' activity)
+      // IF CONTRACT ALREADY CANCELLED, create another cancel activity only
+      //  when there are other schedueld (or 'needs review') changes
+      //  see https://redmine.greenpeace.at/issues/1190
       $contract = civicrm_api3('Membership', 'getsingle', array(
         'id'     => $params['id'],
         'return' => 'id,status_id'));
@@ -208,32 +210,22 @@ abstract class CRM_Contract_ModificationActivity{
         'name'   => 'Cancelled',
         'return' => 'id'));
       if ($contract['status_id'] == $contract_cancelled_status['id']) {
-        // contract is cancelled -> check if there are 'revive' modifications scheduled
-        $requested_modifiction_after_scheduled_revive = FALSE;
-        $requested_modifiction_datetime = date('YmdHiS', strtotime($date));
-        $reviveActivity = new CRM_Contract_ModificationActivity_Revive();
-        $scheduled_activities = civicrm_api3('Activity', 'get', array(
+        // contract is cancelled
+        $pending_activity_count = civicrm_api3('Activity', 'getcount', array(
           'source_record_id' => $params['id'],
-          'activity_type_id' => $reviveActivity->getActivityType(),
-          'status_id'        => 'Scheduled',
-          'option.limit'     => 0,
-          'sequential'       => 1,
-          'return'           => 'id,activity_date_time'));
-        foreach ($scheduled_activities['values'] as $scheduled_activity) {
-          $scheduled_revive_datetime = date('YmdHiS', strtotime($scheduled_activity['activity_date_time']));
-          if ($scheduled_revive_datetime <= $requested_modifiction_datetime) {
-            $requested_modifiction_after_scheduled_revive = TRUE;
-          }
-        }
-
-        if (!$requested_modifiction_after_scheduled_revive) {
-          // contract is already cancelled, and the new cancel request
-          // is NOT scheduled after a 'revive' request
+          'activity_type_id' => ['IN' => CRM_Contract_ModificationActivity::getModificationActivityTypeIds()],
+          'status_id'        => ['IN' => ['Scheduled', 'Needs Review']],
+        ));
+        if ($pending_activity_count == 0) {
           return TRUE;
         }
       }
 
       // TODO: other unwanted scenarios?
     }
+
+
+    // no matching scenario...? I guess than it's o.k. to create this
+    return FALSE;
   }
 }
