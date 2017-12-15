@@ -93,17 +93,6 @@ function contract_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
   return _contract_civix_civicrm_upgrade($op, $queue);
 }
 
-/**
- * Implements hook_civicrm_managed().
- *
- * Generate a list of entities to create/deactivate/delete when this module
- * is installed, disabled, uninstalled.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
- */
-// function contract_civicrm_managed(&$entities) {
-//   _contract_civix_civicrm_managed($entities);
-// }
 
 /**
  * Implements hook_civicrm_alterSettingsFolders().
@@ -114,6 +103,9 @@ function contract_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
   _contract_civix_civicrm_alterSettingsFolders($metaDataFolders);
 }
 
+/**
+ * UI Adjustements for membership forms
+ */
 function contract_civicrm_pageRun( &$page ){
   if($page->getVar('_name') == 'CRM_Member_Page_Tab'){
     $contractStatuses = array();
@@ -127,11 +119,14 @@ function contract_civicrm_pageRun( &$page ){
   }
 }
 
-//TODO - shorten this function call - move into an 1 or more alter functions
+/**
+ * UI Adjustements for membership forms
+ *
+ * @todo shorten this function call - move into an 1 or more alter functions
+ */
 function contract_civicrm_buildForm($formName, &$form) {
 
   switch ($formName) {
-
     // Membership form in view mode
     case 'CRM_Member_Form_MembershipView':
       $contactId = CRM_Utils_Request::retrieve('cid', 'Positive', $form);
@@ -232,6 +227,9 @@ function contract_civicrm_buildForm($formName, &$form) {
   }
 }
 
+/**
+ * Custom validation for membership forms
+ */
 function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors){
   if($formName == 'CRM_Member_Form_Membership' && in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
     $wrapper = new CRM_Contract_Wrapper_MembershipEditForm();
@@ -240,6 +238,9 @@ function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$e
   }
 }
 
+/**
+ * Custom links for memberships
+ */
 function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &$values ){
   switch ($objectName) {
 
@@ -252,7 +253,23 @@ function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &
     }
 }
 
-function contract_civicrm_pre($op, $objectName, $id, &$params){
+
+/**
+ * Monitoring of
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_config
+ */
+function contract_civicrm_pre($op, $objectName, $id, &$params) {
+
+  // pass on to monitoring
+
+  if ($objectName == 'Membership') {
+    CRM_Contract_Monitoring_MembershipMonitor::processPreHook($op, $id, $params);
+
+  } elseif ($objectName == 'Activity') {
+    CRM_Contract_Monitoring_ActivityMonitor::processPreHook($op, $id, $params);
+
+  }
 
   // Using elseif would save *some* resources but make the code more brittle
   // since the comparisons are a little involved and may change over time.
@@ -260,28 +277,37 @@ function contract_civicrm_pre($op, $objectName, $id, &$params){
 
   // Wrap calls to the Membership BAO so we can reverse engineer modification
   // activities if necessary
-  if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
-    $wrapperMembership = CRM_Contract_Wrapper_Membership::one_shot_singleton();
-    $wrapperMembership->pre($op, $id, $params);
-  }
+  // if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
+  //   $wrapperMembership = CRM_Contract_Wrapper_Membership::one_shot_singleton();
+  //   $wrapperMembership->pre($op, $id, $params);
+  // }
 
   // Wrap calles to the Activity BAO so we can execute contract modifications
   // and check for potential conflicts as appropriate
 
-  if($objectName == 'Activity'){
+  // if($objectName == 'Activity'){
 
-    // TODO address weird CiviCRM where this hook is fired when deleting a
-    // membership via the UI. It gets called with $op == 'delete', a null $id
-    // and some odd params. This solves the issue for now.
-    if($op == 'delete' && is_null($id)){
-      return;
-    }
-    $wrapperModificationActivity = CRM_Contract_Wrapper_ModificationActivity::one_shot_singleton();
-    $wrapperModificationActivity->pre($op, $params);
-  }
+  //   // TODO address weird CiviCRM where this hook is fired when deleting a
+  //   // membership via the UI. It gets called with $op == 'delete', a null $id
+  //   // and some odd params. This solves the issue for now.
+  //   if($op == 'delete' && is_null($id)){
+  //     return;
+  //   }
+  //   $wrapperModificationActivity = CRM_Contract_Wrapper_ModificationActivity::one_shot_singleton();
+  //   $wrapperModificationActivity->pre($op, $params);
+  // }
 }
 
 function contract_civicrm_post($op, $objectName, $id, &$objectRef){
+
+  // pass on to monitoring
+  if ($objectName == 'Membership') {
+    CRM_Contract_Monitoring_MembershipMonitor::processPostHook($op, $id, $objectRef);
+
+  } elseif ($objectName == 'Activity') {
+    CRM_Contract_Monitoring_ActivityMonitor::processPostHook($op, $id, $objectRef);
+
+  }
 
   // Wrap calls to the Membership BAO so we can reverse engineer modification
   // activities if necessary

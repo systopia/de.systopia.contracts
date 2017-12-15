@@ -1,0 +1,5 @@
+ Notice: Undefined index: note in civicrm_api3_Contract_create() (line 38 of /var/www/stg/httpdocs/sites/default/files/civicrm/ext/de.systopia.contract/api/v3/Contract.php).
+Notice: Undefined index: medium_id in civicrm_api3_Contract_create() (line 40 of /var/www/stg/httpdocs/sites/default/files/civicrm/ext/de.systopia.contract/api/v3/Contract.php).
+Notice: Undefined index: note in civicrm_api3_Contract_create() (line 38 of /var/www/stg/httpdocs/sites/default/files/civicrm/ext/de.systopia.contract/api/v3/Contract.php).
+Notice: Undefined index: medium_id in civicrm_api3_Contract_create() (line 40 of /var/www/stg/httpdocs/sites/default/files/civicrm/ext/de.systopia.contract/api/v3/Contract.php).
+Notice: Undefined index: note in civicrm_api3_Contract_create() (line 38 of /var/www/stg/httpdocs/sites/default/files/civicrm/ext/de.systopia.contract/api/v3/Contract.php).
