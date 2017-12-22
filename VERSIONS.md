@@ -1,5 +1,8 @@
 # Version History
 
+## 1.1.1 (2017-12-22)
+* fixed issue with yearly amounts > 1000 (GP-1331)
+
 ## 1.1 (2017-10-30)
 * Don't generate undesired scheduled modifications (GP-1190)
 * Problems with ordering (GP-1230)
