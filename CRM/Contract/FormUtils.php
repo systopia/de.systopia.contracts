@@ -40,24 +40,25 @@ class CRM_Contract_FormUtils
 
         // We need to know the id for the row of the custom group table that
         // this custom data is stored in
-        $customGroupTableId = key($details[$result['custom_group_id']]);
-
-        $entityId = $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'];
-        if ($entityId) {
-          if($entity == 'ContributionRecur'){
-            try {
-              $entityResult = civicrm_api3($entity, 'getsingle', array('id' => $entityId));
-              $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = $this->recurringContribution->writePaymentContractLabel($entityResult);
-            } catch (Exception $e) {
-              $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = ts("NOT FOUND!");
+        if (isset($details[$result['custom_group_id']])) {
+          $customGroupTableId = key($details[$result['custom_group_id']]);
+          if (isset($details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'])) {
+            $entityId = $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'];
+            if($entity == 'ContributionRecur'){
+              try {
+                $entityResult = civicrm_api3($entity, 'getsingle', array('id' => $entityId));
+                $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = $this->recurringContribution->writePaymentContractLabel($entityResult);
+              } catch (Exception $e) {
+                $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = ts("NOT FOUND!");
+              }
+            }elseif($entity == 'BankAccountReference'){
+              $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = CRM_Contract_BankingLogic::getIBANforBankAccount($entityId);
+            }elseif($entity == 'PaymentInstrument'){
+              $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $entityId, 'option_group_id' => "payment_instrument" ]);
             }
-          }elseif($entity == 'BankAccountReference'){
-            $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = CRM_Contract_BankingLogic::getIBANforBankAccount($entityId);
-          }elseif($entity == 'PaymentInstrument'){
-            $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' => $entityId, 'option_group_id' => "payment_instrument" ]);
+            // Write nice text and return this to the template
+            $this->form->assign('viewCustomData', $details);
           }
-          // Write nice text and return this to the template
-          $this->form->assign('viewCustomData', $details);
         }
     }
 
