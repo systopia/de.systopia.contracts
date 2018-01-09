@@ -47,4 +47,10 @@
     <title>Contract Download</title>
     <access_arguments>access CiviCRM</access_arguments>
   </item>
+  <item>
+    <path>civicrm/contract/createrecur</path>
+    <page_callback>CRM_Contract_Form_CreateRecur</page_callback>
+    <title>CreateRecur</title>
+    <access_arguments>edit memberships</access_arguments>
+  </item>
 </menu>
