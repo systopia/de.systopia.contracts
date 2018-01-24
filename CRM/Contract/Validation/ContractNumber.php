@@ -11,10 +11,10 @@
  *
  * @todo resolve hard dependecy to CiviBanking module
  */
-class CRM_Contract_Validation_ContractReference implements API_Wrapper {
+class CRM_Contract_Validation_ContractNumber implements API_Wrapper {
 
   /**
-   * Verifies that a membership_general.membership_reference number is UNIQUE
+   * Verifies that a membership_general.membership_contract number is UNIQUE
    * (unless its part of the exceptions, or already set for this ID)
    *
    * @param $reference   string  proposed reference
@@ -22,7 +22,8 @@ class CRM_Contract_Validation_ContractReference implements API_Wrapper {
    *
    * @return NULL if given reference is valid, error message otherwise
    */
-  public static function verifyContractReference($reference, $contract_id = NULL) {
+  public static function verifyContractNumber($reference, $contract_id = NULL) {
+    error_log("CHECKING $reference");
     // empty references are acceptable
     if (empty($reference)) {
       return NULL;
@@ -37,9 +38,9 @@ class CRM_Contract_Validation_ContractReference implements API_Wrapper {
     // Validate requested reference:
     // prepare query
     $query = array(
-      'membership_general.membership_reference' => $reference,
-      'return'                                  => 'id',
-      'option.limit'                            => 1
+      'membership_general.membership_contract' => $reference,
+      'return'                                 => 'id',
+      'option.limit'                           => 1
     );
     CRM_Contract_CustomData::resolveCustomFields($query);
 
@@ -81,8 +82,8 @@ class CRM_Contract_Validation_ContractReference implements API_Wrapper {
     if ($apiRequest['action'] == 'create' || $apiRequest['action'] == 'edit') {
       $params = $apiRequest['params'];
       CRM_Contract_CustomData::labelCustomFields($params);
-      if (!empty($params['membership_general.membership_reference'])) {
-        $validation_error = self::verifyContractReference($params['membership_general.membership_reference'], CRM_Utils_Array::value('id', $params));
+      if (!empty($params['membership_general.membership_contract'])) {
+        $validation_error = self::verifyContractNumber($params['membership_general.membership_contract'], CRM_Utils_Array::value('id', $params));
         if ($validation_error) {
           throw new Exception($validation_error, 1);
         }

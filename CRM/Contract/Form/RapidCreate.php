@@ -158,6 +158,14 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
       HTML_QuickForm::setElementError ( 'bic', 'Please enter a valid BIC');
     }
 
+    // contract number
+    if (!empty($submitted['membership_contract'])) {
+      $reference_error = CRM_Contract_Validation_ContractNumber::verifyContractNumber($submitted['membership_contract']);
+      if ($reference_error) {
+        HTML_QuickForm::setElementError ( 'membership_contract', $reference_error);
+      }
+    }
+
     return parent::validate();
   }
 

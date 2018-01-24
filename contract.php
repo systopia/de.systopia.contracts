@@ -338,6 +338,6 @@ function contract_civicrm_navigationMenu(&$menus){
 function contract_civicrm_apiWrappers(&$wrappers, $apiRequest) {
   // add contract reference validation for Memberships
   if ($apiRequest['entity'] == 'Membership') {
-    $wrappers[] = new CRM_Contract_Validation_ContractReference();
+    $wrappers[] = new CRM_Contract_Validation_ContractNumber();
   }
 }
