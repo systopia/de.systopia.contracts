@@ -52,6 +52,18 @@ class CRM_Contract_Wrapper_MembershipEditForm{
     if(!$this->handler->isValid()){
       $this->errors=$this->handler->getErrors();
     }
+
+    // also, validate the contract number
+    $field_key = CRM_Contract_CustomData::getCustomFieldKey('membership_general', 'membership_contract');
+    foreach ($params as $key => $value) {
+      if (preg_match("#^{$field_key}_-?[0-9]+$#", $key)) {
+        // this should be the value
+        $reference_error = CRM_Contract_Validation_ContractNumber::verifyContractNumber($value, $id);
+        if ($reference_error) {
+          $this->errors[$key] = $reference_error;
+        }
+      }
+    }
   }
 
   public function getErrors(){
