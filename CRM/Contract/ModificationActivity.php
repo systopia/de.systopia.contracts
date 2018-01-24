@@ -58,6 +58,11 @@ abstract class CRM_Contract_ModificationActivity{
   }
 
   static function findByStatusChange($startStatus, $endStatus){
+    if ($startStatus == $endStatus) {
+      // introducing NoStatuChange class, see GP-1207
+      return new CRM_Contract_ModificationActivity_NoStatusChange($this->startStatus);
+    }
+
     foreach (self::$modificationActivityClasses as $class) {
       $activityClass = new $class;
       if(
