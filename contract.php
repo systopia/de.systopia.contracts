@@ -329,3 +329,13 @@ function contract_civicrm_navigationMenu(&$menus){
     }
   }
 }
+
+/**
+  * Implements hook_civicrm_apiWrappers
+  */
+function contract_civicrm_apiWrappers(&$wrappers, $apiRequest) {
+  // add contract reference validation for Memberships
+  if ($apiRequest['entity'] == 'Membership') {
+    $wrappers[] = new CRM_Contract_Validation_ContractReference();
+  }
+}

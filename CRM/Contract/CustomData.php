@@ -14,7 +14,7 @@
 | written permission from the original author(s).        |
 +--------------------------------------------------------*/
 
-define('CUSTOM_DATA_HELPER_VERSION', '0.3.4.dev');
+define('CUSTOM_DATA_HELPER_VERSION', '0.4.dev');
 define('CUSTOM_DATA_HELPER_LOG_LEVEL', 1);
 
 // log levels
@@ -25,7 +25,10 @@ define('CUSTOM_DATA_HELPER_LOG_ERROR', 5);
 class CRM_Contract_CustomData {
 
   /** caches custom field data, indexed by group name */
-  protected static $custom_group_cache = array();
+  protected static $custom_group2name       = NULL;
+  protected static $custom_group2table_name = NULL;
+  protected static $custom_group_cache      = array();
+  protected static $custom_field_cache      = array();
 
   protected $ts_domain = NULL;
   protected $version   = CUSTOM_DATA_HELPER_VERSION;
@@ -291,8 +294,10 @@ class CRM_Contract_CustomData {
        foreach ($required_fields as $required_field) {
           if (isset($requested_data[$required_field])) {
             $update_query[$required_field] = $requested_data[$required_field];
-          } else {
+          } elseif (isset($current_data[$required_field])) {
             $update_query[$required_field] = $current_data[$required_field];
+          } else {
+            // nothing we can do...
           }
        }
 
@@ -316,6 +321,54 @@ class CRM_Contract_CustomData {
     }
   }
 
+  /**
+   * function to replace custom_XX notation with the more
+   * stable "<custom_group_name>.<custom_field_name>" format
+   *
+   * @param $data   array  key=>value data, keys will be changed
+   * @param $depth  int    recursively follow arrays
+   */
+  public static function labelCustomFields(&$data, $depth=1) {
+    if ($depth == 0) return;
+
+    $custom_fields_used = array();
+    foreach ($data as $key => $value) {
+      if (preg_match('#^custom_(?P<field_id>\d+)$#', $key, $match)) {
+        $custom_fields_used[] = $match['field_id'];
+      }
+    }
+
+    // cache fields
+    self::cacheCustomFields($custom_fields_used);
+
+    // replace names
+    foreach ($data as $key => &$value) {
+      if (preg_match('#^custom_(?P<field_id>\d+)$#', $key, $match)) {
+        $new_key = self::getFieldIdentifier($match['field_id']);
+        $data[$new_key] = $value;
+        unset($data[$key]);
+      }
+
+      // recursively look into that array
+      if (is_array($value) && $depth > 0) {
+        self::labelCustomFields($value, $depth-1);
+      }
+    }
+  }
+
+  public static function getFieldIdentifier($field_id) {
+    // just to be on the safe side
+    self::cacheCustomFields(array($field_id));
+
+    // get custom field
+    $custom_field = self::$custom_field_cache[$field_id];
+    if ($custom_field) {
+      $group_name = self::getGroupName($custom_field['custom_group_id']);
+      return "{$group_name}.{$custom_field['name']}";
+    } else {
+      return 'FIELD_NOT_FOUND_' . $field_id;
+    }
+  }
 
   /**
    * internal function to replace "<custom_group_name>.<custom_field_name>"
@@ -330,6 +383,11 @@ class CRM_Contract_CustomData {
     $customgroups_used = array();
     foreach ($data as $key => $value) {
       if (preg_match('/^(?P<group_name>\w+)[.](?P<field_name>\w+)$/', $key, $match)) {
+        if ($match['group_name'] == 'option' || $match['group_name'] == 'options') {
+          // exclude API options
+          continue;
+        }
+
         if (empty($customgroups) || in_array($match['group_name'], $customgroups)) {
           $customgroups_used[$match['group_name']] = 1;
         }
@@ -360,6 +418,18 @@ class CRM_Contract_CustomData {
   /**
   * Get CustomField entity (cached)
   */
+  public static function getCustomFieldKey($custom_group_name, $custom_field_name) {
+    $field = self::getCustomField($custom_group_name, $custom_field_name);
+    if ($field) {
+      return 'custom_' . $field['id'];
+    } else {
+      return NULL;
+    }
+  }
+
+  /**
+  * Get CustomField entity (cached)
+  */
   public static function getCustomField($custom_group_name, $custom_field_name) {
     self::cacheCustomGroups(array($custom_group_name));
 
@@ -371,8 +441,8 @@ class CRM_Contract_CustomData {
   }
 
   /**
-  * Get CustomField entity (cached)
-  */
+   * Precache a list of custom groups
+   */
   public static function cacheCustomGroups($custom_group_names) {
     foreach ($custom_group_names as $custom_group_name) {
       if (!isset(self::$custom_group_cache[$custom_group_name])) {
@@ -383,8 +453,159 @@ class CRM_Contract_CustomData {
           'option.limit'    => 0));
         foreach ($fields['values'] as $field) {
           self::$custom_group_cache[$custom_group_name][$field['name']] = $field;
+          self::$custom_group_cache[$custom_group_name][$field['id']]   = $field;
         }
       }
     }
+  }
+
+  /**
+   * Precache a list of custom fields
+   */
+  public static function cacheCustomFields($custom_field_ids) {
+    // first: check if they are already cached
+    $fields_to_load = array();
+    foreach ($custom_field_ids as $field_id) {
+      if (!array_key_exists($field_id, self::$custom_field_cache)) {
+        $fields_to_load[] = $field_id;
+      }
+    }
+
+    // load missing fields
+    if (!empty($fields_to_load)) {
+      $loaded_fields = civicrm_api3('CustomField', 'get', array(
+        'id'           => array('IN' => $fields_to_load),
+        'option.limit' => 0,
+        ));
+      foreach ($loaded_fields['values'] as $field) {
+        self::$custom_field_cache[$field['id']] = $field;
+      }
+    }
+  }
+
+  /**
+   * Get a mapping: custom_group_id => custom_group_name
+   */
+  public static function getGroup2Name() {
+    if (self::$custom_group2name === NULL) {
+      self::loadGroups();
+    }
+    return self::$custom_group2name;
+  }
+
+  /**
+   * Get a mapping: custom_group_id => table_name
+   */
+  public static function getGroup2TableName() {
+    if (self::$custom_group2table_name === NULL) {
+      self::loadGroups();
+    }
+    return self::$custom_group2table_name;
+  }
+
+
+  /**
+   * Load group data (all groups)
+   */
+  protected static function loadGroups() {
+    self::$custom_group2name = array();
+    self::$custom_group2table_name = array();
+    $group_search = civicrm_api3('CustomGroup', 'get', array(
+      'return'       => 'name,table_name',
+      'option.limit' => 0,
+      ));
+    foreach ($group_search['values'] as $customGroup) {
+      self::$custom_group2name[$customGroup['id']]       = $customGroup['name'];
+      self::$custom_group2table_name[$customGroup['id']] = $customGroup['table_name'];
+    }
+  }
+
+  /**
+   * Get the internal name of a custom gruop
+   */
+  public static function getGroupName($custom_group_id) {
+    $group2name = self::getGroup2Name();
+    return $group2name[$custom_group_id];
+  }
+
+  /**
+   * If an API call is received via REST, the notation
+   * used by this tool:
+   *   "<custom_group_name>.<custom_field_name>"
+   * can be mangled to
+   *   "<custom_group_name>_<custom_field_name>"
+   *
+   * This function reverses this in the array itself
+   *
+   * Also, REST calls struggle with complex data structures,
+   *  such as arrays. If you add html encoded json_strings
+   *  (e.g. '%5B6%2C7%2C8%5D' for '[6,7,8]')
+   *  they will be unpacked as well.
+   *
+   * @todo make it more efficient?
+   *
+   * @param $params      the parameter array as used by the API
+   * @param $group_names list of group names to process. Default is: all
+   */
+  public static function unREST(&$params, $group_names = NULL) {
+    if ($group_names == NULL || !is_array($group_names)) {
+      $groups = self::getGroup2Name();
+      $group_names = array_values($groups);
+    }
+
+    // look for all group names in all variables
+    foreach ($group_names as $group_name) {
+      foreach (array_keys($params) as $key) {
+        $new_key = preg_replace("#^{$group_name}_#", "{$group_name}.", $key);
+        if ($new_key != $key) {
+          $params[$new_key] = $params[$key];
+        }
+      }
+    }
+
+    // also, unpack 'flattened' arrays
+    foreach ($params as $key => &$value) {
+      if (!is_array($value)) {
+        $first_character = substr($value, 0, 1);
+        if ($first_character == '[' || $first_character == '{') {
+          $unpacked_value = json_decode($value, TRUE);
+          if ($unpacked_value) {
+            if (is_array($unpacked_value) && empty($unpacked_value)) {
+              // this is a strange behaviour in the API,
+              //   but empty arrays are not processed properly
+              $value = '';
+            } else {
+              $value = $unpacked_value;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Get the table of a certain group
+   */
+  public static function getGroupTable($group_name) {
+    $id2name = self::getGroup2Name();
+    $name2id = array_flip($id2name);
+    if (isset($name2id[$group_name])) {
+      $group_id = $name2id[$group_name];
+      $id2table = self::getGroup2TableName();
+      if (isset($id2table[$group_id])) {
+        return $id2table[$group_id];
+      }
+    }
+    return NULL;
+  }
+
+  /**
+   * Generates the following SQL join statment:
+   * "LEFT JOIN {$group_table_name} AS {$table_alias} ON {$table_alias}.entity_id = {$join_entity_id}"
+   */
+  public static function createSQLJoin($group_name, $table_alias, $join_entity_id) {
+    // cache the groups used
+    $group_table_name = self::getGroupTable($group_name);
+    return "LEFT JOIN `{$group_table_name}` AS {$table_alias} ON {$table_alias}.entity_id = {$join_entity_id}";
   }
 }

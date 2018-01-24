@@ -54,4 +54,31 @@ class CRM_Contract_Configuration {
     }
     return self::$eligible_campaigns;
   }
+
+
+  /**
+   * Get a list of contract references that are excempt
+   * from the UNIQUE contraint.
+   */
+  public static function getUniqueReferenceExceptions() {
+    // TODO: these are GP values,
+    //   create a setting to make more flexible
+    return array(
+      "Einzug durch TAS",
+      "Vertrag durch TAS",
+      "Allgemeine Daueraufträge",
+      "Vertrag durch Directmail",
+      "Dauerauftrag neu",
+      "Vertrag durch Canvassing",
+      "Einzugsermächtigung",
+      "Frontline",
+      "Online-Spende",
+      "Greenpeace in Action",
+      "Online Spende",
+      "VOR",
+      "Internet",
+      "Onlinespende",
+      "Online-Spenden",
+    );
+  }
 }
