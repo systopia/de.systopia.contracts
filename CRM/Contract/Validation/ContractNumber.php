@@ -23,7 +23,6 @@ class CRM_Contract_Validation_ContractNumber implements API_Wrapper {
    * @return NULL if given reference is valid, error message otherwise
    */
   public static function verifyContractNumber($reference, $contract_id = NULL) {
-    error_log("CHECKING $reference");
     // empty references are acceptable
     if (empty($reference)) {
       return NULL;
