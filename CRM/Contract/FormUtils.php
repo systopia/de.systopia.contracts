@@ -70,15 +70,17 @@ class CRM_Contract_FormUtils
 
         // We need to know the id for the row of the custom group table that
         // this custom data is stored in
-        $customGroupTableId = key($details[$result['custom_group_id']]);
+        if (!empty($details[$result['custom_group_id']])) {
+          $customGroupTableId = key($details[$result['custom_group_id']]);
 
-        $membershipTypeId = $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'];
-        if($membershipTypeId){
-            $membershipType = civicrm_api3('MembershipType', 'getsingle', ['id' => $membershipTypeId]);
+          $membershipTypeId = $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'];
+          if($membershipTypeId){
+              $membershipType = civicrm_api3('MembershipType', 'getsingle', ['id' => $membershipTypeId]);
 
-            // Write nice text and return this to the template
-            $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = $membershipType['name'];
-            $this->form->assign('viewCustomData', $details);
+              // Write nice text and return this to the template
+              $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'] = $membershipType['name'];
+              $this->form->assign('viewCustomData', $details);
+          }
         }
     }
 
