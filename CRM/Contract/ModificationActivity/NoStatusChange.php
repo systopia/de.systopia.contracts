@@ -13,10 +13,6 @@ class CRM_Contract_ModificationActivity_NoStatusChange extends CRM_Contract_Modi
     $this->status_id = $status_id;
   }
 
-  // FIXME: these are not (yet) evaluated
-  protected $allowed  = ['membership_general.membership_contract', 'membership_general.membership_reference'];
-  protected $required = [];
-
   function getStartStatuses(){
     return array($this->status_id);
   }
