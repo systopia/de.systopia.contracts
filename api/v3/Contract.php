@@ -316,6 +316,12 @@ function civicrm_api3_Contract_process_scheduled_modifications($params){
     return civicrm_api3_create_error("You can only use the time machine for specific contract! set the 'id' parameter.");
   }
 
+  // make sure no other task is running
+  $lock = Civi\Core\Container::singleton()->get('lockManager')->acquire("worker.member.contract_engine");
+  if (!$lock->isAcquired()) {
+    return civicrm_api3_create_success(array('message' => "Another instance of the Contract.process_scheduled_modifications process is running. Skipped."));
+  }
+
   // Passing the now param is useful for testing
   $now = new DateTime(isset($params['now']) ? $params['now'] : '');
 
@@ -397,5 +403,7 @@ function civicrm_api3_Contract_process_scheduled_modifications($params){
       error_log("de.systopia.contract: Failed to execute activity [{$scheduledActivity['id']}]: " . $e->getMessage());
     }
   }
+
+  $lock->release();
   return civicrm_api3_create_success($result);
 }
