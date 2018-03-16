@@ -41,7 +41,7 @@
 
     <div class="crm-section payment-modify">
       <div class="label">{$form.cycle_day.label}</div>
-      <div class="content">{$form.cycle_day.html}</div>
+      <div class="content">{$form.cycle_day.html}&nbsp;&nbsp;{if $current_cycle_day}{ts 1=$current_cycle_day}(currently: %1){/ts}{/if}</div>
       <div class="clear"></div>
     </div>
     <div class="crm-section payment-modify">

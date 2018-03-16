@@ -67,6 +67,10 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     // check if BIC lookup is possible
     $this->assign('bic_lookup_accessible', CRM_Contract_SepaLogic::isLittleBicExtensionAccessible());
 
+    // assign current cycle day
+    $current_cycle_day = CRM_Contract_RecurringContribution::getCycleDay($this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')]);
+    $this->assign('current_cycle_day', $current_cycle_day);
+
     // Validate that the contract has a valid start status
     $this->membershipStatus = civicrm_api3('MembershipStatus', 'getsingle', array('id' => $this->membership['status_id']));
     if(!in_array($this->membershipStatus['name'], $this->modificationActivity->getStartStatuses())){

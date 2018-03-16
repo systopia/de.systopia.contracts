@@ -24,6 +24,28 @@ class CRM_Contract_RecurringContribution {
   }
 
   /**
+   * Gets the cycle day for the given recurring contribution
+   *
+   * @todo caching (in this whole section)
+   */
+  public static function getCycleDay($recurring_contribution_id) {
+    $recurring_contribution_id = (int) $recurring_contribution_id;
+    if ($recurring_contribution_id) {
+      try {
+        $recurring_contribution = civicrm_api3('ContributionRecur', 'getsingle', [
+          'id'     => $recurring_contribution_id,
+          'return' => 'cycle_day']);
+        if (!empty($recurring_contribution['cycle_day'])) {
+          return $recurring_contribution['cycle_day'];
+        }
+      } catch (Exception $e) {
+        // doesn't exist?
+      }
+    }
+    return NULL;
+  }
+
+  /**
    * Return a detailed list of recurring contribution
    * for the given contact
    */
