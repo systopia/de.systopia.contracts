@@ -209,7 +209,12 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     $defaults['membership_type_id'] = $this->membership['membership_type_id'];
 
-    list($defaults['activity_date'], $defaults['activity_date_time']) = CRM_Utils_Date::setDateDefaults(date('Y-m-d H:i:00'), 'activityDateTime');
+    if ($this->modificationActivity->getAction() == 'cancel') {
+      list($defaults['activity_date'], $defaults['activity_date_time']) = CRM_Utils_Date::setDateDefaults(date('Y-m-d H:i:00'), 'activityDateTime');
+    } else {
+      // if it's not a cancellation, set the default change date to tomorrow 12am (see GP-1507)
+      list($defaults['activity_date'], $defaults['activity_date_time']) = CRM_Utils_Date::setDateDefaults(date('Y-m-d 00:00:00', strtotime('+1 day')), 'activityDateTime');
+    }
 
 
     parent::setDefaults($defaults);
