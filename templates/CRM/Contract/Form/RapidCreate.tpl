@@ -203,6 +203,12 @@
   <div class="tshirt_order_fields">
 
     <div class="crm-section">
+      <div class="label">{$form.shirt_design.label}</div>
+      <div class="content">{$form.shirt_design.html}</div>
+      <div class="clear"></div>
+    </div>
+
+    <div class="crm-section">
       <div class="label">{$form.shirt_type.label}</div>
       <div class="content">{$form.shirt_type.html}</div>
       <div class="clear"></div>

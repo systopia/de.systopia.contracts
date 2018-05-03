@@ -65,9 +65,11 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
 
     $this->addCheckbox('tshirt_order', 'Is this a T-shirt order?', ['' => true]);
     // A dropdown-field "Shirt Type" needs to be in rthe form - the T-Shirt types available should be taken from the option group "shirt_type"
+    $shirtDesigns = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'order_type', 'label' => ['LIKE' => '%T-Shirt%']])['values'], 'name', 'value');
     $shirtSizes = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'shirt_size'])['values'], 'name', 'value');
     $shirtTypes = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'shirt_type'])['values'], 'name', 'value');
-    $this->add('select', 'shirt_type', 'Shirt type', $shirtTypes);
+    $this->add('select', 'shirt_design', 'Shirt design', $shirtDesigns);
+    $this->add('select', 'shirt_type', 'Shirt cut', $shirtTypes);
     $this->add('select', 'shirt_size', 'Shirt size', $shirtSizes);
 
 
@@ -328,19 +330,16 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
         'name' => 'webshop order',
         'return' => 'value',
       ]);
-      $tshirtActivityParams['custom_'.$webshopCustomFields['order_type']] = civicrm_api3('OptionValue', 'getvalue', [
-        'option_group_id' => 'order_type',
-        'name' => 'T-Shirt',
-        'return' => 'value',
-      ]);
+      $tshirtActivityParams['custom_'.$webshopCustomFields['order_type']] = $submitted['shirt_design'];
       $tshirtActivityParams['custom_'.$webshopCustomFields['shirt_type']] = $submitted['shirt_type'];
       $tshirtActivityParams['custom_'.$webshopCustomFields['shirt_size']] = $submitted['shirt_size'];
       $tshirtActivityParams['custom_'.$webshopCustomFields['linked_membership']] = $contract['id'];
 
       // write subject line for tshirt order
-      $shirtSizeLabel = civicrm_api3('OptionValue', 'getvalue', ['option_group_id' => 'shirt_size', 'value' => $submitted['shirt_size'], 'return' => 'label']);
-      $shirtTypeLabel = civicrm_api3('OptionValue', 'getvalue', ['option_group_id' => 'shirt_type', 'value' => $submitted['shirt_type'], 'return' => 'label']);
-      $tshirtActivityParams['subject'] = "order type T-Shirt AND t-shirt type {$shirtTypeLabel} AND t-shirt size {$shirtSizeLabel} AND number of items 1";
+      $shirtDesignLabel = civicrm_api3('OptionValue', 'getvalue', ['option_group_id' => 'order_type', 'value' => $submitted['shirt_design'], 'return' => 'label']);
+      $shirtSizeLabel   = civicrm_api3('OptionValue', 'getvalue', ['option_group_id' => 'shirt_size', 'value' => $submitted['shirt_size'], 'return' => 'label']);
+      $shirtTypeLabel   = civicrm_api3('OptionValue', 'getvalue', ['option_group_id' => 'shirt_type', 'value' => $submitted['shirt_type'], 'return' => 'label']);
+      $tshirtActivityParams['subject'] = "order type {$shirtDesignLabel} AND t-shirt type {$shirtTypeLabel} AND t-shirt size {$shirtSizeLabel} AND number of items 1";
 
       $tshirtResult = civicrm_api3('Activity', 'create', $tshirtActivityParams);
     }
