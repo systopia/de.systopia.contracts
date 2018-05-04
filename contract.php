@@ -243,15 +243,41 @@ function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$e
 }
 
 function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &$values ){
-  switch ($objectName) {
+  if ($objectName == 'Membership') {
+    // alter membership link
+    $alter = new CRM_Contract_AlterMembershipLinks($objectId, $links, $mask, $values);
+    $alter->removeActions(array(CRM_Core_Action::RENEW, CRM_Core_Action::DELETE, CRM_Core_Action::UPDATE));
+    $alter->addHistoryActions();
 
-    // Change membership edit links
-    case 'Membership':
-      $alter = new CRM_Contract_AlterMembershipLinks($objectId, $links, $mask, $values);
-      $alter->removeActions(array(CRM_Core_Action::RENEW, CRM_Core_Action::DELETE, CRM_Core_Action::UPDATE));
-      $alter->addHistoryActions();
-      break;
+  } elseif ($op=='contribution.selector.row') {
+    // add a Contract link to contributions that are connected to memberships
+    $contribution_id = (int) $objectId;
+    if ($contribution_id) {
+      // add 'view contract' link
+      $membership_id = CRM_Core_DAO::singleValueQuery("SELECT membership_id FROM civicrm_membership_payment WHERE contribution_id = {$contribution_id} LIMIT 1");
+      if ($membership_id) {
+        $contact_id = CRM_Core_DAO::singleValueQuery("SELECT contact_id FROM civicrm_membership WHERE id = {$membership_id} LIMIT 1");
+        if ($contact_id) {
+          $links[] = array(
+              'name'  => 'Contract',
+              'title' => 'View Contract',
+              'url'   => 'civicrm/contact/view/membership',
+              'qs'    => "reset=1&id={$membership_id}&cid={$contact_id}&action=view");
+        }
+      }
+
+      // add 'assign to contract' link
+      if (CRM_Core_Permission::check('edit contributions')) {
+        $links[] = array(
+            'name'  => 'Assign',
+            'title' => 'Assign to Contract',
+            'url'   => 'civicrm/contract/contributionassign',
+            'qs'    => "reset=1&cid={$contribution_id}");
+        // formerly: only for membership dues
+        // $financial_type_id = CRM_Core_DAO::singleValueQuery("SELECT financial_type_id FROM civicrm_contribution WHERE id = {$contribution_id} LIMIT 1");
+      }
     }
+  }
 }
 
 function contract_civicrm_pre($op, $objectName, $id, &$params){
