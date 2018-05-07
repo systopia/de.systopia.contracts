@@ -18,8 +18,14 @@
   </div>
 
   <div class="crm-section">
-    <div class="label">{$form.adjust.label}</div>
-    <div class="content">{$form.adjust.html}</div>
+    <div class="label">{$form.adjust_ft.label}</div>
+    <div class="content">{$form.adjust_ft.html}</div>
+    <div class="clear"></div>
+  </div>
+
+  <div class="crm-section">
+    <div class="label">{$form.adjust_pi.label}</div>
+    <div class="content">{$form.adjust_pi.html}</div>
     <div class="clear"></div>
   </div>
 

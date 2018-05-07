@@ -46,9 +46,24 @@ class CRM_Contract_Form_AssignContribution extends CRM_Core_Form {
     // add adjust option
     $this->add(
         'checkbox',
-        'adjust',
-        E::ts("Adjust financial type and payment instrument."));
-    $this->setDefaults(['adjust' => 1]);
+        'adjust_ft',
+        E::ts("Set financial type to 'Membership Dues'."));
+    $this->setDefaults(['adjust_ft' => 1]);
+
+    // offer 'set to standing order' option, if not SEPA
+    if (class_exists('CRM_Sepa_Logic_PaymentInstruments')) {
+      $contribution = civicrm_api3('Contribution', 'getsingle', array(
+          'id' => $contribution_id,
+          'return' => 'payment_instrument_id'));
+      if (!CRM_Sepa_Logic_PaymentInstruments::isSDD($contribution)) {
+        $this->add(
+            'checkbox',
+            'adjust_pi',
+            E::ts("Set payment instrument to 'Standing Order'."));
+        $this->setDefaults(['adjust_pi' => 1]);
+      }
+    }
+    $paymnet_instrument_name = CRM_Core_DAO::singleValueQuery("SELECT FROM civicrm_contribution ")
 
     $this->addButtons(array(
       array(
@@ -77,7 +92,7 @@ class CRM_Contract_Form_AssignContribution extends CRM_Core_Form {
         }
 
         // adjust contribution
-        if ($values['adjust']) {
+        if ($values['adjust_ft']) {
           $membership_type_id = civicrm_api3('Membership', 'getvalue', array(
               'id'     => $values['membership_id'],
               'return' => 'membership_type_id'));
