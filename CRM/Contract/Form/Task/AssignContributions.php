@@ -209,7 +209,6 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
       }
       if (!empty($contribution_recur_update)) {
         $contribution_recur_update['id'] = $contract['contribution_recur_id'];
-        error_log("UPDATE RCUR " . json_encode($contribution_recur_update));
         civicrm_api3('ContributionRecur', 'create', $contribution_recur_update);
         CRM_Core_Session::setStatus(E::ts("Adjusted date range of recurring contribution [%1]", array(1 => $contract['contribution_recur_id'])), E::ts("Success"), 'info');
       }
