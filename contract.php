@@ -8,6 +8,7 @@
 +--------------------------------------------------------------*/
 
 require_once 'contract.civix.php';
+use CRM_Contract_ExtensionUtil as E;
 
 /**
  * Implements hook_civicrm_config().
@@ -365,5 +366,24 @@ function contract_civicrm_apiWrappers(&$wrappers, $apiRequest) {
   // add contract reference validation for Memberships
   if ($apiRequest['entity'] == 'Membership') {
     $wrappers[] = new CRM_Contract_Validation_ContractNumber();
+  }
+}
+
+/**
+ * Add an "Assign to Campaign" for contact / membership search results
+ *
+ * @param string $objectType specifies the component
+ * @param array $tasks the list of actions
+ *
+ * @access public
+ */
+function contract_civicrm_searchTasks($objectType, &$tasks) {
+  if ($objectType == 'contribution') {
+    if (CRM_Core_Permission::check('manage campaign')) {
+      $tasks[] = array(
+          'title' => E::ts('Assign to contract'),
+          'class' => 'CRM_Contract_Form_Task_AssignContributions',
+          'result' => false);
+    }
   }
 }

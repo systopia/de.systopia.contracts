@@ -6,7 +6,7 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-use CRM_Uimods_ExtensionUtil as E;
+use CRM_Contract_ExtensionUtil as E;
 
 /**
  * Form controller class
