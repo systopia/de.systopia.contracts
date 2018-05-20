@@ -75,6 +75,7 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
   function postProcess() {
     $values = $this->exportValues();
     $contribution_id_list = implode(',', $this->_contributionIds);
+    $excluded_contribution_ids = array();
 
     $contracts = $this->getEligibleContracts();
     $contract = $contracts[$values['contract_id']];
@@ -84,7 +85,14 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
       throw new Exception("No contract selected!");
     }
 
-    if (!empty($values['reassign'])) {
+    if (empty($values['reassign'])) {
+      // only assign currently unassigned ones -> add the assigned ones to the list
+      $currently_assigned = CRM_Core_DAO::executeQuery("SELECT contribution_id FROM civicrm_membership_payment WHERE contribution_id IN ({$contribution_id_list});");
+      while ($currently_assigned->fetch()) {
+        $excluded_contribution_ids[] = $currently_assigned->contribution_id;
+      }
+
+    } else {
       // detach all contributions
       CRM_Core_DAO::executeQuery("DELETE FROM civicrm_membership_payment WHERE contribution_id IN ({$contribution_id_list})");
     }
@@ -96,13 +104,17 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
                                         {$contract_id}  AS membership_id
                                       FROM civicrm_contribution
                                       WHERE id IN ({$contribution_id_list});");
-    CRM_Core_Session::setStatus(E::ts("Assigned %1 contribution(s) to membership [%2]", array(
-        1 => count($this->_contributionIds),
+    CRM_Core_Session::setStatus(E::ts("Assigned %1 contribution(s) to contract [%2]", array(
+        1 => count($this->_contributionIds) - count($excluded_contribution_ids),
         2 => $contract_id)));
 
     // finally: update every single contribution
     $update_count = 0;
     foreach ($this->_contributionIds as $contribution_id) {
+      if (in_array($contribution_id, $excluded_contribution_ids)) {
+        continue; // this one has not been re-assiged -> no updates
+      }
+
       $contribution_update = array();
       // update financial type - if requested
       if (!empty($values['adjust_financial_type'])) {
@@ -148,7 +160,9 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
     }
 
     // done:
-    CRM_Core_Session::setStatus(E::ts("%1 contribution(s) were adjusted as requested.", array(1 => $update_count)));
+    if ($update_count > 0) {
+      CRM_Core_Session::setStatus(E::ts("%1 contribution(s) were adjusted as requested.", array(1 => $update_count)));
+    }
   }
 
 
