@@ -16,6 +16,8 @@ require_once 'CRM/Core/Form.php';
  */
 class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Task {
 
+  protected $_eligibleContracts = NULL;
+
   /**
    * Compile task form
    */
@@ -39,6 +41,12 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
         E::ts('Adjust Financial Type'),
         ['' => true]);
 
+    // option: re-assign
+    $this->addCheckbox(
+        'reassign',
+        E::ts('Re-Assign'),
+        ['' => true]);
+
     // option: also assign to recurring contribution [no, yes, yes and adjust start data, only if within start/end date
     $this->addElement('select',
         'assign_mode',
@@ -54,7 +62,7 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
     // option: change payment instrument (except SEPA) to ...
     $this->addElement('select',
         'adjust_pi',
-        E::ts('Adjust Payment Instrument (only non-SEPA)'),
+        E::ts('Adjust Payment Instrument'),
         $this->getEligiblePaymentInstruments(),
         array('class' => 'crm-select2'));
 
@@ -67,6 +75,18 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
   function postProcess() {
     $values = $this->exportValues();
 
+    $contracts = $this->getEligibleContracts();
+    $contract = $contracts[$values['contract_id']];
+    if (empty($contract)) {
+      throw new Exception("No contract selected!");
+    }
+
+
+    if (empty($contract['sepa_mandate_id'])) {
+      // TODO: process non-sepa options
+
+    }
+
     // TODO: implement
   }
 
@@ -75,42 +95,45 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
   /**
    * Get a list of all eligible contracts
    */
-  protected function getEligibleContracts() {
-    $contracts = array();
-    $contribution_id_list = implode(',', $this->_contributionIds);
-    $search = CRM_Core_DAO::executeQuery("
-    SELECT
-     m.id                                AS contract_id,
-     m.start_date                        AS start_date,
-     m.status_id                         AS status_id,
-     m.membership_type_id                AS membership_type_id,
-     f.name                              AS financial_type,
-     p.membership_recurring_contribution AS contribution_recur_id,
-     s.id                                AS sepa_mandate_id
-    FROM civicrm_contribution c
-    LEFT JOIN civicrm_membership m               ON m.contact_id = c.contact_id
-    LEFT JOIN civicrm_value_membership_payment p ON p.entity_id = m.id
-    LEFT JOIN civicrm_membership_type t          ON t.id = m.membership_type_id
-    LEFT JOIN civicrm_financial_type f           ON f.id = t.financial_type_id
-    LEFT JOIN civicrm_sdd_mandate s              ON s.entity_id = p.membership_recurring_contribution 
-                                                  AND s.entity_table = 'civicrm_contribution_recur'
-    WHERE c.id IN ({$contribution_id_list})
-      AND p.membership_recurring_contribution IS NOT NULL
-    GROUP BY m.id
-    ORDER BY m.status_id ASC, m.start_date DESC;");
-    while ($search->fetch()) {
-      $contracts[$search->contract_id] = array(
-          'id' => $search->contract_id,
-          'start_date' => $search->start_date,
-          'status_id' => $search->status_id,
-          'membership_type_id' => $search->membership_type_id,
-          'contribution_recur_id' => $search->contribution_recur_id,
-          'sepa_mandate_id' => $search->sepa_mandate_id,
-          'financial_type' => $search->financial_type,
-      );
+  protected function getEligibleContracts()
+  {
+    if ($this->_eligibleContracts === NULL) {
+      $this->_eligibleContracts = array();
+      $contribution_id_list = implode(',', $this->_contributionIds);
+      $search = CRM_Core_DAO::executeQuery("
+      SELECT
+       m.id                                AS contract_id,
+       m.start_date                        AS start_date,
+       m.status_id                         AS status_id,
+       m.membership_type_id                AS membership_type_id,
+       f.name                              AS financial_type,
+       p.membership_recurring_contribution AS contribution_recur_id,
+       s.id                                AS sepa_mandate_id
+      FROM civicrm_contribution c
+      LEFT JOIN civicrm_membership m               ON m.contact_id = c.contact_id
+      LEFT JOIN civicrm_value_membership_payment p ON p.entity_id = m.id
+      LEFT JOIN civicrm_membership_type t          ON t.id = m.membership_type_id
+      LEFT JOIN civicrm_financial_type f           ON f.id = t.financial_type_id
+      LEFT JOIN civicrm_sdd_mandate s              ON s.entity_id = p.membership_recurring_contribution 
+                                                    AND s.entity_table = 'civicrm_contribution_recur'
+      WHERE c.id IN ({$contribution_id_list})
+        AND p.membership_recurring_contribution IS NOT NULL
+      GROUP BY m.id
+      ORDER BY m.status_id ASC, m.start_date DESC;");
+      while ($search->fetch()) {
+        $this->_eligibleContracts[$search->contract_id] = array(
+            'id' => $search->contract_id,
+            'start_date' => $search->start_date,
+            'status_id' => $search->status_id,
+            'membership_type_id' => $search->membership_type_id,
+            'contribution_recur_id' => $search->contribution_recur_id,
+            'sepa_mandate_id' => $search->sepa_mandate_id,
+            'financial_type' => $search->financial_type,
+        );
+      }
     }
 
-    return $contracts;
+    return $this->_eligibleContracts;
   }
 
   /**

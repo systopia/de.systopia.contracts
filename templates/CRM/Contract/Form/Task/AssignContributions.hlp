@@ -1,0 +1,24 @@
+{*-------------------------------------------------------------+
+| SYSTOPIA Contract Extension                                  |
+| Copyright (C) 2018 SYSTOPIA                                  |
+| Author: B. Endres (endres -at- systopia.de)                  |
+| http://www.systopia.de/                                      |
++-------------------------------------------------------------*}
+
+
+{htxt id='id-adjust-financial-type'}
+  <p>{ts domain="de.systopia.contract"}Set the financial type of all contributions to the financial type specified in the selected contract's type.{/ts}</p>
+{/htxt}
+
+{htxt id='id-re-assign'}
+  <p>{ts domain="de.systopia.contract"}If selected even already assigned contributions will be detached from their current contract, and re-assigned to the selected one.{/ts}</p>
+{/htxt}
+
+{htxt id='id-assign-mode'}
+  <p>{ts domain="de.systopia.contract"}Here you can select to assign the contributions not only to the membership but also to the recurring contribution (e.g. standing order).{/ts}</p>
+  <p>{ts domain="de.systopia.contract"}This option is only available for non-SEPA contracts. SEPA contributions, however, should already be assigned to the respective recurring contribution (i.e. mandate).{/ts}</p>
+{/htxt}
+
+{htxt id='id-adjust-pi'}
+  <p>{ts domain="de.systopia.contract"}Adjust the payment instrument of all assigned contributions.{/ts}</p>
+{/htxt}
