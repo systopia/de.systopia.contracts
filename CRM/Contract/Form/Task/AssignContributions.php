@@ -74,20 +74,81 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
    */
   function postProcess() {
     $values = $this->exportValues();
+    $contribution_id_list = implode(',', $this->_contributionIds);
 
     $contracts = $this->getEligibleContracts();
     $contract = $contracts[$values['contract_id']];
+    $contract_id = (int) $contract['id'];
+
     if (empty($contract)) {
       throw new Exception("No contract selected!");
     }
 
-
-    if (empty($contract['sepa_mandate_id'])) {
-      // TODO: process non-sepa options
-
+    if (!empty($values['reassign'])) {
+      // detach all contributions
+      CRM_Core_DAO::executeQuery("DELETE FROM civicrm_membership_payment WHERE contribution_id IN ({$contribution_id_list})");
     }
 
-    // TODO: implement
+    // assign contributions
+    CRM_Core_DAO::executeQuery("INSERT IGNORE INTO civicrm_membership_payment (contribution_id,membership_id)
+                                      SELECT 
+                                        id              AS contribution_id,
+                                        {$contract_id}  AS membership_id
+                                      FROM civicrm_contribution
+                                      WHERE id IN ({$contribution_id_list});");
+    CRM_Core_Session::setStatus(E::ts("Assigned %1 contribution(s) to membership [%2]", array(
+        1 => count($this->_contributionIds),
+        2 => $contract_id)));
+
+    // finally: update every single contribution
+    $update_count = 0;
+    foreach ($this->_contributionIds as $contribution_id) {
+      $contribution_update = array();
+      // update financial type - if requested
+      if (!empty($values['adjust_financial_type'])) {
+        $contribution_update['financial_type_id'] = $contract['financial_type_id'];
+      }
+
+      // now the non-sepa options - if available
+      if (empty($contract['sepa_mandate_id'])) {
+
+        // adjust payment instrument - if requested
+        if (!empty($values['adjust_pi'])) {
+          $contribution_update['payment_instrument_id'] = $values['adjust_pi'];
+        }
+
+        // assign to the recurring contribution
+        switch ($values['assign_mode']) {
+          case 'yes':
+            // assign no matter what
+            $contribution_update['contribution_recur_id'] = $contract['contribution_recur_id'];
+            break;
+
+          case 'adjust':
+            // TODO: implement
+            break;
+
+          case 'in':
+            // TODO: implement
+            break;
+
+          default:
+          case 'no':
+            // do nothing
+            break;
+        }
+      }
+
+      // finally: run the upgrade
+      if (!empty($contribution_update)) {
+        $contribution_update['id'] = $contribution_id;
+        civicrm_api3('Contribution', 'create', $contribution_update);
+        $update_count += 1;
+      }
+    }
+
+    // done:
+    CRM_Core_Session::setStatus(E::ts("%1 contribution(s) were adjusted as requested.", array(1 => $update_count)));
   }
 
 
@@ -106,6 +167,7 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
        m.start_date                        AS start_date,
        m.status_id                         AS status_id,
        m.membership_type_id                AS membership_type_id,
+       f.id                                AS financial_type_id,
        f.name                              AS financial_type,
        p.membership_recurring_contribution AS contribution_recur_id,
        s.id                                AS sepa_mandate_id
@@ -122,13 +184,14 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
       ORDER BY m.status_id ASC, m.start_date DESC;");
       while ($search->fetch()) {
         $this->_eligibleContracts[$search->contract_id] = array(
-            'id' => $search->contract_id,
-            'start_date' => $search->start_date,
-            'status_id' => $search->status_id,
-            'membership_type_id' => $search->membership_type_id,
+            'id'                    => $search->contract_id,
+            'start_date'            => $search->start_date,
+            'status_id'             => $search->status_id,
+            'membership_type_id'    => $search->membership_type_id,
             'contribution_recur_id' => $search->contribution_recur_id,
-            'sepa_mandate_id' => $search->sepa_mandate_id,
-            'financial_type' => $search->financial_type,
+            'sepa_mandate_id'       => $search->sepa_mandate_id,
+            'financial_type'        => $search->financial_type,
+            'financial_type_id'     => $search->financial_type_id,
         );
       }
     }
