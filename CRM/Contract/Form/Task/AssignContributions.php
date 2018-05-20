@@ -80,6 +80,8 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
     $contracts = $this->getEligibleContracts();
     $contract = $contracts[$values['contract_id']];
     $contract_id = (int) $contract['id'];
+    $contribution_receive_dates = array();
+    $contribution_recur = NULL;
 
     if (empty($contract)) {
       throw new Exception("No contract selected!");
@@ -106,7 +108,30 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
                                       WHERE id IN ({$contribution_id_list});");
     CRM_Core_Session::setStatus(E::ts("Assigned %1 contribution(s) to contract [%2]", array(
         1 => count($this->_contributionIds) - count($excluded_contribution_ids),
-        2 => $contract_id)));
+        2 => $contract_id)), E::ts("Success"), 'info');
+
+
+    // prepare for adjustments
+    if (empty($contract['sepa_mandate_id'])) {
+      $contribution_recur = civicrm_api3('ContributionRecur', 'getsingle', array(
+          'id'     => $contract['contribution_recur_id'],
+          'return' => 'start_date,end_date'));
+      $contribution_recur['start_date'] = empty($contribution_recur['start_date']) ? NULL : date('YmdHis', strtotime($contribution_recur['start_date']));
+      $contribution_recur['end_date']   = empty($contribution_recur['end_date'])   ? NULL : date('YmdHis', strtotime($contribution_recur['end_date']));
+      $min_date = NULL;
+      $max_date = NULL;
+
+      // load the receive dates of all contributions
+      $query = CRM_Core_DAO::executeQuery("
+        SELECT
+          id           AS contribution_id,
+          receive_date AS receive_date
+        FROM civicrm_contribution
+        WHERE id IN ({$contribution_id_list})");
+      while ($query->fetch()) {
+        $contribution_receive_dates[$query->contribution_id] = $query->receive_date;
+      }
+    }
 
     // finally: update every single contribution
     $update_count = 0;
@@ -137,11 +162,25 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
             break;
 
           case 'adjust':
-            // TODO: implement
+            // assign contribution in any case
+            $contribution_update['contribution_recur_id'] = $contract['contribution_recur_id'];
+            // but keep a record of the range, so we can potentially adjust it
+            $receive_date = date('YmdHis', strtotime($contribution_receive_dates[$contribution_id]));
+            if ($min_date == NULL || $min_date > $receive_date) {
+              $min_date = $receive_date;
+            }
+            if ($max_date == NULL || $max_date < $receive_date) {
+              $max_date = $receive_date;
+            }
             break;
 
           case 'in':
-            // TODO: implement
+            // only assign contribution if already in the start_date - end_date range
+            $receive_date = date('YmdHis', strtotime($contribution_receive_dates[$contribution_id]));
+            if (   ($contribution_recur['start_date'] == NULL || $contribution_recur['start_date'] <= $receive_date)
+                && ($contribution_recur['end_date'] == NULL   || $contribution_recur['end_date']   >= $receive_date)) {
+              $contribution_update['contribution_recur_id'] = $contract['contribution_recur_id'];
+            }
             break;
 
           default:
@@ -159,9 +198,26 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
       }
     }
 
+    // recurring contribution adjustment
+    if (empty($contract['sepa_mandate_id']) && $values['assign_mode'] == 'adjust') {
+      $contribution_recur_update = array();
+      if ($min_date != NULL && $contribution_recur['start_date'] != NULL && $min_date < $contribution_recur['start_date']) {
+        $contribution_recur_update['start_date'] = $min_date;
+      }
+      if ($max_date != NULL && $contribution_recur['end_date'] != NULL   && $max_date > $contribution_recur['end_date']) {
+        $contribution_recur_update['end_date'] = $max_date;
+      }
+      if (!empty($contribution_recur_update)) {
+        $contribution_recur_update['id'] = $contract['contribution_recur_id'];
+        error_log("UPDATE RCUR " . json_encode($contribution_recur_update));
+        civicrm_api3('ContributionRecur', 'create', $contribution_recur_update);
+        CRM_Core_Session::setStatus(E::ts("Adjusted date range of recurring contribution [%1]", array(1 => $contract['contribution_recur_id'])), E::ts("Success"), 'info');
+      }
+    }
+
     // done:
     if ($update_count > 0) {
-      CRM_Core_Session::setStatus(E::ts("%1 contribution(s) were adjusted as requested.", array(1 => $update_count)));
+      CRM_Core_Session::setStatus(E::ts("%1 contribution(s) were adjusted as requested.", array(1 => $update_count)), E::ts("Success"), 'info');
     }
   }
 
