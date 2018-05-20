@@ -24,6 +24,7 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
 
     // get all contracts
     $contracts = $this->getEligibleContracts();
+    $this->assign('contracts', json_encode($contracts));
 
     // contract selector
     $this->addElement('select',
@@ -76,28 +77,37 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
    */
   protected function getEligibleContracts() {
     $contracts = array();
-
-    // first: get the IDs of eligible contracts
-    $contract_ids = array();
     $contribution_id_list = implode(',', $this->_contributionIds);
     $search = CRM_Core_DAO::executeQuery("
-    SELECT m.id AS contract_id  
+    SELECT
+     m.id                                AS contract_id,
+     m.start_date                        AS start_date,
+     m.status_id                         AS status_id,
+     m.membership_type_id                AS membership_type_id,
+     f.name                              AS financial_type,
+     p.membership_recurring_contribution AS contribution_recur_id,
+     s.id                                AS sepa_mandate_id
     FROM civicrm_contribution c
-    LEFT JOIN civicrm_membership m ON m.contact_id = c.contact_id
+    LEFT JOIN civicrm_membership m               ON m.contact_id = c.contact_id
+    LEFT JOIN civicrm_value_membership_payment p ON p.entity_id = m.id
+    LEFT JOIN civicrm_membership_type t          ON t.id = m.membership_type_id
+    LEFT JOIN civicrm_financial_type f           ON f.id = t.financial_type_id
+    LEFT JOIN civicrm_sdd_mandate s              ON s.entity_id = p.membership_recurring_contribution 
+                                                  AND s.entity_table = 'civicrm_contribution_recur'
     WHERE c.id IN ({$contribution_id_list})
+      AND p.membership_recurring_contribution IS NOT NULL
     GROUP BY m.id
-    ORDER BY m.status_id DESC, m.start_date DESC;");
+    ORDER BY m.status_id ASC, m.start_date DESC;");
     while ($search->fetch()) {
-      $contract_ids[] = $search->contract_id;
-    }
-
-    if (!empty($contract_ids)) {
-      $contract_query = civicrm_api3('Membership', 'get', array(
-        'id'         => array('IN' => $this->_contributionIds),
-        'return'     => 'start_date,membership_type_id,status_id',
-        'sequential' => 1
-      ));
-      $contracts = $contract_query['values'];
+      $contracts[$search->contract_id] = array(
+          'id' => $search->contract_id,
+          'start_date' => $search->start_date,
+          'status_id' => $search->status_id,
+          'membership_type_id' => $search->membership_type_id,
+          'contribution_recur_id' => $search->contribution_recur_id,
+          'sepa_mandate_id' => $search->sepa_mandate_id,
+          'financial_type' => $search->financial_type,
+      );
     }
 
     return $contracts;
@@ -108,7 +118,6 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
    */
   protected function getContractList($contracts) {
     $contract_list = array();
-    error_log(json_encode($contracts));
 
     // load membership types
     $membership_types = civicrm_api3('MembershipType', 'get', array(

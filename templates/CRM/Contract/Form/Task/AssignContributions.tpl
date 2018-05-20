@@ -13,17 +13,17 @@
 
 <div class="crm-section">
   <div class="label">{$form.adjust_financial_type.label}</div>
-  <div class="content">{$form.adjust_financial_type.html}</div>
+  <div class="content">{$form.adjust_financial_type.html}&nbsp;<span class="membership-financial-type">(unknown)</span></div></div>
   <div class="clear"></div>
 </div>
 
-<div class="crm-section">
+<div class="crm-section non-sepa-contract-only">
   <div class="label">{$form.assign_mode.label}</div>
   <div class="content">{$form.assign_mode.html}</div>
   <div class="clear"></div>
 </div>
 
-<div class="crm-section">
+<div class="crm-section non-sepa-contract-only">
   <div class="label">{$form.adjust_pi.label}</div>
   <div class="content">{$form.adjust_pi.html}</div>
   <div class="clear"></div>
@@ -33,7 +33,7 @@
 
 
 <script type="text/javascript">
-var generic_segments = {$generic_segments};
+var contracts = {$contracts};
 {literal}
 
 /*******************************
@@ -41,34 +41,20 @@ var generic_segments = {$generic_segments};
  ******************************/
 cj("#contract_id").change(function() {
   // rebuild segment list
-  //
-  // // first: remove all
-  // cj("#segment_list option").remove();
-  // cj("#segment").val('');
-  //
-  // // then: add default ones
-  // for (var i = 0; i < generic_segments.length; i++) {
-  //   cj("#segment_list").append('<option value="' + generic_segments[i] + '">' + generic_segments[i] + '(generic) </option>');
-  // }
-  //
-  // // then: look up the specific ones and add
-  // CRM.api3('Segmentation', 'segmentlist', {
-  //   "campaign_id": cj("#campaign_id").val(),
-  // }).done(function(result) {
-  //   for (var i = 0; i < result.values.length; i++) {
-  //     cj("#segment_list").append('<option value="' + result.values[i] + '">' + result.values[i] + '</option>');
-  //   }
-  // });
-});
+  var contract = contracts[cj("#contract_id").val()];
+  // show membership type
+  cj("span.membership-financial-type").html("(" + contract['financial_type'] + ")");
 
-/*******************************
- *    segemnt list handler     *
- ******************************/
-cj("#segment_list").change(function() {
-  cj("#segment").val(cj("#segment_list").val());
+  // show non-sepa options
+  if (contract['sepa_mandate_id']) {
+      cj("div.non-sepa-contract-only").hide();
+  } else {
+      cj("div.non-sepa-contract-only").show();
+      cj("div.non-sepa-contract-only").show();
+  }
 });
 
 // fire off event once
-cj("#campaign_id").change();
+cj("#contract_id").change();
 {/literal}
 </script>

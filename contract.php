@@ -379,9 +379,9 @@ function contract_civicrm_apiWrappers(&$wrappers, $apiRequest) {
  */
 function contract_civicrm_searchTasks($objectType, &$tasks) {
   if ($objectType == 'contribution') {
-    if (CRM_Core_Permission::check('manage campaign')) {
+    if (CRM_Core_Permission::check('edit memberships')) {
       $tasks[] = array(
-          'title' => E::ts('Assign to contract'),
+          'title' => E::ts('Assign to Contract'),
           'class' => 'CRM_Contract_Form_Task_AssignContributions',
           'result' => false);
     }
