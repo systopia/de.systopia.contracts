@@ -59,14 +59,15 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
         ),
         array('class' => 'crm-select2'));
 
-    // option: change payment instrument (except SEPA) to ...
-    $this->addElement('select',
-        'adjust_pi',
-        E::ts('Adjust Payment Instrument'),
-        $this->getEligiblePaymentInstruments(),
-        array('class' => 'crm-select2'));
-
-    CRM_Core_Form::addDefaultButtons(E::ts("Assign"));
+    // REMOVED: not wanted
+    //    // option: change payment instrument (except SEPA) to ...
+    //    $this->addElement('select',
+    //        'adjust_pi',
+    //        E::ts('Adjust Payment Instrument'),
+    //        $this->getEligiblePaymentInstruments(),
+    //        array('class' => 'crm-select2'));
+    //
+    //    CRM_Core_Form::addDefaultButtons(E::ts("Assign"));
   }
 
   /**
@@ -149,10 +150,10 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
       // now the non-sepa options - if available
       if (empty($contract['sepa_mandate_id'])) {
 
-        // adjust payment instrument - if requested
-        if (!empty($values['adjust_pi'])) {
-          $contribution_update['payment_instrument_id'] = $values['adjust_pi'];
-        }
+        // REMOVED: adjust payment instrument - if requested
+        // if (!empty($values['adjust_pi'])) {
+        //   $contribution_update['payment_instrument_id'] = $values['adjust_pi'];
+        // }
 
         // assign to the recurring contribution
         switch ($values['assign_mode']) {
