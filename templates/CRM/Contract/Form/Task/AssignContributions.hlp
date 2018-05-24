@@ -10,6 +10,10 @@
   <p>{ts domain="de.systopia.contract"}Set the financial type of all contributions to the financial type specified in the selected contract's type.{/ts}</p>
 {/htxt}
 
+{htxt id='id-adjust-start-date'}
+  <p>{ts domain="de.systopia.contract"}If a contribution is assigned with a receive date before the current start date of the membership, the start date is extended.{/ts}</p>
+{/htxt}
+
 {htxt id='id-re-assign'}
   <p>{ts domain="de.systopia.contract"}If selected even already assigned contributions will be detached from their current contract, and re-assigned to the selected one.{/ts}</p>
 {/htxt}
