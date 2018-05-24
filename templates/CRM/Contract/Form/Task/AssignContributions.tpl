@@ -23,13 +23,6 @@
   <div class="clear"></div>
 </div>
 
-<div class="crm-section">
-    <div class="label">{$form.adjust_start_date.label} <a onclick='CRM.help("{ts domain="de.systopia.contract"}Adjust Start Date{/ts}", {literal}{"id":"id-adjust-start-date","file":"CRM\/Contract\/Form\/Task\/AssignContributions"}{/literal}); return false;' href="#" title="{ts domain="de.systopia.contract"}Help{/ts}" class="helpicon">&nbsp;</a></td></div>
-    <div class="content">{$form.adjust_start_date.html}</div>
-    <div class="clear"></div>
-</div>
-
-
 <!-- REMOVED: div class="crm-section non-sepa-contract-only">
   <div class="label">{$form.adjust_pi.label} <a onclick='CRM.help("{ts domain="de.systopia.contract"}Adjust Payment Instrument{/ts}", {literal}{"id":"id-adjust-pi","file":"CRM\/Contract\/Form\/Task\/AssignContributions"}{/literal}); return false;' href="#" title="{ts domain="de.systopia.contract"}Help{/ts}" class="helpicon">&nbsp;</a></td></div>
   <div class="content">{$form.adjust_pi.html}</div>

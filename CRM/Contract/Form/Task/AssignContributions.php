@@ -47,12 +47,6 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
         E::ts('Re-Assign'),
         ['' => true]);
 
-    // option: adjust membership start date
-    $this->addCheckbox(
-        'adjust_start_date',
-        E::ts('Adjust Start Date'),
-        ['' => true]);
-
     // option: also assign to recurring contribution [no, yes, yes and adjust start data, only if within start/end date
     $this->addElement('select',
         'assign_mode',
@@ -88,10 +82,7 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
     $contract = $contracts[$values['contract_id']];
     $contract_id = (int) $contract['id'];
     $contribution_receive_dates = array();
-    $sepa_contributions = array()
     $contribution_recur = NULL;
-    $min_date = NULL;
-    $max_date = NULL;
 
     if (empty($contract)) {
       throw new Exception("No contract selected!");
@@ -121,21 +112,6 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
         2 => $contract_id)), E::ts("Success"), 'info');
 
 
-    // load information on  all contributions
-    $query = CRM_Core_DAO::executeQuery("
-        SELECT
-          id                     AS contribution_id,
-          payment_instrument_id  AS payment_instrument_id,
-          receive_date           AS receive_date
-        FROM civicrm_contribution
-        WHERE id IN ({$contribution_id_list})");
-    while ($query->fetch()) {
-      $contribution_receive_dates[$query->contribution_id] = $query->receive_date;
-      if ($query->payment_instrument_id in SEPA) {
-        $sepa_contributions[] = $query->contribution_id;
-      }
-    }
-
     // prepare for adjustments
     if (empty($contract['sepa_mandate_id'])) {
       $contribution_recur = civicrm_api3('ContributionRecur', 'getsingle', array(
@@ -143,6 +119,19 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
           'return' => 'start_date,end_date'));
       $contribution_recur['start_date'] = empty($contribution_recur['start_date']) ? NULL : date('YmdHis', strtotime($contribution_recur['start_date']));
       $contribution_recur['end_date']   = empty($contribution_recur['end_date'])   ? NULL : date('YmdHis', strtotime($contribution_recur['end_date']));
+      $min_date = NULL;
+      $max_date = NULL;
+
+      // load the receive dates of all contributions
+      $query = CRM_Core_DAO::executeQuery("
+        SELECT
+          id           AS contribution_id,
+          receive_date AS receive_date
+        FROM civicrm_contribution
+        WHERE id IN ({$contribution_id_list})");
+      while ($query->fetch()) {
+        $contribution_receive_dates[$query->contribution_id] = $query->receive_date;
+      }
     }
 
     // finally: update every single contribution
