@@ -16,6 +16,8 @@ require_once 'CRM/Core/Form.php';
  */
 class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Task {
 
+  protected static $sepa_pi_names = array('OOFF', 'RCUR', 'FRST');
+
   protected $_eligibleContracts = NULL;
 
   /**
@@ -59,15 +61,7 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
         ),
         array('class' => 'crm-select2'));
 
-    // REMOVED: not wanted
-    //    // option: change payment instrument (except SEPA) to ...
-    //    $this->addElement('select',
-    //        'adjust_pi',
-    //        E::ts('Adjust Payment Instrument'),
-    //        $this->getEligiblePaymentInstruments(),
-    //        array('class' => 'crm-select2'));
-    //
-    //    CRM_Core_Form::addDefaultButtons(E::ts("Assign"));
+    CRM_Core_Form::addDefaultButtons(E::ts("Assign"));
   }
 
   /**
@@ -81,7 +75,6 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
     $contracts = $this->getEligibleContracts();
     $contract = $contracts[$values['contract_id']];
     $contract_id = (int) $contract['id'];
-    $contribution_receive_dates = array();
     $contribution_recur = NULL;
 
     if (empty($contract)) {
@@ -112,44 +105,51 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
         2 => $contract_id)), E::ts("Success"), 'info');
 
 
-    // prepare for adjustments
-    if (empty($contract['sepa_mandate_id'])) {
-      $contribution_recur = civicrm_api3('ContributionRecur', 'getsingle', array(
-          'id'     => $contract['contribution_recur_id'],
-          'return' => 'start_date,end_date'));
-      $contribution_recur['start_date'] = empty($contribution_recur['start_date']) ? NULL : date('YmdHis', strtotime($contribution_recur['start_date']));
-      $contribution_recur['end_date']   = empty($contribution_recur['end_date'])   ? NULL : date('YmdHis', strtotime($contribution_recur['end_date']));
-      $min_date = NULL;
-      $max_date = NULL;
+    // load required contribution information
+    $contribution_query = civicrm_api3('Contribution', 'get', array(
+        'id' => ['IN' => $this->_contributionIds],
+        'option.limit' => 0,
+        'sequential'   => 0,
+        'return'       => 'receive_date,payment_instrument_id,id'));
+    $contributions = $contribution_query['values'];
 
-      // load the receive dates of all contributions
-      $query = CRM_Core_DAO::executeQuery("
-        SELECT
-          id           AS contribution_id,
-          receive_date AS receive_date
-        FROM civicrm_contribution
-        WHERE id IN ({$contribution_id_list})");
-      while ($query->fetch()) {
-        $contribution_receive_dates[$query->contribution_id] = $query->receive_date;
-      }
+    // load recurring contribution, too
+    $contribution_recur = civicrm_api3('ContributionRecur', 'getsingle', array(
+        'id'     => $contract['contribution_recur_id'],
+        'return' => 'start_date,end_date'));
+    $contribution_recur['start_date'] = empty($contribution_recur['start_date']) ? NULL : date('YmdHis', strtotime($contribution_recur['start_date']));
+    $contribution_recur['end_date']   = empty($contribution_recur['end_date'])   ? NULL : date('YmdHis', strtotime($contribution_recur['end_date']));
+
+    // load SEPA payment instruments
+    $sepa_pi_query = civicrm_api3('OptionValue', 'get', array(
+        'option_group_id' => 'payment_instrument',
+        'return'          => 'value,name',
+        'name'            => ['IN' => self::$sepa_pi_names],
+        'option.limit'    => 0));
+    $sepa_pis = array();
+    foreach ($sepa_pi_query['values'] as $value) {
+      $sepa_pis[] = $value['value'];
     }
 
     // finally: update every single contribution
     $update_count = 0;
+    $min_date = NULL;
+    $max_date = NULL;
     foreach ($this->_contributionIds as $contribution_id) {
       if (in_array($contribution_id, $excluded_contribution_ids)) {
         continue; // this one has not been re-assiged -> no updates
       }
 
+      // let's go...
+      $contribution = $contributions[$contribution_id];
       $contribution_update = array();
       // update financial type - if requested
       if (!empty($values['adjust_financial_type'])) {
         $contribution_update['financial_type_id'] = $contract['financial_type_id'];
       }
 
-      // now the non-sepa options - if available
-      if (empty($contract['sepa_mandate_id'])) {
-
+      // now the non-sepa options: if NOT a SEPA contract AND NOT a SEPA contribution
+      if (empty($contract['sepa_mandate_id']) && !in_array($contribution['payment_instrument_id'], $sepa_pis)) {
         // REMOVED: adjust payment instrument - if requested
         // if (!empty($values['adjust_pi'])) {
         //   $contribution_update['payment_instrument_id'] = $values['adjust_pi'];
@@ -166,7 +166,7 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
             // assign contribution in any case
             $contribution_update['contribution_recur_id'] = $contract['contribution_recur_id'];
             // but keep a record of the range, so we can potentially adjust it
-            $receive_date = date('YmdHis', strtotime($contribution_receive_dates[$contribution_id]));
+            $receive_date = date('YmdHis', strtotime($contribution['receive_date']));
             if ($min_date == NULL || $min_date > $receive_date) {
               $min_date = $receive_date;
             }
@@ -177,7 +177,7 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
 
           case 'in':
             // only assign contribution if already in the start_date - end_date range
-            $receive_date = date('YmdHis', strtotime($contribution_receive_dates[$contribution_id]));
+            $receive_date = date('YmdHis', strtotime($contribution['receive_date']));
             if (   ($contribution_recur['start_date'] == NULL || $contribution_recur['start_date'] <= $receive_date)
                 && ($contribution_recur['end_date'] == NULL   || $contribution_recur['end_date']   >= $receive_date)) {
               $contribution_update['contribution_recur_id'] = $contract['contribution_recur_id'];
@@ -302,15 +302,13 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
    */
   protected function getEligiblePaymentInstruments() {
     $eligible_pis = array();
-    $sepa_pi_names = array('OOFF', 'RCUR', 'FRST');
-
     $all_pis = civicrm_api3('OptionValue', 'get', array(
         'option_group_id' => 'payment_instrument',
         'is_active'       => 1,
         'return'          => 'value,name,label',
         'option.limit'    => 0));
     foreach ($all_pis['values'] as $pi) {
-      if (!in_array($pi['name'], $sepa_pi_names)) {
+      if (!in_array($pi['name'], self::$sepa_pi_names)) {
         $eligible_pis[$pi['value']] = $pi['label'];
       }
     }

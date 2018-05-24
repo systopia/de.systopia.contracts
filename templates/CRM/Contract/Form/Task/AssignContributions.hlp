@@ -16,7 +16,7 @@
 
 {htxt id='id-assign-mode'}
   <p>{ts domain="de.systopia.contract"}Here you can select to assign the contributions not only to the membership but also to the recurring contribution (e.g. standing order).{/ts}</p>
-  <p>{ts domain="de.systopia.contract"}This option is only available for non-SEPA contracts. SEPA contributions, however, should already be assigned to the respective recurring contribution (i.e. mandate).{/ts}</p>
+  <p>{ts domain="de.systopia.contract"}This option is only available for non-SEPA contracts, and will only be executed for non-SEPA contributions.{/ts}</p>
 {/htxt}
 
 {htxt id='id-adjust-pi'}
