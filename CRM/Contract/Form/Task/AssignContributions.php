@@ -226,9 +226,14 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
   /**
    * Get a list of all eligible contracts
    */
-  protected function getEligibleContracts()
-  {
+  protected function getEligibleContracts() {
     if ($this->_eligibleContracts === NULL) {
+      // get pi group id
+      $payment_instruments_group_id = civicrm_api3('OptionGroup', 'getvalue', array(
+          'return' => 'id',
+          'name'   => 'payment_instrument'));
+      if (empty($payment_instruments_group_id)) $payment_instruments_group_id = 10; // fallback
+
       $this->_eligibleContracts = array();
       $contribution_id_list = implode(',', $this->_contributionIds);
       $search = CRM_Core_DAO::executeQuery("
@@ -240,10 +245,14 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
        f.id                                AS financial_type_id,
        f.name                              AS financial_type,
        p.membership_recurring_contribution AS contribution_recur_id,
+       IF(pi.name IN ('RCUR', 'FRST'), 'SEPA', pi.label)
+                                           AS contribution_recur_pi,
        s.id                                AS sepa_mandate_id
       FROM civicrm_contribution c
       LEFT JOIN civicrm_membership m               ON m.contact_id = c.contact_id
       LEFT JOIN civicrm_value_membership_payment p ON p.entity_id = m.id
+      LEFT JOIN civicrm_contribution_recur r       ON r.id = p.membership_recurring_contribution 
+      LEFT JOIN civicrm_option_value pi            ON pi.value = r.payment_instrument_id AND pi.option_group_id = {$payment_instruments_group_id}
       LEFT JOIN civicrm_membership_type t          ON t.id = m.membership_type_id
       LEFT JOIN civicrm_financial_type f           ON f.id = t.financial_type_id
       LEFT JOIN civicrm_sdd_mandate s              ON s.entity_id = p.membership_recurring_contribution 
@@ -259,6 +268,7 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
             'status_id'             => $search->status_id,
             'membership_type_id'    => $search->membership_type_id,
             'contribution_recur_id' => $search->contribution_recur_id,
+            'contribution_recur_pi' => $search->contribution_recur_pi,
             'sepa_mandate_id'       => $search->sepa_mandate_id,
             'financial_type'        => $search->financial_type,
             'financial_type_id'     => $search->financial_type_id,
@@ -286,11 +296,12 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
         'return'       => 'label'));
 
     foreach ($contracts as $contract) {
-      $contract_list[$contract['id']] = E::ts("[%4] '%1' since %2 (%3)", array(
+      $contract_list[$contract['id']] = E::ts("[%4] '%1' since %2 (%3) - %5", array(
           1 => $membership_types['values'][$contract['membership_type_id']]['name'],
           2 => substr($contract['start_date'], 0, 4),
           3 => $membership_status['values'][$contract['status_id']]['label'],
-          4 => $contract['id']
+          4 => $contract['id'],
+          5 => $contract['contribution_recur_pi']
           ));
     }
 
