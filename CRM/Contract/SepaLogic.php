@@ -38,7 +38,7 @@ class CRM_Contract_SepaLogic {
    * Adjust or update the given SEPA mandate according to the
    * requested change
    */
-  public static function updateSepaMandate($membership_id, $current_state, $desired_state, $activity) {
+  public static function updateSepaMandate($membership_id, $current_state, $desired_state, $activity, $action = NULL) {
     // desired_state (from activity) hasn't resolved the numeric custom_ fields yet
     foreach ($desired_state as $key => $value) {
       if (preg_match('#^custom_\d+$#', $key)) {
@@ -64,7 +64,7 @@ class CRM_Contract_SepaLogic {
         $mandate_relevant_changes[] = $desired_field_name;
       }
     }
-    if (empty($mandate_relevant_changes)) {
+    if (empty($mandate_relevant_changes) && $action != 'revive') {
       // nothing to do here
       return NULL;
     }

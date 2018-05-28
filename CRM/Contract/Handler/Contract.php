@@ -138,7 +138,8 @@ class CRM_Contract_Handler_Contract{
     $new_recur = CRM_Contract_SepaLogic::updateSepaMandate($this->startState['id'],
                                               $this->startState,
                                               $this->modificationActivity,
-                                              $this->modificationActivity);
+                                              $this->modificationActivity,
+                                              $this->modificationClass->getAction());
     if ($new_recur) {
       // this means a new mandate has been created -> set
       $this->params['membership_payment.membership_recurring_contribution'] = $new_recur;
