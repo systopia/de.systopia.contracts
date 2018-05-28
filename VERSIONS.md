@@ -1,5 +1,10 @@
 # Version History
 
+## 1.3.1 (2017-12-22)
+* multiple T-Shirts in rapid create form (GP-1533)
+
+[TODO]
+
 ## 1.1.1 (2017-12-22)
 * fixed issue with yearly amounts > 1000 (GP-1331)
 
