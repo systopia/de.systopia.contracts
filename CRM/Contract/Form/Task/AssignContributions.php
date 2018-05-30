@@ -42,6 +42,7 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
         'adjust_financial_type',
         E::ts('Adjust Financial Type'),
         ['' => true]);
+    $this->setDefaults(['adjust_financial_type' => 'checked']);
 
     // option: re-assign
     $this->addCheckbox(
