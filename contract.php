@@ -266,17 +266,6 @@ function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &
               'qs'    => "reset=1&id={$membership_id}&cid={$contact_id}&action=view");
         }
       }
-
-      // add 'assign to contract' link
-//      if (CRM_Core_Permission::check('edit contributions')) {
-//        $links[] = array(
-//            'name'  => 'Assign',
-//            'title' => 'Assign to Contract',
-//            'url'   => 'civicrm/contract/contributionassign',
-//            'qs'    => "reset=1&cid={$contribution_id}");
-//        // formerly: only for membership dues
-//        // $financial_type_id = CRM_Core_DAO::singleValueQuery("SELECT financial_type_id FROM civicrm_contribution WHERE id = {$contribution_id} LIMIT 1");
-//      }
     }
   }
 }
