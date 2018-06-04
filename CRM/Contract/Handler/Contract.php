@@ -237,6 +237,17 @@ class CRM_Contract_Handler_Contract{
         $sepaMandate = $sepaMandateResult['values'][$sepaMandateResult['id']];
         $params['membership_payment.from_ba'] = CRM_Contract_BankingLogic::getOrCreateBankAccount($sepaMandate['contact_id'], $sepaMandate['iban'], $sepaMandate['bic']);
         $params['membership_payment.to_ba']   = CRM_Contract_BankingLogic::getCreditorBankAccount();
+      } elseif ($sepaMandateResult['count'] == 0) {
+        // this should be a recurring contribution -> get from the latest contribution
+        list($from_ba, $to_ba) = CRM_Contract_BankingLogic::getAccountsFromRecurringContribution($contributionRecur['id']);
+        $params['membership_payment.from_ba'] = $from_ba;
+        $params['membership_payment.to_ba']   = $to_ba;
+
+      } else {
+        // this is an error:
+        $params['membership_payment.from_ba'] = '';
+        $params['membership_payment.to_ba']   = '';
+
       }
     }
     $params = $this->convertCustomIds($params);
