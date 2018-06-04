@@ -111,8 +111,8 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
 
     // load required contribution information
     $contribution_query = civicrm_api3('Contribution', 'get', array(
-        'id' => ['IN' => $this->_contributionIds],
-        'option.limit' => 0,
+        'id'           => ['IN' => $this->_contributionIds],
+        'options'      => ['limit' => 0],
         'sequential'   => 0,
         'return'       => 'receive_date,payment_instrument_id,id'));
     $contributions = $contribution_query['values'];
@@ -129,7 +129,7 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
         'option_group_id' => 'payment_instrument',
         'return'          => 'value,name',
         'name'            => ['IN' => self::$sepa_pi_names],
-        'option.limit'    => 0));
+        'options'         => ['limit' => 0]));
     $sepa_pis = array();
     foreach ($sepa_pi_query['values'] as $value) {
       $sepa_pis[] = $value['value'];
@@ -146,8 +146,6 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
 
       // let's go...
       $contribution = $contributions[$contribution_id];
-      $this->error(json_encode($contribution));
-      $this->error(json_encode($sepa_pis));
       $contribution_update = array();
       // update financial type - if requested
       if (!empty($values['adjust_financial_type'])) {
