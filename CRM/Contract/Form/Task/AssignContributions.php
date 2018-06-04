@@ -95,12 +95,15 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
     }
 
     // assign contributions
+    $excluded_contribution_id_list = implode(',', $excluded_contribution_ids);
+    $NOT_IN_EXCLUDED = empty($excluded_contribution_id_list) ? 'TRUE' : "id NOT IN ({$excluded_contribution_id_list})";
     CRM_Core_DAO::executeQuery("INSERT IGNORE INTO civicrm_membership_payment (contribution_id,membership_id)
                                       SELECT 
                                         id              AS contribution_id,
                                         {$contract_id}  AS membership_id
                                       FROM civicrm_contribution
-                                      WHERE id IN ({$contribution_id_list});");
+                                      WHERE id IN ({$contribution_id_list})
+                                        AND {$NOT_IN_EXCLUDED};");
     CRM_Core_Session::setStatus(E::ts("Assigned %1 contribution(s) to contract [%2]", array(
         1 => count($this->_contributionIds) - count($excluded_contribution_ids),
         2 => $contract_id)), E::ts("Success"), 'info');
@@ -143,6 +146,8 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
 
       // let's go...
       $contribution = $contributions[$contribution_id];
+      $this->error(json_encode($contribution));
+      $this->error(json_encode($sepa_pis));
       $contribution_update = array();
       // update financial type - if requested
       if (!empty($values['adjust_financial_type'])) {
