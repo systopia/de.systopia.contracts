@@ -219,6 +219,30 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
       }
     }
 
+    // see if we need to adjust the bank accounts
+    if (empty($contract['sepa_mandate_id']) && $values['assign_mode'] != 'no') {
+      // something might have changed, check the accounts
+      list($from_ba, $to_ba) = CRM_Contract_BankingLogic::getAccountsFromRecurringContribution($contract['contribution_recur_id']);
+
+      if ($from_ba != $contract['from_ba'] || $to_ba != $contract['to_ba']) {
+        $contract_update = [];
+        if ($from_ba != $contract['from_ba']) {
+          $field_key = CRM_Contract_Utils::getCustomFieldId('membership_payment.from_ba');
+          $contract_update[$field_key] = $from_ba;
+        }
+        if ($to_ba != $contract['to_ba']) {
+          $field_key = CRM_Contract_Utils::getCustomFieldId('membership_payment.to_ba');
+          $contract_update[$field_key] = $to_ba;
+        }
+
+        if (!empty($contract_update)) {
+          $contract_update['id'] = $contract['id'];
+          $contract_update['skip_handler'] = 1;
+          civicrm_api3('Membership', 'create', $contract_update);
+        }
+      }
+    }
+
     // done:
     if ($update_count > 0) {
       CRM_Core_Session::setStatus(E::ts("%1 contribution(s) were adjusted as requested.", array(1 => $update_count)), E::ts("Success"), 'info');
@@ -243,11 +267,14 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
       $search = CRM_Core_DAO::executeQuery("
       SELECT
        m.id                                AS contract_id,
+       m.contact_id                        AS contact_id,
        m.start_date                        AS start_date,
        m.status_id                         AS status_id,
        m.membership_type_id                AS membership_type_id,
        f.id                                AS financial_type_id,
        f.name                              AS financial_type,
+       p.from_ba                           AS from_ba,
+       p.to_ba                             AS to_ba,
        p.membership_recurring_contribution AS contribution_recur_id,
        IF(pi.name IN ('RCUR', 'FRST'), 'SEPA', pi.label)
                                            AS contribution_recur_pi,
@@ -275,6 +302,9 @@ class CRM_Contract_Form_Task_AssignContributions extends CRM_Contribute_Form_Tas
             'contribution_recur_pi' => $search->contribution_recur_pi,
             'sepa_mandate_id'       => $search->sepa_mandate_id,
             'financial_type'        => $search->financial_type,
+            'from_ba'               => $search->from_ba,
+            'to_ba'                 => $search->to_ba,
+            'contact_id'            => $search->contact_id,
             'financial_type_id'     => $search->financial_type_id,
         );
       }
