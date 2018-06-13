@@ -318,6 +318,8 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     $contractParams['medium_id'] = $submitted['activity_medium']; // Membership channel
 
     $contract = civicrm_api3('Contract', 'create', $contractParams);
+    $membership_url = CRM_Utils_System::url('civicrm/contact/view/membership', "action=view&cid={$contact['id']}&id={$contract['id']}");
+    CRM_Core_Session::setStatus("New Membership <a href=\"{$membership_url}\" style=\"font-weight: bold;\">{$contract['id']}</a> created.", "Success", 'info');
 
     // Create T-shirt order
 
