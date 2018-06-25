@@ -157,7 +157,7 @@ class CRM_Contract_SepaLogic {
         'type'               => 'RCUR',
         'contact_id'         => $current_state['contact_id'],
         'amount'             => $amount,
-        'currency'           => 'EUR',
+        'currency'           => self::getCreditor()->currency,
         'start_date'         => self::getMandateUpdateStartDate($current_state, $current_state, $desired_state, $activity),
         'creation_date'      => date('YmdHis'), // NOW
         'date'               => date('YmdHis', strtotime($activity['activity_date_time'])),

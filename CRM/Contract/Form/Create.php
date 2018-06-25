@@ -170,7 +170,7 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
               'type'               => 'RCUR',
               'contact_id'         => $this->get('cid'),
               'amount'             => $amount,
-              'currency'           => 'EUR',
+              'currency'           => CRM_Contract_SepaLogic::getCreditor()->currency,
               'start_date'         => CRM_Utils_Date::processDate($submitted['start_date'], null, null, 'Y-m-d H:i:s'),
               'creation_date'      => date('YmdHis'), // NOW
               'date'               => CRM_Utils_Date::processDate($submitted['start_date'], null, null, 'Y-m-d H:i:s'),
