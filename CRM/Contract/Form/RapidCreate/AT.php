@@ -7,13 +7,13 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
+class CRM_Contract_Form_RapidCreate_AT extends CRM_Core_Form{
 
   function buildQuickForm(){
-    CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/RapidCreate.js');
+    CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'templates/CRM/Contract/Form/RapidCreate/AT.js');
     CRM_Core_Resources::singleton()->addScriptFile('de.systopia.contract', 'js/rapidcreate_address_autocomplete.js', 10, 'page-header');
     // ### Contact information ###
-    $prefixes = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'individual_prefix', 'is_active' => 1])['values'], 'label', 'value');
+    $prefixes = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'individual_prefix', 'is_active' => 1, 'options' => ['limit' => 0, 'sort' => 'weight']])['values'], 'label', 'value');
     $this->add('select', 'prefix_id', 'Prefix', $prefixes, true);
     $this->add('text', 'formal_title', 'Title', array('class' => 'huge'));
     $this->add('text', 'first_name', 'First name', array('class' => 'huge'));
@@ -65,9 +65,9 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
 
     $this->addCheckbox('tshirt_order', 'Is this a T-shirt order?', ['' => true]);
     // A dropdown-field "Shirt Type" needs to be in rthe form - the T-Shirt types available should be taken from the option group "shirt_type"
-    $shirtDesigns = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'order_type', 'label' => ['LIKE' => '%T-Shirt%']])['values'], 'name', 'value');
-    $shirtSizes = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'shirt_size'])['values'], 'name', 'value');
-    $shirtTypes = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'shirt_type'])['values'], 'name', 'value');
+    $shirtDesigns = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'order_type', 'label' => ['LIKE' => '%T-Shirt%'], 'options' => ['limit' => 0, 'sort' => 'weight']])['values'], 'name', 'value');
+    $shirtSizes = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'shirt_size', 'options' => ['limit' => 0, 'sort' => 'weight']])['values'], 'name', 'value');
+    $shirtTypes = array_column(civicrm_api3('OptionValue', 'get', ['option_group_id' => 'shirt_type', 'options' => ['limit' => 0, 'sort' => 'weight']])['values'], 'name', 'value');
     $this->add('select', 'shirt_design', 'Shirt design', $shirtDesigns);
     $this->add('select', 'shirt_type', 'Shirt cut', $shirtTypes);
     $this->add('select', 'shirt_size', 'Shirt size', $shirtSizes);
@@ -95,12 +95,12 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     //   'placeholder' => ts('- none -')
     // ], true);
     // Membership type (membership)
-    foreach(civicrm_api3('MembershipType', 'get', [])['values'] as $MembershipType){
+    foreach(civicrm_api3('MembershipType', 'get', ['options' => ['limit' => 0, 'sort' => 'weight']])['values'] as $MembershipType){
       $MembershipTypeOptions[$MembershipType['id']] = $MembershipType['name'];
     };
     $this->add('select', 'membership_type_id', ts('Membership type'), array('' => '- none -') + $MembershipTypeOptions, true, array('class' => 'crm-select2'));
     // Source media (activity)
-    foreach(civicrm_api3('Activity', 'getoptions', ['field' => "activity_medium_id"])['values'] as $key => $value){
+    foreach(civicrm_api3('Activity', 'getoptions', ['field' => "activity_medium_id", 'options' => ['limit' => 0, 'sort' => 'weight']])['values'] as $key => $value){
       $mediumOptions[$key] = $value;
     }
     $this->add('select', 'activity_medium', ts('Source media'), array('' => '- none -') + $mediumOptions, false, array('class' => 'crm-select2'));
@@ -111,9 +111,10 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
     // DD-Fundraiser
     $this->addEntityRef('membership_dialoger', ts('DD-Fundraiser'), array('api' => array('params' => array('contact_type' => 'Individual', 'contact_sub_type' => 'Dialoger'))), true);
     // Membership channel
-    foreach(civicrm_api3('OptionValue', 'get', array(
+    foreach(civicrm_api3('OptionValue', 'get', [
       'option_group_id' => 'contact_channel',
-      'is_active'       => 1))['values'] as $optionValue){
+      'is_active'       => 1,
+      'options'         => ['limit' => 0, 'sort' => 'weight']])['values'] as $optionValue){
       $membershipChannelOptions[$optionValue['value']] = $optionValue['label'];
     };
     $this->add('select', 'membership_channel', ts('Membership channel'), array('' => '- none -') + $membershipChannelOptions, true, array('class' => 'crm-select2'));
@@ -123,8 +124,9 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
 
 
     $this->addButtons([
-      array('type' => 'cancel', 'name' => 'Cancel'),
-      array('type' => 'submit', 'name' => 'Create')
+      ['type' => 'submit', 'name' => 'Save', 'subName' => 'done', 'isDefault' => TRUE, 'icon' => 'check'],
+      ['type' => 'submit', 'name' => 'Save and new', 'subName' => 'new'],
+      ['type' => 'cancel', 'name' => 'Cancel'],
     ]);
 
     $this->setDefaults();
@@ -346,8 +348,11 @@ class CRM_Contract_Form_RapidCreate extends CRM_Core_Form{
       $tshirtResult = civicrm_api3('Activity', 'create', $tshirtActivityParams);
     }
 
-
-    $this->controller->_destination = CRM_Utils_System::url('civicrm/contact/view', "reset=1&cid={$contact['id']}");
+    if (array_key_exists('_qf_AT_submit_new', $submitted)) {
+      $this->controller->_destination = CRM_Utils_System::url('civicrm/member/add', "reset=1&action=add&context=standalone");
+    } else {
+      $this->controller->_destination = CRM_Utils_System::url('civicrm/contact/view', "reset=1&cid={$contact['id']}");
+    }
 
   }
 
