@@ -108,7 +108,7 @@
   </div>
   <div class="crm-section payment-create">
     <div class="label">{$form.payment_amount.label}</div>
-    <div class="content">{$form.payment_amount.html}&nbsp;EUR</div>
+    <div class="content">{$form.payment_amount.html}&nbsp;<span id="payment_amount_currency"></span></div>
     <div class="clear"></div>
   </div>
   <div class="crm-section payment-create">
@@ -277,10 +277,12 @@ function updatePaymentSummaryText() {
     "Creditor account: " + creditor.iban + "<br/>" +
     "Payment method: SEPA Direct Debit<br/>" +
     "Frequency: " + freqency_label + "<br/>" +
-    "Annual amount: " + annual + " EUR<br/>" +
-    "Installment amount: " + installment.toFixed(2) + " EUR<br/>" +
+    "Annual amount: " + annual + " " + creditor.currency + "<br/>" +
+    "Installment amount: " + installment.toFixed(2) + " " + creditor.currency + "<br/>" +
     "Next debit: " + first_collection + "<br/>"
     );
+
+  cj('#payment_amount_currency').text(creditor.currency);
 }
 
 // call once for the UI to adjust

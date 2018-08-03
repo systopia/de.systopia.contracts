@@ -187,8 +187,8 @@ class CRM_Contract_RecurringContribution {
         Creditor account: {$result['fields']['org_iban']}<br />
         Payment method: {$result['fields']['payment_instrument']}<br />
         Frequency: {$result['fields']['frequency']}<br />
-        Annual amount: {$result['fields']['annual_amount']}&nbsp;EUR<br />
-        Installment amount: {$result['fields']['amount']}&nbsp;EUR<br />
+        Annual amount: {$result['fields']['annual_amount']}&nbsp;{$cr['currency']}<br />
+        Installment amount: {$result['fields']['amount']}&nbsp;{$cr['currency']}<br />
         Next debit: {$result['fields']['next_debit']}
       ";
 
@@ -198,8 +198,8 @@ class CRM_Contract_RecurringContribution {
         Debitor name: {$result['fields']['display_name']}<br />
         Payment method: {$result['fields']['payment_instrument']}<br />
         Frequency: {$result['fields']['frequency']}<br />
-        Annual amount: {$result['fields']['annual_amount']}&nbsp;EUR<br />
-        Installment amount: {$result['fields']['amount']}&nbsp;EUR<br />
+        Annual amount: {$result['fields']['annual_amount']}&nbsp;{$cr['currency']}<br />
+        Installment amount: {$result['fields']['amount']}&nbsp;{$cr['currency']}<br />
       ";
       $result['label'] = "{$result['fields']['payment_instrument']}, {$result['fields']['amount']} {$result['fields']['frequency']}";
     }

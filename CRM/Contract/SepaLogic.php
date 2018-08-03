@@ -157,7 +157,7 @@ class CRM_Contract_SepaLogic {
         'type'               => 'RCUR',
         'contact_id'         => $current_state['contact_id'],
         'amount'             => $amount,
-        'currency'           => 'EUR',
+        'currency'           => self::getCreditor()->currency,
         'start_date'         => self::getMandateUpdateStartDate($current_state, $current_state, $desired_state, $activity),
         'creation_date'      => date('YmdHis'), // NOW
         'date'               => date('YmdHis', strtotime($activity['activity_date_time'])),
@@ -464,7 +464,8 @@ class CRM_Contract_SepaLogic {
    * @return int next valid cycle day
    */
   public static function nextCycleDay() {
-    $buffer_days = 2; // TODO: more?
+    $creditor = CRM_Sepa_Logic_Settings::defaultCreditor();
+    $buffer_days = (int) CRM_Sepa_Logic_Settings::getSetting("pp_buffer_days") + (int) CRM_Sepa_Logic_Settings::getSetting("batching.FRST.notice", $creditor->id);
     $cycle_days = self::getCycleDays();
 
     $safety_counter = 32;

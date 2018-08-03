@@ -140,6 +140,7 @@ function contract_civicrm_buildForm($formName, &$form) {
       $contactId = CRM_Utils_Request::retrieve('cid', 'Positive', $form);
 
       $formUtils = new CRM_Contract_FormUtils($form, 'Membership');
+      $formUtils->setPaymentAmountCurrency();
       $formUtils->replaceIdWithLabel('membership_payment.membership_recurring_contribution', 'ContributionRecur');
       $formUtils->replaceIdWithLabel('membership_payment.payment_instrument', 'PaymentInstrument');
       $formUtils->replaceIdWithLabel('membership_payment.to_ba', 'BankAccountReference');
