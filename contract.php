@@ -385,6 +385,10 @@ function contract_civicrm_searchTasks($objectType, &$tasks) {
           'title' => E::ts('Assign to Contract'),
           'class' => 'CRM_Contract_Form_Task_AssignContributions',
           'result' => false);
+      $tasks[] = array(
+          'title' => E::ts('Detach from Contract'),
+          'class' => 'CRM_Contract_Form_Task_DetachContributions',
+          'result' => false);
     }
   }
 }
