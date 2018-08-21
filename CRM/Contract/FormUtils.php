@@ -154,6 +154,7 @@ class CRM_Contract_FormUtils
           $script = str_replace('CONTRACT_FILE_DOWNLOAD', $url, $script);
           CRM_Core_Region::instance('page-footer')->add(array(
             'script' => $script,
+            'name'   => 'contract-download@de.systopia.contract',
           ));
         }
       }
