@@ -32,6 +32,7 @@ class CRM_Contract_Utils{
     'membership_payment.from_ba'                           => 'contract_updates.ch_from_ba',
     'membership_payment.to_ba'                             => 'contract_updates.ch_to_ba',
     'membership_payment.cycle_day'                         => 'contract_updates.ch_cycle_day',
+    'membership_payment.defer_payment_start'               => 'contract_updates.ch_defer_payment_start',
     'membership_cancellation.membership_cancel_reason'     => 'contract_cancellation.contact_history_cancel_reason',
 ];
 

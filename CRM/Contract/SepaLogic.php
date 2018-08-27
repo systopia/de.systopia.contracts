@@ -48,13 +48,15 @@ class CRM_Contract_SepaLogic {
     }
 
     // all relevant fields (activity field  -> membership field)
-    $mandate_relevant_fields = array(
+    $mandate_relevant_fields = [
       'contract_updates.ch_annual'                 => 'membership_payment.membership_annual',
       'contract_updates.ch_from_ba'                => 'membership_payment.from_ba',
       // 'contract_updates.ch_to_ba'                  => 'membership_payment.to_ba', // TODO: implement when multiple creditors are around
       'contract_updates.ch_frequency'              => 'membership_payment.membership_frequency',
       'contract_updates.ch_cycle_day'              => 'membership_payment.cycle_day',
-      'contract_updates.ch_recurring_contribution' => 'membership_payment.membership_recurring_contribution');
+      'contract_updates.ch_recurring_contribution' => 'membership_payment.membership_recurring_contribution',
+      'contract_updates.ch_defer_payment_start'    => 'membership_payment.defer_payment_start',
+    ];
 
     // calculate changes to see whether we have to act
     $mandate_relevant_changes = array();
@@ -165,7 +167,7 @@ class CRM_Contract_SepaLogic {
         'contact_id'         => $current_state['contact_id'],
         'amount'             => $amount,
         'currency'           => self::getCreditor()->currency,
-        'start_date'         => self::getMandateUpdateStartDate($current_state, $current_state, $desired_state, $activity),
+        'start_date'         => self::getMandateUpdateStartDate($current_state, $desired_state, $activity),
         'creation_date'      => date('YmdHis'), // NOW
         'date'               => date('YmdHis', strtotime($activity['activity_date_time'])),
         'validation_date'    => date('YmdHis'), // NOW
@@ -278,13 +280,13 @@ class CRM_Contract_SepaLogic {
    *
    * @see https://redmine.greenpeace.at/issues/771
    */
-  public static function getMandateUpdateStartDate($current_state, $current_state, $desired_state, $activity) {
+  public static function getMandateUpdateStartDate($current_state, $desired_state, $activity) {
     $now = date('YmdHis');
     $update_activity_type  = CRM_Core_OptionGroup::getValue('activity_type', 'Contract_Updated', 'name');
     $contribution_recur_id = CRM_Utils_Array::value('membership_payment.membership_recurring_contribution', $current_state);
 
-    // check if it is a proper update
-    if ($contribution_recur_id && $activity['activity_type_id'] == $update_activity_type) {
+    // check if it is a proper update and if we should defer the start date to respect already paid periods
+    if ($contribution_recur_id && $activity['activity_type_id'] == $update_activity_type && $desired_state['contract_updates.ch_defer_payment_start'] == '1') {
       // load last successull collection for the recurring contribution
       $calculated_date = self::getNextInstallmentDate($contribution_recur_id);
       // re-format date (returned as 'Y-m-d H:i:s') and return
