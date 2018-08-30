@@ -64,7 +64,8 @@ class CRM_Contract_Form_Task_DetachContributions extends CRM_Contribute_Form_Tas
     $values = $this->exportValues();
     if (!empty($values['detach_recur'])) {
       $dcounter = 0;
-      foreach ($this->_contributionIds as $contribution_id) {
+      $nonsepa_contribution_ids = $this->getNonSepaContributionIDs();
+      foreach ($nonsepa_contribution_ids as $contribution_id) {
         try {
           civicrm_api3('Contribution', 'create', [
               'id'                    => $contribution_id,
@@ -74,13 +75,19 @@ class CRM_Contract_Form_Task_DetachContributions extends CRM_Contribute_Form_Tas
           CRM_Core_Session::setStatus(E::ts("Contribution [%1] couldn't be detached: %2", [1 => $contribution_id, 2 => $ex->getMessage()]), ts('Error'), 'error');
         }
       }
+      // inform the user:
       CRM_Core_Session::setStatus(E::ts("%1 contribution(s) have been detached from the recurring contribution.", [1 => $dcounter]), ts('Success'), 'info');
+      $sepa_contribution_count  = count($this->_contributionIds) - count($nonsepa_contribution_ids);
+      if ($sepa_contribution_count) {
+        CRM_Core_Session::setStatus(E::ts("%1 contribution(s) have <strong>not</strong> been detached from the recurring contribution, because they belong to a CiviSEPA mandate.", [1 => $sepa_contribution_count]), ts('Cannot Detach'), 'info');
+      }
     }
 
     // update financial types
     if (!empty($values['change_financial_type'])) {
       // update all contributions
       $ccounter = 0;
+
       foreach ($this->_contributionIds as $contribution_id) {
         try {
           civicrm_api3('Contribution', 'create', [
@@ -91,6 +98,7 @@ class CRM_Contract_Form_Task_DetachContributions extends CRM_Contribute_Form_Tas
           CRM_Core_Session::setStatus(E::ts("Financial type for contribution [%1] couldn't be changed: %2", [1 => $contribution_id, 2 => $ex->getMessage()]), ts('Error'), 'error');
         }
       }
+      // inform the user:
       CRM_Core_Session::setStatus(E::ts("Financial type for %1 contribution(s) has been updated.", [1 => $ccounter]), ts('Success'), 'info');
 
       // update all recurring contributions
@@ -99,7 +107,6 @@ class CRM_Contract_Form_Task_DetachContributions extends CRM_Contribute_Form_Tas
         $recur_ids = $this->getRecurringIDs();
         foreach ($recur_ids as $recur_id) {
           try {
-            CRM_Core_Error::debug_log_message("$recur_id {$values['change_financial_type']}");
             civicrm_api3('ContributionRecur', 'create', [
                 'id'                => $recur_id,
                 'financial_type_id' => $values['change_financial_type']]);
@@ -108,6 +115,7 @@ class CRM_Contract_Form_Task_DetachContributions extends CRM_Contribute_Form_Tas
             CRM_Core_Session::setStatus(E::ts("Financial type for recurring contribution [%1] couldn't be changed: %2", [1 => $recur_id, 2 => $ex->getMessage()]), ts('Error'), 'error');
           }
         }
+        // inform the user:
         CRM_Core_Session::setStatus(E::ts("Financial type for %1 recurring contribution(s) has been updated.", [1 => $rcounter]), ts('Success'), 'info');
       }
     }
@@ -148,7 +156,9 @@ class CRM_Contract_Form_Task_DetachContributions extends CRM_Contribute_Form_Tas
     if (!empty($id_list)) {
       $query = CRM_Core_DAO::executeQuery("SELECT DISTINCT(contribution_recur_id) AS rid FROM civicrm_contribution WHERE id IN ({$id_list})");
       while ($query->fetch()) {
-        $rcur_ids[] = $query->rid;
+        if (!empty($query->rid)) {
+          $rcur_ids[] = $query->rid;
+        }
       }
     }
     return $rcur_ids;
@@ -169,4 +179,27 @@ class CRM_Contract_Form_Task_DetachContributions extends CRM_Contribute_Form_Tas
     }
     return $list;
   }
+
+  /**
+   * Filter $this->_contributionIds for the ones that are
+   * NOT connected to a SEPA mandate
+   */
+  protected function getNonSepaContributionIDs() {
+    $id_list = implode(',', $this->_contributionIds);
+    $nonsepa_ids = [];
+    if (!empty($id_list)) {
+      $query = CRM_Core_DAO::executeQuery("
+          SELECT contribution.id AS rid 
+          FROM civicrm_contribution contribution
+          LEFT JOIN civicrm_sdd_mandate mandate  ON mandate.entity_id = contribution.contribution_recur_id
+                                                AND mandate.entity_table = 'civicrm_contribution_recur'
+          WHERE contribution.id IN ({$id_list})
+            AND mandate.id IS NULL;");
+      while ($query->fetch()) {
+        $nonsepa_ids[] = $query->rid;
+      }
+    }
+    return $nonsepa_ids;
+  }
 }
+
