@@ -21,7 +21,7 @@ class CRM_Contract_Form_Task_DetachContributions extends CRM_Contribute_Form_Tas
     CRM_Utils_System::setTitle(ts('Detach Contributions from Membership'));
 
     // compile an info text
-    $infotext = E::ts("%1 of the %2 contributions are currently attached to a membership.", array(
+    $infotext = E::ts("%1 of the %2 contributions are currently attached to a membership, and <strong>will be detached.</strong>", array(
       1 => $this->getAssignedCount(),
       2 => count($this->_contributionIds)));
     $this->assign('infotext', $infotext);
@@ -30,7 +30,7 @@ class CRM_Contract_Form_Task_DetachContributions extends CRM_Contribute_Form_Tas
     // additional options
     $this->addCheckbox(
         'detach_recur',
-        E::ts('Detach %1 connected recurring contributions', [1 => $this->getRecurringCount()]),
+        E::ts('Detach from %1 recurring contributions', [1 => $this->getRecurringCount()]),
         ['' => true]);
 
     $this->addElement('select',
@@ -58,15 +58,23 @@ class CRM_Contract_Form_Task_DetachContributions extends CRM_Contribute_Form_Tas
       CRM_Core_DAO::executeQuery("DELETE FROM civicrm_membership_payment WHERE contribution_id IN ({$id_list})");
     }
 
-    CRM_Core_Session::setStatus(E::ts("%1 contribution(s) have been detached from their memberships.", array(1 => $count)), ts('Success'), 'info');
+    CRM_Core_Session::setStatus(E::ts("All contribution(s) have been detached from their memberships."), ts('Success'), 'info');
 
     // detach the recurring contributions
     $values = $this->exportValues();
-    $recur_ids = $this->getRecurringIDs();
     if (!empty($values['detach_recur'])) {
-      foreach ($recur_ids as $recur_id) {
-        // TODO: remove from contract
+      $dcounter = 0;
+      foreach ($this->_contributionIds as $contribution_id) {
+        try {
+          civicrm_api3('Contribution', 'create', [
+              'id'                    => $contribution_id,
+              'contribution_recur_id' => '']);
+          $dcounter += 1;
+        } catch (Exception $ex) {
+          CRM_Core_Session::setStatus(E::ts("Contribution [%1] couldn't be detached: %2", [1 => $contribution_id, 2 => $ex->getMessage()]), ts('Error'), 'error');
+        }
       }
+      CRM_Core_Session::setStatus(E::ts("%1 contribution(s) have been detached from the recurring contribution.", [1 => $dcounter]), ts('Success'), 'info');
     }
 
     // update financial types
@@ -79,7 +87,7 @@ class CRM_Contract_Form_Task_DetachContributions extends CRM_Contribute_Form_Tas
               'id'                => $contribution_id,
               'financial_type_id' => $values['change_financial_type']]);
           $ccounter += 1;
-        } catch (API_Exception $ex) {
+        } catch (Exception $ex) {
           CRM_Core_Session::setStatus(E::ts("Financial type for contribution [%1] couldn't be changed: %2", [1 => $contribution_id, 2 => $ex->getMessage()]), ts('Error'), 'error');
         }
       }
@@ -88,13 +96,15 @@ class CRM_Contract_Form_Task_DetachContributions extends CRM_Contribute_Form_Tas
       // update all recurring contributions
       if (!empty($values['change_recur_financial_type'])) {
         $rcounter = 0;
+        $recur_ids = $this->getRecurringIDs();
         foreach ($recur_ids as $recur_id) {
           try {
+            CRM_Core_Error::debug_log_message("$recur_id {$values['change_financial_type']}");
             civicrm_api3('ContributionRecur', 'create', [
                 'id'                => $recur_id,
                 'financial_type_id' => $values['change_financial_type']]);
             $rcounter += 1;
-          } catch (API_Exception $ex) {
+          } catch (Exception $ex) {
             CRM_Core_Session::setStatus(E::ts("Financial type for recurring contribution [%1] couldn't be changed: %2", [1 => $recur_id, 2 => $ex->getMessage()]), ts('Error'), 'error');
           }
         }
