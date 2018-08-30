@@ -62,6 +62,7 @@ class CRM_Contract_Form_Task_DetachContributions extends CRM_Contribute_Form_Tas
 
     // detach the recurring contributions
     $values = $this->exportValues();
+    $recur_ids = $this->getRecurringIDs();
     if (!empty($values['detach_recur'])) {
       $dcounter = 0;
       $nonsepa_contribution_ids = $this->getNonSepaContributionIDs();
@@ -104,7 +105,6 @@ class CRM_Contract_Form_Task_DetachContributions extends CRM_Contribute_Form_Tas
       // update all recurring contributions
       if (!empty($values['change_recur_financial_type'])) {
         $rcounter = 0;
-        $recur_ids = $this->getRecurringIDs();
         foreach ($recur_ids as $recur_id) {
           try {
             civicrm_api3('ContributionRecur', 'create', [
