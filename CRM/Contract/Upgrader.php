@@ -24,4 +24,18 @@ class CRM_Contract_Upgrader extends CRM_Contract_Upgrader_Base {
   public function uninstall() {
   }
 
+  /**
+   * Add custom field "defer_payment_start"
+   *
+   * @return TRUE on success
+   * @throws Exception
+   */
+  public function upgrade_1360() {
+    $this->ctx->log->info('Applying update 1360');
+    $customData = new CRM_Contract_CustomData('de.systopia.contract');
+    $customData->syncCustomGroup(__DIR__ . '/../../resources/custom_group_contract_updates.json');
+    $customData->syncCustomGroup(__DIR__ . '/../../resources/custom_group_membership_payment.json');
+    return TRUE;
+  }
+
 }
