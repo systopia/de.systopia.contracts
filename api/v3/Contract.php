@@ -158,6 +158,7 @@ function civicrm_api3_Contract_modify($params){
     'membership_payment.cycle_day',
     'membership_payment.to_ba',
     'membership_payment.from_ba',
+    'membership_payment.defer_payment_start',
   ];
 
   foreach($expectedCustomFields as $expectedCustomField){
@@ -185,6 +186,7 @@ function civicrm_api3_Contract_modify($params){
         'membership_payment.cycle_day',
         'membership_payment.to_ba',
         'membership_payment.from_ba',
+        'membership_payment.defer_payment_start',
       ];
       foreach($updateFields as $updateField){
         if(isset($params[$updateField])){

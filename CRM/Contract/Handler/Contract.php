@@ -405,6 +405,7 @@ class CRM_Contract_Handler_Contract{
     $abbrevations['membership_payment.from_ba']='member iban';
     $abbrevations['membership_payment.cycle_day']='cycle day';
     $abbrevations['membership_payment.payment_instrument']='payment method';
+    $abbrevations['membership_payment.defer_payment_start'] = 'defer';
 
     $changesText = [];
 
@@ -458,6 +459,7 @@ class CRM_Contract_Handler_Contract{
       'membership_payment.to_ba',
       'membership_payment.cycle_day',
       'membership_payment.payment_instrument',
+      'membership_payment.defer_payment_start',
     ];
   }
 
