@@ -6,3 +6,10 @@ table.dataTable.display tbody tr.needs-review,
 table.dataTable.display tbody tr.needs-review:hover {
     background-color: rgb(255,220,220);
 }
+
+/* exclude review rows from shoreditch overflow handling  */
+.page-civicrm-contact #memberships table tr.crm-membership-review table td:not(:last-child) {
+    max-width: unset;
+    overflow: unset;
+    text-overflow: unset;
+}

@@ -259,7 +259,7 @@ function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &
   if ($objectName == 'Membership') {
     // alter membership link
     $alter = new CRM_Contract_AlterMembershipLinks($objectId, $links, $mask, $values);
-    $alter->removeActions(array(CRM_Core_Action::RENEW, CRM_Core_Action::DELETE, CRM_Core_Action::UPDATE));
+    $alter->removeActions(array(CRM_Core_Action::RENEW, CRM_Core_Action::FOLLOWUP, CRM_Core_Action::DELETE, CRM_Core_Action::UPDATE));
     $alter->addHistoryActions();
 
   } elseif ($op=='contribution.selector.row') {

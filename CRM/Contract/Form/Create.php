@@ -91,7 +91,11 @@ class CRM_Contract_Form_Create extends CRM_Core_Form{
     $this->add('select', 'membership_channel', ts('Membership channel'), array('' => '- none -') + $membershipChannelOptions, false, array('class' => 'crm-select2'));
 
     // Notes
-    $this->addWysiwyg('activity_details', ts('Notes'), []);
+    if (version_compare(CRM_Utils_System::version(), '4.7', '<')) {
+      $this->addWysiwyg('activity_details', ts('Notes'), []);
+    } else {
+      $this->add('wysiwyg', 'activity_details', ts('Notes'));
+    }
 
 
     $this->addButtons([
