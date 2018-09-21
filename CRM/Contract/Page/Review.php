@@ -14,6 +14,16 @@ class CRM_Contract_Page_Review extends CRM_Core_Page {
       Throw new Exception('Missing a valid contract ID');
     }
 
+    // get contract currency from currently active recurring contribution
+    // TODO: make currency changeable/store it with the contract update
+    $membership = civicrm_api3('Membership', 'getsingle', [
+      'id' => CRM_Utils_Request::retrieve('id', 'Positive')
+    ]);
+    $this->assign('currency', civicrm_api3('ContributionRecur', 'getvalue', [
+      'id' => $membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')],
+      'return' => 'currency',
+    ]));
+
     // Set activity params
     $activityParams = [
       'source_record_id' => $id,
