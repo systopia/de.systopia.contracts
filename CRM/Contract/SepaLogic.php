@@ -185,6 +185,21 @@ class CRM_Contract_SepaLogic {
       $new_mandate = self::createNewMandate($new_mandate_values);
       $new_recurring_contribution = $new_mandate['entity_id'];
 
+      // link new mandate to contract:
+      self::addSepaMandateContractLink($new_mandate['id'], $membership_id);
+
+      // try to create replacement link
+      if (!empty($current_state['membership_payment.membership_recurring_contribution'])) {
+        // see if the old one was a mandate
+        $old_mandate = civicrm_api('SepaMandate', 'get', array(
+            'entity_table' => 'civicrm_contribution_recur',
+            'entity_id'    => $current_state['membership_payment.membership_recurring_contribution'],
+            'return'       => 'id'));
+        if (!empty($old_mandate['id'])) {
+          self::addSepaMandateReplacedLink($new_mandate['id'], $old_mandate['id']);
+        }
+      }
+
     } else {
       // another (existing) recurring contribution has been chosen by the user:
       $new_recurring_contribution = (int) CRM_Utils_Array::value('contract_updates.ch_recurring_contribution', $desired_state, CRM_Utils_Array::value('membership_payment.membership_recurring_contribution', $current_state));
@@ -269,6 +284,63 @@ class CRM_Contract_SepaLogic {
 
     } else {
       // NON-SEPA contributions not be changed, see GP-796
+    }
+  }
+
+  /**
+   * Link the given mandate to the contract,
+   *  ending any previously existing  links
+   *
+   * @param $mandate_id   int     sepa mandate id
+   * @param $contract_id  int     membership ID
+   * @param $date         string  timestamp of change, default: 'now'
+   */
+  public static function addSepaMandateContractLink($mandate_id, $contract_id, $date = 'now') {
+    if (function_exists('CRM_Sepa_BAO_SepaMandateLink::createMandateLink')) {
+      try {
+        $link_class = CRM_Sepa_BAO_SepaMandateLink::$LINK_CLASS_MEMBERSHIP;
+
+        // first: end old links
+        $current_links = CRM_Sepa_BAO_SepaMandateLink::getCurrentMandateLinks($mandate_id, $link_class);
+        foreach ($current_links as $current_link) {
+          CRM_Sepa_BAO_SepaMandateLink::endMandateLink($current_link['id'], $date);
+        }
+
+        // then: create a new link
+        CRM_Sepa_BAO_SepaMandateLink::createMandateLink(
+            $mandate_id,
+            $contract_id,
+            'civicrm_membership',
+            $link_class,
+            TRUE,
+            $date
+        );
+      } catch(Exception $ex) {
+        // link couldn't be generated
+        CRM_Core_Error::debug_log_message("Contract: Couldn't create mandate link: " . $ex->getMessage());
+      }
+    } else {
+      CRM_Core_Error::debug_log_message("Contract: Couldn't create mandate link, CiviSEPA version too old.");
+    }
+  }
+
+  /**
+   * Mark the new mandate as a replacement of the old mandate
+   *
+   * @param $new_mandate_id  int     sepa mandate id of new mandate
+   * @param $old_mandate_id  int     sepa mandate id of old, terminated mandate
+   * @param $date            string  timestamp of change, default: 'now'
+   */
+  public static function addSepaMandateReplacedLink($new_mandate_id, $old_mandate_id, $date = 'now') {
+    if (function_exists('CRM_Sepa_BAO_SepaMandateLink::addReplaceMandateLink')) {
+      try {
+        CRM_Sepa_BAO_SepaMandateLink::addReplaceMandateLink($new_mandate_id, $old_mandate_id, $date);
+      } catch(Exception $ex) {
+        // link couldn't be generated
+        CRM_Core_Error::debug_log_message("Contract: Couldn't create mandate replaced link: " . $ex->getMessage());
+      }
+    } else {
+      CRM_Core_Error::debug_log_message("Contract: Couldn't create mandate replaced link, CiviSEPA version too old.");
     }
   }
 
