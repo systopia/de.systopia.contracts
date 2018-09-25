@@ -296,22 +296,20 @@ class CRM_Contract_SepaLogic {
    * @param $date         string  timestamp of change, default: 'now'
    */
   public static function addSepaMandateContractLink($mandate_id, $contract_id, $date = 'now') {
-    if (function_exists('CRM_Sepa_BAO_SepaMandateLink::createMandateLink')) {
+    if (method_exists('CRM_Sepa_BAO_SepaMandateLink', 'createMandateLink')) {
       try {
         $link_class = CRM_Sepa_BAO_SepaMandateLink::$LINK_CLASS_MEMBERSHIP;
 
         // first: check if link already there
-        $current_links = CRM_Sepa_BAO_SepaMandateLink::getCurrentMandateLinks($mandate_id, $link_class);
+        $current_links = CRM_Sepa_BAO_SepaMandateLink::getActiveLinks(NULL, $link_class, $contract_id, 'civicrm_membership');
         foreach ($current_links as $current_link) {
-          if (   $current_link['entity_id'] == $contract_id
-              && $current_link['entity_table'] == 'civicrm_membership') {
+          if ($current_link['mandate_id'] == $mandate_id) {
             // link already there and active
             return;
           }
         }
 
         // then: end any old links
-        $current_links = CRM_Sepa_BAO_SepaMandateLink::getCurrentMandateLinks($mandate_id, $link_class);
         foreach ($current_links as $current_link) {
           CRM_Sepa_BAO_SepaMandateLink::endMandateLink($current_link['id'], $date);
         }

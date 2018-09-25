@@ -20,7 +20,6 @@ function civicrm_api3_Contract_create($params){
     // Any parameters with a period in will be converted to the custom_N format
     // Other fields will be passed directly to the membership.create API
     foreach ($params as $key => $value){
-
       if(strpos($key, '.')){
         unset($params[$key]);
         $params[CRM_Contract_Utils::getCustomFieldId($key)] = $value;
@@ -29,10 +28,11 @@ function civicrm_api3_Contract_create($params){
     $membership = civicrm_api3('Membership', 'create', $params);
 
     // link SEPA Mandate
-    if (!empty($params['membership_payment.membership_recurring_contribution'])) {
+    $recurring_contribution_field_key = CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution');
+    if (!empty($params[$recurring_contribution_field_key])) {
       // make sure it's a mandate
       $mandate = civicrm_api3('SepaMandate', 'get', array(
-          'entity_id'    => $params['membership_payment.membership_recurring_contribution'],
+          'entity_id'    => $params[$recurring_contribution_field_key],
           'entity_table' => 'civicrm_contribution_recur',
           'return'       => 'id'));
       if (!empty($mandate['id'])) {
