@@ -28,6 +28,18 @@ function civicrm_api3_Contract_create($params){
     }
     $membership = civicrm_api3('Membership', 'create', $params);
 
+    // link SEPA Mandate
+    if (!empty($params['membership_payment.membership_recurring_contribution'])) {
+      // make sure it's a mandate
+      $mandate = civicrm_api3('SepaMandate', 'get', array(
+          'entity_id'    => $params['membership_payment.membership_recurring_contribution'],
+          'entity_table' => 'civicrm_contribution_recur',
+          'return'       => 'id'));
+      if (!empty($mandate['id'])) {
+        CRM_Contract_SepaLogic::addSepaMandateContractLink($mandate['id'], $membership['id']);
+      }
+    }
+
     // update the generated activity
     $activity = civicrm_api3('Activity', 'getsingle', [
       'source_record_id' => $membership['id'],

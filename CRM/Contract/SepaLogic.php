@@ -300,7 +300,17 @@ class CRM_Contract_SepaLogic {
       try {
         $link_class = CRM_Sepa_BAO_SepaMandateLink::$LINK_CLASS_MEMBERSHIP;
 
-        // first: end old links
+        // first: check if link already there
+        $current_links = CRM_Sepa_BAO_SepaMandateLink::getCurrentMandateLinks($mandate_id, $link_class);
+        foreach ($current_links as $current_link) {
+          if (   $current_link['entity_id'] == $contract_id
+              && $current_link['entity_table'] == 'civicrm_membership') {
+            // link already there and active
+            return;
+          }
+        }
+
+        // then: end any old links
         $current_links = CRM_Sepa_BAO_SepaMandateLink::getCurrentMandateLinks($mandate_id, $link_class);
         foreach ($current_links as $current_link) {
           CRM_Sepa_BAO_SepaMandateLink::endMandateLink($current_link['id'], $date);
