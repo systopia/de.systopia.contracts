@@ -19,7 +19,7 @@ use CRM_Contract_ExtensionUtil as E;
 function _civicrm_api3_contract_payment_link_create_spec(&$spec) {
   $spec['id'] = array(
       'name'         => 'id',
-      'api.required' => 1,
+      'api.required' => 0,
       'type'         => CRM_Utils_Type::T_INT,
       'title'        => 'ContractPaymentLink ID',
       'description'  => 'ID of existing ContractPaymentLink entity',
@@ -107,15 +107,15 @@ function _civicrm_api3_contract_payment_link_getactive_spec(&$spec) {
       'name'         => 'contract_id',
       'api.required' => 0,
       'type'         => CRM_Utils_Type::T_INT,
-      'title'        => 'Mandate ID',
-      'description'  => 'SepaMandate this link relates to',
+      'title'        => 'Contract ID',
+      'description'  => 'Contract/Membership this link relates to',
   );
   $spec['contribution_recur_id'] = array(
       'name'         => 'contribution_recur_id',
       'api.required' => 0,
       'type'         => CRM_Utils_Type::T_INT,
-      'title'        => 'Entity ID',
-      'description'  => 'Entity this link relates to',
+      'title'        => 'Payment ID',
+      'description'  => 'ContributionRcur this link relates to',
   );
   $spec['date'] = array(
       'name'         => 'date',

@@ -6,7 +6,7 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-use CRM_Sepa_ExtensionUtil as E;
+use CRM_Contract_ExtensionUtil as E;
 
 class CRM_Contract_BAO_ContractPaymentLink extends CRM_Contract_DAO_ContractPaymentLink {
 
@@ -47,7 +47,7 @@ class CRM_Contract_BAO_ContractPaymentLink extends CRM_Contract_DAO_ContractPaym
    *        start_date NULL or in the past
    *
    *
-   * @param int $contract_id            the mandate to link
+   * @param int $contract_id            the contract to link
    * @param int $contribution_recur_id  ID of the linked entity
    * @param string $date                what timestamp does the "active" refer to? Default is: now
    *
@@ -80,7 +80,8 @@ class CRM_Contract_BAO_ContractPaymentLink extends CRM_Contract_DAO_ContractPaym
 
     // build and run query
     $WHERE_CLAUSE = '(' . implode(') AND (', $WHERE_CLAUSES) . ')';
-    $query_sql = "SELECT * FROM civicrm_sdd_entity_mandate WHERE {$WHERE_CLAUSE}";
+    $query_sql = "SELECT * FROM civicrm_contract_payment WHERE {$WHERE_CLAUSE}";
+    CRM_Core_Error::debug_log_message("SQL $query_sql");
     $query = CRM_Core_DAO::executeQuery($query_sql);
     $results = array();
     while ($query->fetch()) {

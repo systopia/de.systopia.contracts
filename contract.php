@@ -406,3 +406,16 @@ function contract_civicrm_permission(&$permissions) {
     ]
   ];
 }
+
+/**
+ * Entity Types Hook
+ * @param $entityTypes
+ */
+function contract_civicrm_entityTypes(&$entityTypes) {
+  // add my DAO's
+  $entityTypes[] = array(
+      'name' => 'ContractPaymentLink',
+      'class' => 'CRM_Contract_DAO_ContractPaymentLink',
+      'table' => 'civicrm_contract_payment',
+  );
+}
