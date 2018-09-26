@@ -69,7 +69,7 @@ function _civicrm_api3_contract_payment_link_create_spec(&$spec) {
  * @throws API_Exception
  */
 function civicrm_api3_contract_payment_link_create($params) {
-  return _civicrm_api3_basic_create(CRM_Contract_BAO_ContractPaymentLink, $params);
+  return _civicrm_api3_basic_create('CRM_Contract_BAO_ContractPaymentLink', $params);
 }
 
 /**
@@ -80,7 +80,7 @@ function civicrm_api3_contract_payment_link_create($params) {
  * @throws API_Exception
  */
 function civicrm_api3_contract_payment_link_delete($params) {
-  return _civicrm_api3_basic_delete(CRM_Contract_BAO_ContractPaymentLink, $params);
+  return _civicrm_api3_basic_delete('CRM_Contract_BAO_ContractPaymentLink', $params);
 }
 
 /**
@@ -91,7 +91,7 @@ function civicrm_api3_contract_payment_link_delete($params) {
  * @throws API_Exception
  */
 function civicrm_api3_contract_payment_link_get($params) {
-  return _civicrm_api3_basic_get(CRM_Contract_BAO_ContractPaymentLink, $params);
+  return _civicrm_api3_basic_get('CRM_Contract_BAO_ContractPaymentLink', $params);
 }
 
 
