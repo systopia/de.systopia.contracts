@@ -188,7 +188,7 @@ class CRM_Contract_SepaLogic {
       // try to create replacement link
       if (!empty($current_state['membership_payment.membership_recurring_contribution'])) {
         // see if the old one was a mandate
-        $old_mandate = civicrm_api('SepaMandate', 'get', array(
+        $old_mandate = civicrm_api3('SepaMandate', 'get', array(
             'entity_table' => 'civicrm_contribution_recur',
             'entity_id'    => $current_state['membership_payment.membership_recurring_contribution'],
             'return'       => 'id'));
@@ -337,7 +337,7 @@ class CRM_Contract_SepaLogic {
    * @param $date            string  timestamp of change, default: 'now'
    */
   public static function addSepaMandateReplacedLink($new_mandate_id, $old_mandate_id, $date = 'now') {
-    if (function_exists('CRM_Sepa_BAO_SepaMandateLink::addReplaceMandateLink')) {
+    if (method_exists('CRM_Sepa_BAO_SepaMandateLink', 'addReplaceMandateLink')) {
       try {
         CRM_Sepa_BAO_SepaMandateLink::addReplaceMandateLink($new_mandate_id, $old_mandate_id, $date);
       } catch(Exception $ex) {
