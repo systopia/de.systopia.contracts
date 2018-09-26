@@ -303,9 +303,9 @@ class CRM_Contract_SepaLogic {
 
     try {
       // first: check if link already there
-      $current_links = CRM_Contract_BAO_ContractPaymentLink::getActiveLinks($contract_id, $contribution_recur_id);
+      $current_links = CRM_Contract_BAO_ContractPaymentLink::getActiveLinks($contract_id);
       foreach ($current_links as $current_link) {
-        if ($current_link['contract_id'] == $contract_id) {
+        if ($current_link['contribution_recur_id'] == $contribution_recur_id) {
           // link already there and active
           return;
         }

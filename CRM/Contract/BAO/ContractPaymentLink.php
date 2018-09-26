@@ -81,7 +81,6 @@ class CRM_Contract_BAO_ContractPaymentLink extends CRM_Contract_DAO_ContractPaym
     // build and run query
     $WHERE_CLAUSE = '(' . implode(') AND (', $WHERE_CLAUSES) . ')';
     $query_sql = "SELECT * FROM civicrm_contract_payment WHERE {$WHERE_CLAUSE}";
-    CRM_Core_Error::debug_log_message("SQL $query_sql");
     $query = CRM_Core_DAO::executeQuery($query_sql);
     $results = array();
     while ($query->fetch()) {
