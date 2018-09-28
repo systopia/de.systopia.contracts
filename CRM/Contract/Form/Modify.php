@@ -92,7 +92,11 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     $this->add('select', 'activity_medium', ts('Source media'), array('' => '- none -') + $mediumOptions, false, array('class' => 'crm-select2'));
 
     // Add a note field
-    $this->addWysiwyg('activity_details', ts('Notes'), []);
+    if (version_compare(CRM_Utils_System::version(), '4.7', '<')) {
+      $this->addWysiwyg('activity_details', ts('Notes'), []);
+    } else {
+      $this->add('wysiwyg', 'activity_details', ts('Notes'));
+    }
 
     // Then add fields that are dependent on the action
     if(in_array($this->modificationActivity->getAction(), array('update', 'revive'))){

@@ -42,7 +42,7 @@ class CRM_Contract_FormUtils
         // this custom data is stored in
         if (isset($details[$result['custom_group_id']])) {
           $customGroupTableId = key($details[$result['custom_group_id']]);
-          if (isset($details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'])) {
+          if (!empty($details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'])) {
             $entityId = $details[$result['custom_group_id']][$customGroupTableId]['fields'][$result['id']]['field_value'];
             if($entity == 'ContributionRecur'){
               try {

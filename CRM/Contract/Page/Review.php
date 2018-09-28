@@ -143,10 +143,10 @@ class CRM_Contract_Page_Review extends CRM_Core_Page {
 
     $this->assign('membershipTypes', $membershipTypes);
 
-
-
-
-    CRM_Core_Resources::singleton()->addScriptFile('civicrm', 'packages/ckeditor/ckeditor.js');
+    // since Civi 4.7, wysiwyg/ckeditor is a default core resource
+    if (version_compare(CRM_Utils_System::version(), '4.7', '<')) {
+      CRM_Core_Resources::singleton()->addScriptFile('civicrm', 'packages/ckeditor/ckeditor.js');
+    }
     foreach(civicrm_api3('CustomField', 'get', [ 'custom_group_id' => ['IN' => ['contract_cancellation', 'contract_updates']]])['values'] as $customField){
       $activityParams['return'][]='custom_'.$customField['id'];
     }
