@@ -15,7 +15,9 @@ class CRM_Contract_Upgrader extends CRM_Contract_Upgrader_Base {
   // By convention, functions that look like "function upgrade_NNNN()" are
   // upgrade tasks. They are executed in order (like Drupal's hook_update_N).
 
+
   public function install() {
+    $this->executeSqlFile('sql/contract.sql');
   }
 
   public function postInstall() {
@@ -35,6 +37,12 @@ class CRM_Contract_Upgrader extends CRM_Contract_Upgrader_Base {
     $customData = new CRM_Contract_CustomData('de.systopia.contract');
     $customData->syncCustomGroup(__DIR__ . '/../../resources/custom_group_contract_updates.json');
     $customData->syncCustomGroup(__DIR__ . '/../../resources/custom_group_membership_payment.json');
+    return TRUE;
+  }
+
+  public function upgrade_1370() {
+    $this->ctx->log->info('Applying update 1370');
+    $this->executeSqlFile('sql/contract.sql');
     return TRUE;
   }
 
