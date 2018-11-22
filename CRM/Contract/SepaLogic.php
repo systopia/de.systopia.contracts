@@ -117,7 +117,7 @@ class CRM_Contract_SepaLogic {
             }
           }
           if (empty($annual_amount)) {
-            $annual_amount = self::formatMoney($recurring_contribution['amount'] * $frequency);
+            $annual_amount = self::formatMoney(self::formatMoney($recurring_contribution['amount']) * $frequency);
           }
           if (empty($from_ba)) {
             $mandate = self::getMandateForRecurringContributionID($recurring_contribution_id);
@@ -137,7 +137,7 @@ class CRM_Contract_SepaLogic {
 
       // calculate amount
       $frequency_interval = 12 / $frequency;
-      $amount = self::formatMoney($annual_amount / $frequency);
+      $amount = self::formatMoney(self::formatMoney($annual_amount) / $frequency);
       if ($amount < 0.01) {
         throw new Exception("Installment amount too small");
       }

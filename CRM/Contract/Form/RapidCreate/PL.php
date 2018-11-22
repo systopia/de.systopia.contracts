@@ -143,7 +143,7 @@ class CRM_Contract_Form_RapidCreate_PL extends CRM_Core_Form {
       HTML_QuickForm::setElementError('payment_amount', 'Please specify an amount when specifying a frequency');
     }
 
-    $amount = CRM_Contract_SepaLogic::formatMoney($submitted['payment_amount'] / $submitted['payment_frequency']);
+    $amount = CRM_Contract_SepaLogic::formatMoney(CRM_Contract_SepaLogic::formatMoney($submitted['payment_amount']) / $submitted['payment_frequency']);
     if ($amount < 0.01) {
       HTML_QuickForm::setElementError('payment_amount', 'Annual amount too small.');
     }
