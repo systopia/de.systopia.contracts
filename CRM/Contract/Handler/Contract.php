@@ -566,7 +566,7 @@ class CRM_Contract_Handler_Contract{
       'month' => 12,
       'year' => 1
     );
-    return CRM_Contract_SepaLogic::formatMoney($contributionRecur['amount'] * $frequencyUnitTranslate[$contributionRecur['frequency_unit']] / $contributionRecur['frequency_interval']);
+    return CRM_Contract_SepaLogic::formatMoney(CRM_Contract_SepaLogic::formatMoney($contributionRecur['amount']) * $frequencyUnitTranslate[$contributionRecur['frequency_unit']] / $contributionRecur['frequency_interval']);
   }
 
   /**
