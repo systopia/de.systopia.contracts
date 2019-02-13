@@ -1,10 +1,10 @@
-table.dataTable.display tbody tr.scheduled,
-table.dataTable.display tbody tr.scheduled:hover {
-    background-color: rgb(255,255,220);
+table.dataTable.display tbody tr.scheduled td,
+table.dataTable.display tbody tr.scheduled:hover td {
+    background-color: rgb(255,255,220) !important;
 }
-table.dataTable.display tbody tr.needs-review,
-table.dataTable.display tbody tr.needs-review:hover {
-    background-color: rgb(255,220,220);
+table.dataTable.display tbody tr.needs-review td,
+table.dataTable.display tbody tr.needs-review:hover td {
+    background-color: rgb(255,220,220) !important;
 }
 
 /* exclude review rows from shoreditch overflow handling  */
