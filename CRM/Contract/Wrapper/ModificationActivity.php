@@ -11,6 +11,7 @@
 * This class wraps calls to the activity create API and passes them to the
 * ModificationActivity handler unless they have a status of scheduled and a date in
 * the future
+* @deprecated - replaced because it caused recursion errors
 **/
 
 class CRM_Contract_Wrapper_ModificationActivity{
