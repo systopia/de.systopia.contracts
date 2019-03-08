@@ -1,7 +1,7 @@
 <?php
 /*-------------------------------------------------------------+
 | SYSTOPIA Contract Extension                                  |
-| Copyright (C) 2017 SYSTOPIA                                  |
+| Copyright (C) 2019 SYSTOPIA                                  |
 | Author: B. Endres (endres -at- systopia.de)                  |
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
@@ -47,7 +47,7 @@ class CRM_Contract_Monitoring_EntityMonitor {
     self::$_monitor_stack[$class][] = $monitor;
 
     // finally, run the handler
-    $monitor->handlePre($op, &$params);
+    $monitor->handlePre($op, $params);
   }
 
   /**
@@ -61,6 +61,6 @@ class CRM_Contract_Monitoring_EntityMonitor {
     array_pop(self::$_monitor_stack[$class]);
 
     // finally, run the handler
-    $monitor->handlePost($op, &$objectRef);
+    $monitor->handlePost($op, $objectRef);
   }
 }

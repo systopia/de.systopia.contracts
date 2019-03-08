@@ -13,7 +13,15 @@
  */
 class CRM_Contract_Configuration {
 
+  public static $use_new_engine = FALSE;
   protected static $eligible_campaigns = NULL;
+
+  /**
+   * Should the new Engine be used?
+   */
+  public static function useNewEngine() {
+    return self::$use_new_engine;
+  }
 
   /**
    * derive gender_id from the given prefix_id

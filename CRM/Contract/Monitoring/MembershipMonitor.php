@@ -29,9 +29,11 @@ class CRM_Contract_Monitoring_MembershipMonitor extends CRM_Contract_Monitoring_
   }
 
   public static function processPreHook($op, $entity_id, &$params) {
-    CRM_Contract_Monitoring_EntityMonitor::processPreHook(CRM_Contract_Monitoring_MembershipMonitor, $op, $entity_id, &$params);
+    CRM_Contract_Monitoring_EntityMonitor::processPreHook(CRM_Contract_Monitoring_MembershipMonitor, $op, $entity_id, $params);
   }
 
   public static function processPostHook($op, $entity_id, $objectRef) {
-    CRM_Contract_Monitoring_EntityMonitor::processPostHook(CRM_Contract_Monitoring_MembershipMonitor, $op, $entity_id, &$objectRef);
+    CRM_Contract_Monitoring_EntityMonitor::processPostHook(CRM_Contract_Monitoring_MembershipMonitor, $op, $entity_id, $objectRef);
   }
+
+}

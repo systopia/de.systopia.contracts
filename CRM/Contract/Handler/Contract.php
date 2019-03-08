@@ -239,6 +239,7 @@ class CRM_Contract_Handler_Contract{
         $params['membership_payment.to_ba']   = CRM_Contract_BankingLogic::getCreditorBankAccount();
       } elseif ($sepaMandateResult['count'] == 0) {
         // this should be a recurring contribution -> get from the latest contribution
+        CRM_Contract_BankingLogic::getIbanReferenceTypeID();
         list($from_ba, $to_ba) = CRM_Contract_BankingLogic::getAccountsFromRecurringContribution($contributionRecur['id']);
         $params['membership_payment.from_ba'] = $from_ba;
         $params['membership_payment.to_ba']   = $to_ba;

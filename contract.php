@@ -7,9 +7,6 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-// flag to turn the new engine on and off
-// TODO: remove when stable
-define('CONTRACT_USE_REFACTORED_ENGINE', 1);
 
 require_once 'contract.civix.php';
 use CRM_Contract_ExtensionUtil as E;
@@ -65,20 +62,6 @@ function contract_civicrm_uninstall() {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_enable
  */
 function contract_civicrm_enable() {
-  require_once 'CRM/Contract/CustomData.php';
-  $customData = new CRM_Contract_CustomData('de.systopia.contract');
-  $customData->syncOptionGroup(__DIR__ . '/resources/option_group_contract_cancel_reason.json');
-  $customData->syncOptionGroup(__DIR__ . '/resources/option_group_payment_frequency.json');
-  $customData->syncOptionGroup(__DIR__ . '/resources/option_group_activity_types.json');
-  $customData->syncOptionGroup(__DIR__ . '/resources/option_group_activity_status.json');
-  $customData->syncOptionGroup(__DIR__ . '/resources/option_group_shirt_type.json');
-  $customData->syncOptionGroup(__DIR__ . '/resources/option_group_shirt_size.json');
-  $customData->syncCustomGroup(__DIR__ . '/resources/custom_group_contract_cancellation.json');
-  $customData->syncCustomGroup(__DIR__ . '/resources/custom_group_contract_updates.json');
-  $customData->syncCustomGroup(__DIR__ . '/resources/custom_group_membership_cancellation.json');
-  $customData->syncCustomGroup(__DIR__ . '/resources/custom_group_membership_payment.json');
-  $customData->syncEntities(__DIR__ . '/resources/entities_membership_status.json');
-
   _contract_civix_civicrm_enable();
 }
 
@@ -311,7 +294,7 @@ function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &
 function contract_civicrm_pre($op, $objectName, $id, &$params) {
 
   // pass on to monitoring
-  if (CONTRACT_USE_REFACTORED_ENGINE) {
+  if (CRM_Contract_Configuration::useNewEngine()) {
     if ($objectName == 'Membership') {
       CRM_Contract_Monitoring_MembershipMonitor::processPreHook($op, $id, $params);
 
@@ -332,7 +315,7 @@ function contract_civicrm_pre($op, $objectName, $id, &$params) {
        $wrapperMembership->pre($op, $id, $params);
      }
 
-     // Wrap calles to the Activity BAO so we can execute contract modifications
+     // Wrap calls to the Activity BAO so we can execute contract modifications
      // and check for potential conflicts as appropriate
 
      if($objectName == 'Activity'){
@@ -347,15 +330,16 @@ function contract_civicrm_pre($op, $objectName, $id, &$params) {
        $wrapperModificationActivity->pre($op, $params);
      }
   }
+  //error_log("PRE {$objectName} DONE");
 }
 
 /**
  * CiviCRM POST hook: Monitoring of relevant entity changes
  */
 function contract_civicrm_post($op, $objectName, $id, &$objectRef){
-
+  //error_log("POST {$objectName} START");
   // pass on to monitoring
-  if (CONTRACT_USE_REFACTORED_ENGINE) {
+  if (CRM_Contract_Configuration::useNewEngine()) {
     if ($objectName == 'Membership') {
       CRM_Contract_Monitoring_MembershipMonitor::processPostHook($op, $id, $objectRef);
 
@@ -386,6 +370,7 @@ function contract_civicrm_post($op, $objectName, $id, &$objectRef){
       }
     }
   }
+  //error_log("POST {$objectName} DONE");
 }
 
 /**

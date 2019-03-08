@@ -154,15 +154,20 @@ class CRM_Contract_BankingLogic {
   public static function getAccountsFromRecurringContribution($contribution_recur_id) {
     $contribution_recur_id = (int) $contribution_recur_id;
     if (!empty($contribution_recur_id)) {
-      $most_recent_contribution = CRM_Core_DAO::executeQuery("
+      try {
+        // TODO: make this relationship configurable
+        $most_recent_contribution = CRM_Core_DAO::executeQuery("
           SELECT from_ba, to_ba
           FROM civicrm_contribution c
-          LEFT JOIN civicrm_value_contribution_information i ON i.entity_id = c.id 
+            LEFT JOIN civicrm_value_contribution_information i ON i.entity_id = c.id 
           WHERE c.contribution_recur_id = {$contribution_recur_id}
           ORDER BY receive_date DESC
           LIMIT 1;");
-      if ($most_recent_contribution->fetch()) {
-        return array($most_recent_contribution->from_ba, $most_recent_contribution->to_ba);
+        if ($most_recent_contribution->fetch()) {
+          return array($most_recent_contribution->from_ba, $most_recent_contribution->to_ba);
+        }
+      } catch (Exception $ex) {
+        // the civicrm_value_contribution_information probably doesn't exist
       }
     }
 
