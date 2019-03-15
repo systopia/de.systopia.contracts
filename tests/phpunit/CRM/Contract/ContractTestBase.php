@@ -219,4 +219,20 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
     }
     return $this->assertAPI3('Contract', 'modify', $params);
   }
+
+  /**
+   * Get a random value from the given option group
+   */
+  public function getRandomOptionValue($option_group_id, $label = TRUE) {
+    $all_option_values = $this->assertAPI3('OptionValue', 'get', [
+        'option.limit'    => 0,
+        'return'          => 'value,label',
+        'option_group_id' => $option_group_id]);
+    $value = $all_option_values['values'][array_rand($all_option_values['values'])];
+    if ($label) {
+      return $value['label'];
+    } else {
+      return $value['value'];
+    }
+  }
 }

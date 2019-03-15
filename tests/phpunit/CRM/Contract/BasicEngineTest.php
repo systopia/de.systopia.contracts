@@ -23,8 +23,6 @@ include_once 'ContractTestBase.php';
  */
 class CRM_Contract_BasicEngineTest extends CRM_Contract_ContractTestBase {
 
-
-
   /**
    * Example: Test that a version is returned.
    */
@@ -33,7 +31,9 @@ class CRM_Contract_BasicEngineTest extends CRM_Contract_ContractTestBase {
     $contract = $this->createNewContract();
 
     // schedule and update for tomorrow
-    $this->modifyContract($contract['id'], 'cancel', 'tomorrow', ['membership_payment.membership_annual' => '240.00', 'membership_cancellation.membership_cancel_reason' => "Unknown"]);
+    $this->modifyContract($contract['id'], 'cancel', 'tomorrow', [
+        'membership_payment.membership_annual'             => '240.00',
+        'membership_cancellation.membership_cancel_reason' => $this->getRandomOptionValue('contract_cancel_reason')]);
 
     // run engine see if anything changed
     $this->runContractEngine($contract['id']);
