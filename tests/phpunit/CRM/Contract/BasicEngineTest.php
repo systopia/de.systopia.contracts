@@ -33,7 +33,7 @@ class CRM_Contract_BasicEngineTest extends CRM_Contract_ContractTestBase {
     $contract = $this->createNewContract();
 
     // schedule and update for tomorrow
-    $this->modifyContract($contract['id'], 'cancel', 'tomorrow', ['membership_payment.membership_annual' => '240.00']);
+    $this->modifyContract($contract['id'], 'cancel', 'tomorrow', ['membership_payment.membership_annual' => '240.00', 'membership_cancellation.membership_cancel_reason' => "Unknown"]);
 
     // run engine see if anything changed
     $this->runContractEngine($contract['id']);

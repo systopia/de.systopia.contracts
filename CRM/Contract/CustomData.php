@@ -54,7 +54,7 @@ class CRM_Contract_CustomData {
   public function syncEntities($source_file) {
     $data = json_decode(file_get_contents($source_file), TRUE);
     if (empty($data)) {
-      throw new Exception("syncOptionGroup::syncOptionGroup: Invalid specs");
+      throw new Exception("syncEntities: Invalid specs");
     }
 
     foreach ($data['_entities'] as $entity_data) {
@@ -82,7 +82,7 @@ class CRM_Contract_CustomData {
   public function syncOptionGroup($source_file) {
     $data = json_decode(file_get_contents($source_file), TRUE);
     if (empty($data)) {
-      throw new Exception("syncOptionGroup::syncOptionGroup: Invalid specs");
+      throw new Exception("syncOptionGroup: Invalid specs");
     }
 
     // first: find or create option group
