@@ -70,9 +70,11 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
   public function runContractEngine($contract_id, $now = 'now')
   {
     $this->assertNotEmpty($contract_id, "You can only run the contract engine on a specific contract ID.");
-    return $this->assertAPI3('Contract', 'process_scheduled_modifications', [
+    $result = $this->assertAPI3('Contract', 'process_scheduled_modifications', [
         'now' => $now,
         'id'  => $contract_id]);
+    $this->assertTrue(empty($result['values']['failed']), "Contract Engine reports failure");
+    return $result;
   }
 
 
@@ -157,23 +159,76 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
   }
 
   /**
+   * Create a new payment contract and return the recurring contribution
+   *
+   * @param $params  array specs
+   * @param $is_sepa bool  if true, a SEPA mandate will be generated
+   */
+  public function createPayment($params, $is_sepa) {
+    // fill common parameters
+    if (empty($params['contact_id'])) {
+      $contact = $this->createContactWithRandomEmail();
+      $params['contact_id'] = $contact['id'];
+    }
+    if (empty($params['frequency_interval'])) {
+      $params['frequency_interval'] = 12;
+    }
+    if (empty($params['frequency_unit'])) {
+      $params['frequency_unit'] = 'month';
+    }
+    if (empty($params['amount'])) {
+      $params['amount'] = '120.00';
+    }
+    if (empty($params['financial_type_id'])) {
+      $params['financial_type_id'] = '1';
+    }
+    if (empty($params['currency'])) {
+      $params['currency'] = 'EUR';
+    }
+
+    if ($is_sepa) {
+      // SEPA Mandate:
+      if (empty($params['iban'])) {
+        $params['iban'] = 'DE89370400440532013000';
+      }
+      if (empty($params['bic'])) {
+        $params['bic'] = 'GENODEM1GLS';
+      }
+      if (empty($params['type'])) {
+        $params['type'] = 'RCUR';
+      }
+
+      $mandate = $this->assertAPI3('SepaMandate', 'createfull', $params);
+      $mandate = $this->assertAPI3('SepaMandate', 'getsingle', ['id' => $mandate['id']]);
+      return $this->assertAPI3('ContributionRecur', 'getsingle', ['id' => $mandate['entity_id']]);
+
+    } else {
+      // Standing Order (recurring contribution)
+      if (empty($params['payment_instrument_id'])) {
+        $params['payment_instrument_id'] = $this->getRandomPaymentInstrumentID();
+      }
+      if (empty($params['status_id'])) {
+        $params['status_id'] = 'Current';
+      }
+
+      $payment = $this->assertAPI3('ContributionRecur', 'create', $params);
+      return $this->assertAPI3('ContributionRecur', 'getsingle', ['id' => $payment['id']]);
+    }
+  }
+
+  /**
    * Create a new contract
    *
    * @param $params
    */
-  public function createNewContract($params = [])
-  {
+  public function createNewContract($params = []) {
     $contact_id = (!empty($params['contact_id'])) ? $params['contact_id'] : $this->createContactWithRandomEmail()['id'];
 
-    // first: create contract payment
-    $payment = $this->assertAPI3('ContributionRecur', 'create', [
-        'contact_id'            => $contact_id,
-        'amount'                => '120.00', //rand(10, 200),
-        'frequency_interval'    => 12, //array_rand([1, 3, 6, 12]),
-        'frequency_unit'        => 'month',
-        'payment_instrument_id' => $this->getRandomPaymentInstrumentID(),
-        'status_id'             => 'Current',
-    ]);
+    // first: make sure we have a contract payment
+    if (empty($params['membership_payment.membership_recurring_contribution'])) {
+      $payment = $this->createPayment($params, !empty($params['is_sepa']));
+      $params['membership_payment.membership_recurring_contribution'] = $payment['id'];
+    }
 
 
     //membership_payment.membership_recurring_contribution
@@ -187,7 +242,7 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
         'note'               => (!empty($params['note'])) ? $params['note'] : 'Test',
         'medium_id'          => (!empty($params['medium_id'])) ? $params['medium_id'] : '1',
         // custom stuff:
-        'membership_payment.membership_recurring_contribution' => $payment['id'],
+        'membership_payment.membership_recurring_contribution' => $params['membership_payment.membership_recurring_contribution'],
         'membership_general.membership_dialoger'               => $contact_id,
         // membership_general.membership_contract   // Contract number
         // membership_general.membership_reference  // Reference number
