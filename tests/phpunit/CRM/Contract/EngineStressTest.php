@@ -28,28 +28,34 @@ class CRM_Contract_EngineStessTest extends CRM_Contract_ContractTestBase {
    * Example: Test that a version is returned.
    */
   public function testMultiUpgrade() {
-    $ITERATION_COUNT = 33;
-    foreach ([0,1] as $is_sepa) {
+    $ITERATION_COUNT = 11;
+    foreach ([1,0] as $is_sepa) {
       // create a new contract
       $contract = $this->createNewContract(['is_sepa' => $is_sepa]);
       $scheduled_updates = $this->assertAPI3('Contract', 'get_open_modification_counts', ['id' => $contract['id']]);
       $this->assertEquals(0, $scheduled_updates['scheduled'], "There should not be a scheduled change");
 
       // schedule a bunch of updates
+
       for ($i = 1; $i <= $ITERATION_COUNT; $i++) {
-        $this->modifyContract($contract['id'], 'update', date('YmdHis', strtotime("now + {$i} minutes")), [
-            'membership_payment.membership_annual' => (10 * $i)
-        ]);
+        $update = [
+            'membership_payment.membership_annual' => (1 * $i)
+        ];
+        if (!$is_sepa) {
+          // FIXME: if this is not a SEPA contract, we need to pass the bank account
+          $update['membership_payment.from_ba'] = $this->getBankAccountID($contract['contact_id']);
+        }
+        $this->modifyContract($contract['id'], 'update', date('YmdHis', strtotime("now + {$i} minutes")), $update);
       }
 
       // now... these should all be conflicting
       $scheduled_updates = $this->assertAPI3('Contract', 'get_open_modification_counts', ['id' => $contract['id']]);
-      $this->assertEquals($ITERATION_COUNT, $scheduled_updates['needs_review'], "There should be {$ITERATION_COUNT} update scheduled.");
+      $this->assertEquals($ITERATION_COUNT, $scheduled_updates['needs_review'] + $scheduled_updates['scheduled'], "There should be {$ITERATION_COUNT} update scheduled.");
 
       // cheekily set all of the 'needs review' ones to 'scheduled'
       CRM_Core_DAO::executeQuery("UPDATE civicrm_activity SET status_id = 1 WHERE source_record_id = {$contract['id']} AND status_id <> 2;");
 
-      // now... these should all be schduled
+      // now... these should all be scheduled
       $scheduled_updates = $this->assertAPI3('Contract', 'get_open_modification_counts', ['id' => $contract['id']]);
       $this->assertEquals($ITERATION_COUNT, $scheduled_updates['scheduled'], "There should be {$ITERATION_COUNT} update scheduled.");
 

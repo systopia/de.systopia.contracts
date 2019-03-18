@@ -48,7 +48,7 @@ class CRM_Contract_BasicEngineTest extends CRM_Contract_ContractTestBase {
    * Example: Test that a version is returned.
    */
   public function testSimpleUpgrade() {
-    foreach ([0,1] as $is_sepa) {
+    foreach ([1] as $is_sepa) {
       // create a new contract
       $contract = $this->createNewContract(['is_sepa' => $is_sepa]);
 

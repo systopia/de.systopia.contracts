@@ -290,4 +290,22 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
       return $value['value'];
     }
   }
+
+  /**
+   * Get bank account ID
+   *
+   * @param $contact_id  integer contact ID
+   * @param string $iban string IBAN
+   * @param string $bic  string BIC
+   * @return int
+   */
+  public function getBankAccountID($contact_id, $iban = 'DE89370400440532013000', $bic = 'GENODEM1GLS') {
+    try {
+      $ba_id = CRM_Contract_BankingLogic::getOrCreateBankAccount($contact_id, $iban, $bic);
+      $this->assertNotEmpty($ba_id, "Failed to create bank account");
+      return $ba_id;
+    } catch (Exception $ex) {
+      $this->fail("Error while createing bank account: " . $ex->getMessage());
+    }
+  }
 }
