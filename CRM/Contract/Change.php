@@ -6,6 +6,8 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
+use CRM_Contract_ExtensionUtil as E;
+
 /**
  * Base class for contract changes. These are tracked changes to
  *  a contract, represented by an activity
@@ -54,6 +56,8 @@ abstract class CRM_Contract_Change {
    */
   protected function __construct($data) {
     $this->data = $data;
+    // make sure activity_type_id is numeric
+    $this->data['activity_type_id'] = $this->getActvityTypeID();
   }
 
   ################################################################################
@@ -83,6 +87,13 @@ abstract class CRM_Contract_Change {
    * Derive/populate additional data
    */
   public function populateData() {}
+
+  /**
+   * Check whether this change activity should actually be created
+   *
+   * @throws Exception if the creation should be disallowed
+   */
+  public function shouldBeAccepted() {}
 
   /**
    * Make sure that the data for this change is valid
@@ -125,16 +136,34 @@ abstract class CRM_Contract_Change {
   }
 
   /**
+   * Get the (numeric) activity type ID
+   *
+   * @return int activity type ID
+   */
+  public function getActvityTypeID() {
+    if (is_numeric($this->data['activity_type_id'])) {
+      return $this->data['activity_type_id'];
+    }
+
+    // otherwise translate class to ID
+    $id2class = self::getActivityTypeId2Class();
+    $class2id = array_flip($id2class);
+    $activity_type_id = $class2id[get_class($this)];
+    return $activity_type_id;
+  }
+
+  /**
    * Update the contract with the given data
    *
    * @param $updates array changes: attribute->value
-   * @throws CiviCRM_API3_Exception
+   * @throws Exception
    */
   public function updateContract($updates) {
     // make sure the ID is there
     $updates['id'] = $this->getContractID();
 
-    // TODO: derive fields
+    // derive fields if possible
+    $this->setDerivedFields($updates);
 
     // make sure all fields are resolved
     CRM_Contract_CustomData::resolveCustomFields($updates);
@@ -144,6 +173,78 @@ abstract class CRM_Contract_Change {
 
     // and delete the cached contract data (if any)
     $this->contract = NULL;
+  }
+
+  /**
+   * Calculate the subject line for this activity
+   *
+   * @param $contract_before array contract before update
+   * @param $contract_after  array contract after update
+   *
+   * @return string subject line
+   */
+  public function getSubject($contract_after, $contract_before = NULL) {
+    return "TO BE IMPLEMENTED";
+  }
+
+    /**
+   * Derive some missing fields based on the changes
+   *  for this contract
+   *
+   * @param $contract_change array changes for the contract
+   * @throws Exception should anything go wrong
+   */
+  public function setDerivedFields(&$contract_change) {
+
+    // DERIVE fields based on payment contract (recurring contribution)
+    if (!empty($contract_change['membership_payment.membership_recurring_contribution'])) {
+      $contribution_recur_id = (int) $contract_change['membership_payment.membership_recurring_contribution'];
+      try {
+        $contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $contribution_recur_id));
+      } catch (Exception $ex) {
+        throw new Exception("Couldn't find recurring contribution [{$contribution_recur_id}]!");
+      }
+
+      $contract_change['membership_payment.membership_annual']    = $this->calcAnnualAmount($contributionRecur);
+      $contract_change['membership_payment.membership_frequency'] = $this->calcPaymentFrequency($contributionRecur);
+      $contract_change['membership_payment.cycle_day']            = $contributionRecur['cycle_day'];
+      $contract_change['membership_payment.payment_instrument']   = $contributionRecur['payment_instrument_id'];
+
+      // If this is a sepa payment, get the 'to' and 'from' bank account
+      $sepaMandateResult = civicrm_api3('SepaMandate', 'get', array(
+          'entity_table' => "civicrm_contribution_recur",
+          'entity_id'    => $contributionRecur['id']
+      ));
+      if($sepaMandateResult['count'] == 1){
+        // SEPA Mandate
+        $sepaMandate                          = $sepaMandateResult['values'][$sepaMandateResult['id']];
+        $contract_change['membership_payment.from_ba'] = CRM_Contract_BankingLogic::getOrCreateBankAccount($sepaMandate['contact_id'], $sepaMandate['iban'], $sepaMandate['bic']);
+        $contract_change['membership_payment.to_ba']   = CRM_Contract_BankingLogic::getCreditorBankAccount();
+
+      } elseif ($sepaMandateResult['count'] == 0) {
+        // Other recurring contribution
+        CRM_Contract_BankingLogic::getIbanReferenceTypeID();
+        list($from_ba, $to_ba) = CRM_Contract_BankingLogic::getAccountsFromRecurringContribution($contributionRecur['id']);
+        $contract_change['membership_payment.from_ba'] = $from_ba;
+        $contract_change['membership_payment.to_ba']   = $to_ba;
+
+      } else {
+        // ERROR
+        $contract_change['membership_payment.from_ba'] = '';
+        $contract_change['membership_payment.to_ba']   = '';
+      }
+    }
+  }
+
+  /**
+   * Set a parameter with the activity
+   *
+   * @param $key   string property name
+   * @param $value string value to set
+   */
+  public function setParameter($key, $value) {
+    $this->data[$key] = $value;
+    // TODO: mark as dirty?
   }
 
   /**
@@ -176,6 +277,12 @@ abstract class CRM_Contract_Change {
    */
   public function setStatus($status) {
     $this->data['status_id'] = $status;
+  }
+
+  public function checkForConflicts() {
+    // TODO: refactor CRM_Contract_Handler_ModificationConflicts
+    $conflictHandler = new CRM_Contract_Handler_ModificationConflicts();
+    $conflictHandler->checkForConflicts($this->data['id']);
   }
 
 

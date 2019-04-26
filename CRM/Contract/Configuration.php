@@ -13,7 +13,7 @@
  */
 class CRM_Contract_Configuration {
 
-  public static $use_new_engine = FALSE;
+  public static $use_new_engine = TRUE;
   protected static $eligible_campaigns = NULL;
 
   /**
@@ -21,6 +21,21 @@ class CRM_Contract_Configuration {
    */
   public static function useNewEngine() {
     return self::$use_new_engine;
+  }
+
+  /**
+   * Get logged in contact ID
+   *
+   * @todo: make configurable
+   */
+  public static function getUserID() {
+    $session = CRM_Core_Session::singleton();
+    $contact_id = $session->getLoggedInContactID();
+    if (!$contact_id) {
+      // TODO: make default configurable
+      $contact_id = 1;
+    }
+    return $contact_id;
   }
 
   /**

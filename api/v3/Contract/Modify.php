@@ -15,12 +15,13 @@ function _civicrm_api3_Contract_modify_spec(&$params){
     'name'         => 'modify_action',
     'title'        => 'Action',
     'api.required' => 1,
-    'api.alias'    => 'action',
+    'api.aliases'  => ['action'],
     'description'  => 'Action to be executed (same as "action")',
     );
   $params['id'] = array(
     'name'         => 'id',
     'title'        => 'Contract ID',
+    'api.aliases'  => ['contract_id'],
     'api.required' => 1,
     'description'  => 'Contract (Membership) ID of the contract to be modified',
     );
@@ -75,20 +76,53 @@ function civicrm_api3_Contract_modify($params) {
   // modify data to match internal structure
   $params['activity_type_id']   = $params['action'];
   $params['activity_date_time'] = date('Y-m-d H:i:s', $requested_execution_time);
-  $params['source_record_id']   = $params['contract_id'];
+  $params['source_record_id']   = $params['id'];
+  unset($params['id']);
   if (!empty($params['note'])) {
     $params['details'] = $params['note'];
   }
 
-  // TODO: set contacts
 
   // generate change (activity)
   $change = CRM_Contract_Change::getChangeForData($params);
-  $change->setStatus('scheduled');
+  $change->setParameter('source_contact_id', CRM_Contract_Configuration::getUserID());
+  $change->setParameter('target_contact_id', $change->getContract()['contact_id']);
+  $change->setStatus('Scheduled');
   $change->populateData();
   $change->verifyData();
+  $change->shouldBeAccepted();
   $change->save();
+
+  // make sure any newly created conflicts are marked
+  $change->checkForConflicts();
+
+  // return contract (legacy behaviour)
+  $contract = $change->getContract();
+  return civicrm_api3_create_success([$contract['id'] => $contract]);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /**

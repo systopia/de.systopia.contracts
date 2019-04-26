@@ -13,7 +13,7 @@
 class CRM_Contract_Monitoring_EntityMonitor {
 
   /** is monitoring enabled? */
-  protected static $enabled = TRUE;
+  protected static $enabled = FALSE;
 
   /** store an instance per type/ID */
   private static $_monitor_instances = array();
@@ -48,13 +48,13 @@ class CRM_Contract_Monitoring_EntityMonitor {
   /**
    * Get the monitor instance for this
    */
-  public static function getInstance($class, $entity_id, $params) {
+  public static function getInstance($class, $entity_id, $params = []) {
     if ($entity_id) {
       $key = "{$class}-{$entity_id}";
-      if (!isset(self::$_monitor_instance[$key])) {
-        self::$_monitor_instance[$key] = new $class($entity_id, $params);
+      if (!isset(self::$_monitor_instances[$key])) {
+        self::$_monitor_instances[$key] = new $class($entity_id, $params);
       }
-      return self::$_monitor_instance[$key];
+      return self::$_monitor_instances[$key];
 
     } else {
       // no ID? so no tracking...
