@@ -148,6 +148,7 @@ class CRM_Contract_Handler_Contract{
 
     // Setting skip_handler to true  avoids us 'handling the already handled' call
     $params = $this->convertCustomIds($this->params);
+    $params = $this->convertFileFields($params);
     $params['skip_handler'] = true;
     civicrm_api3('Membership', 'create', $params);
     $this->setEndState($params['id']);
@@ -251,6 +252,7 @@ class CRM_Contract_Handler_Contract{
       }
     }
     $params = $this->convertCustomIds($params);
+    $params = $this->convertFileFields($params);
 
     $params['skip_handler'] = true;
 
@@ -491,6 +493,27 @@ class CRM_Contract_Handler_Contract{
       if(strpos($key, '.')){
         unset($params[$key]);
         $params[CRM_Contract_Utils::getCustomFieldId($key)] = $param;
+      }
+    }
+    return $params;
+  }
+
+  /**
+   * Convert file fields passed as array to just the numeric file ID
+   *
+   * @param $params
+   *
+   * @return mixed
+   */
+  private function convertFileFields($params){
+    foreach($params as $key => $param) {
+      if (is_array($param)) {
+        if (!empty($param['fid'])) {
+          $params[$key] = $param['fid'];
+        }
+        else if (!empty($param['id']) && array_key_exists('data', $param)) {
+          unset($params[$key]);
+        }
       }
     }
     return $params;
