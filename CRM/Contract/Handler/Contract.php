@@ -291,7 +291,7 @@ class CRM_Contract_Handler_Contract{
     $this->modificationActivity = $activityResult['values'][$activityResult['id']];
   }
 
-  private function getModificationActivityParams(){
+  private function ;(){
 
     $params['status_id'] = 'Completed';
     $params['activity_type_id'] = $this->modificationClass->getActivityType();

@@ -1,9 +1,8 @@
 <?php
 /*-------------------------------------------------------------+
 | SYSTOPIA Contract Extension                                  |
-| Copyright (C) 2017 SYSTOPIA                                  |
-| Author: M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
-|         B. Endres (endres -at- systopia.de)                  |
+| Copyright (C) 2017-2019 SYSTOPIA                             |
+| Author: B. Endres (endres -at- systopia.de)                  |
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
@@ -21,13 +20,13 @@
   $params['now'] = array(
     'name'         => 'now',
     'title'        => 'NOW Time',
-    'api.required' => 0,
+    'api.default'  => 'now',
     'description'  => 'You can provide another datetime for what the algorithm considers to be now',
     );
   $params['limit'] = array(
     'name'         => 'limit',
     'title'        => 'Limit',
-    'api.required' => 0,
+    'api.default'  => 1000,
     'description'  => 'Max count of modifications to be processed',
     );
 }
@@ -36,18 +35,68 @@
 /**
  * Process the scheduled contract modifications
  */
-function civicrm_api3_Contract_process_scheduled_modifications($params){
-
-  // make sure that the time machine only works with individual contracts
-  //  see GP-936
-  if (isset($params['now']) && empty($params['id'])) {
-    return civicrm_api3_create_error("You can only use the time machine for specific contract! set the 'id' parameter.");
-  }
-
+function civicrm_api3_Contract_process_scheduled_modifications($params) {
   // make sure no other task is running
   $lock = Civi\Core\Container::singleton()->get('lockManager')->acquire("worker.member.contract_engine");
   if (!$lock->isAcquired()) {
     return civicrm_api3_create_success(array('message' => "Another instance of the Contract.process_scheduled_modifications process is running. Skipped."));
+  }
+
+  if (!CRM_Contract_Configuration::useNewEngine()) {
+    return civicrm_api3_Contract_process_scheduled_modifications_legacy($params);
+  }
+
+  // make sure that the time machine only works with a single contract, see GP-936
+  if (isset($params['now']) && empty($params['id'])) {
+    return civicrm_api3_create_error("You can only use the time machine for specific contract! set the 'id' parameter.");
+  }
+
+  // compile query
+  $activityParams = [
+      'activity_type_id'   => ['IN' => CRM_Contract_Change::getActivityTypeIds()],
+      'status_id'          => 'scheduled',
+      'activity_date_time' => ['<=' => date('Y-m-d H:i:s', strtotime($params['now']))], // execute everything scheduled in the past
+      'option.limit'       => $params['limit'],
+      'sequential'         => 1, // in the scheduled order(!)
+      'option.sort'        => 'activity_date_time ASC, id ASC',
+  ];
+  if (!empty($params['id'])) {
+    $activityParams['source_record_id'] = (int) $params['id'];
+  }
+
+  // run query
+  $counter = 0;
+  $scheduled_activities = civicrm_api3('activity', 'get', $activityParams);
+  foreach ($scheduled_activities['values'] as $scheduled_activity) {
+    $counter++;
+    if ($counter > $params['limit']) {
+      break;
+    }
+
+    // execute the changes
+    $change = CRM_Contract_Change::getChangeForData($scheduled_activity);
+    $change->verifyData();
+    try {
+      CRM_Contract_Monitoring_EntityMonitor::disable();
+      $change->execute();
+      CRM_Contract_Monitoring_EntityMonitor::enable();
+    } catch (Exception $ex) {
+      CRM_Contract_Monitoring_EntityMonitor::enable();
+      throw $ex;
+    }
+  }
+}
+
+/**
+ * Legacy engine implementation
+ * @author M. McAndrew (michaelmcandrew@thirdsectordesign.org)
+ * @deprecated
+ */
+function civicrm_api3_Contract_process_scheduled_modifications_legacy($params){
+  // make sure that the time machine only works with individual contracts
+  //  see GP-936
+  if (isset($params['now']) && empty($params['id'])) {
+    return civicrm_api3_create_error("You can only use the time machine for specific contract! set the 'id' parameter.");
   }
 
   // Passing the now param is useful for testing
@@ -92,6 +141,8 @@ function civicrm_api3_Contract_process_scheduled_modifications($params){
       if($counter > $limit){
         break;
       }
+
+
 
       $handler = new CRM_Contract_Handler_Contract;
 

@@ -12,12 +12,38 @@
  */
 class CRM_Contract_Monitoring_EntityMonitor {
 
+  /** is monitoring enabled? */
+  protected static $enabled = TRUE;
+
   /** store an instance per type/ID */
   private static $_monitor_instances = array();
 
   /** store the pro/post process stack per type */
   private static $_monitor_stack     = array();
 
+
+  /**
+   * Is the monitoring enabled?
+   *
+   * @return bool Is the monitoring enabled?
+   */
+  public static function isEnabled() {
+    return self::$enabled;
+  }
+
+  /**
+   * Enable monitoring for changes to be recorded
+   */
+  public static function enable() {
+    self::$enabled = TRUE;
+  }
+
+  /**
+   * Disable monitoring for changes to be recorded
+   */
+  public static function disable() {
+    self::$enabled = FALSE;
+  }
 
   /**
    * Get the monitor instance for this

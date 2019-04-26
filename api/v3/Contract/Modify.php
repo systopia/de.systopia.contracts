@@ -1,9 +1,8 @@
 <?php
 /*-------------------------------------------------------------+
 | SYSTOPIA Contract Extension                                  |
-| Copyright (C) 2017 SYSTOPIA                                  |
-| Author: M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
-|         B. Endres (endres -at- systopia.de)                  |
+| Copyright (C) 2017-2019 SYSTOPIA                             |
+| Author: B. Endres (endres -at- systopia.de)                  |
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
@@ -25,24 +24,36 @@ function _civicrm_api3_Contract_modify_spec(&$params){
     'api.required' => 1,
     'description'  => 'Contract (Membership) ID of the contract to be modified',
     );
-  $params['date'] = array(
-    'name'         => 'date',
-    'title'        => 'Date',
-    'api.required' => 0,
-    'description'  => 'Scheduled execution date (not in the past, and in format Y-m-d H:i:s)',
+  $params['medium_id'] = array(
+      'name'         => 'medium_id',
+      'title'        => 'Medium ID',
+      'api.required' => 1,
+      'description'  => 'How was the modification received',
+  );
+  if (CRM_Contract_Configuration::useNewEngine()) {
+    $params['date'] = array(
+        'name'         => 'date',
+        'title'        => 'Date',
+        'api.default'  => 'now',
+        'description'  => 'Scheduled execution date (not in the past, and in format Y-m-d H:i:s)',
     );
+  } else {
+    $params['date'] = array(
+        'name'         => 'date',
+        'title'        => 'Date',
+        'api.required' => 0,
+        'description'  => 'Scheduled execution date (not in the past, and in format Y-m-d H:i:s)',
+    );
+  }
 }
 
 
 /**
- * Schedule a Contract modification
+ * Schedule a new Contract modification
  */
-function civicrm_api3_Contract_modify($params){
-  // copy 'modify_action' into 'action' param
-  //   to avoid clashes with entity/action parameters in REST calls
-  if (!empty($params['modify_action'])) {
-    $params['action'] = $params['modify_action'];
-  }
+function civicrm_api3_Contract_modify($params) {
+  // use activity_type_id instead of modify_action
+  $params['action'] = $params['modify_action'];
 
   // also: revert REST-like '.' -> '_' conversion
   foreach (array_keys($params) as $key) {
@@ -51,6 +62,41 @@ function civicrm_api3_Contract_modify($params){
     $params[$new_key] = $params[$key];
   }
 
+  if (!CRM_Contract_Configuration::useNewEngine()) {
+    return civicrm_api3_Contract_modify_legacy($params);
+  }
+
+  // check the requested execution time
+  $requested_execution_time = strtotime($params['date']);
+  if ($requested_execution_time < strtotime('today')) {
+    throw new Exception("Parameter 'date' must either be in the future, or absent if you want to execute the modification immediately.");
+  }
+
+  // modify data to match internal structure
+  $params['activity_type_id']   = $params['action'];
+  $params['activity_date_time'] = date('Y-m-d H:i:s', $requested_execution_time);
+  $params['source_record_id']   = $params['contract_id'];
+  if (!empty($params['note'])) {
+    $params['details'] = $params['note'];
+  }
+
+  // TODO: set contacts
+
+  // generate change (activity)
+  $change = CRM_Contract_Change::getChangeForData($params);
+  $change->setStatus('scheduled');
+  $change->populateData();
+  $change->verifyData();
+  $change->save();
+}
+
+
+/**
+ * Legacy engine implementation
+ * @author M. McAndrew (michaelmcandrew@thirdsectordesign.org)
+ * @deprecated
+ */
+function civicrm_api3_Contract_modify_legacy($params) {
   // Throw an exception is $params['action'] is not set
   if(!isset($params['action'])){
     throw new Exception('Please include an action/modify_action parameter with this API call');
