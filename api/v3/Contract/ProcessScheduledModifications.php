@@ -12,24 +12,24 @@ const CE_ENGINE_PROCESSING_LIMIT = 1000;
  * Process the scheduled contract modifications
  */
 function _civicrm_api3_Contract_process_scheduled_modifications_spec(&$params){
-  $params['id'] = array(
+  $params['id'] = [
     'name'         => 'id',
     'title'        => 'Contract ID',
     'api.required' => 0,
     'description'  => 'If given, only pending modifications for this contract will be processed',
-    );
-  $params['now'] = array(
+    ];
+  $params['now'] = [
     'name'         => 'now',
     'title'        => 'NOW Time',
     'api.required' => 0,
     'description'  => 'You can provide another datetime for what the algorithm considers to be now',
-    );
-  $params['limit'] = array(
+    ];
+  $params['limit'] = [
     'name'         => 'limit',
     'title'        => 'Limit',
     'api.default'  => CE_ENGINE_PROCESSING_LIMIT,
     'description'  => 'Max count of modifications to be processed',
-    );
+    ];
 }
 
 
@@ -55,6 +55,10 @@ function civicrm_api3_Contract_process_scheduled_modifications($params) {
     return civicrm_api3_create_error("You can only use the time machine for specific contract! set the 'id' parameter.");
   }
 
+  if (empty($params['limit'])) {
+    $params['limit'] = CE_ENGINE_PROCESSING_LIMIT;
+  }
+
   // compile query
   $activityParams = [
       'activity_type_id'   => ['IN' => CRM_Contract_Change::getActivityTypeIds()],
@@ -63,13 +67,10 @@ function civicrm_api3_Contract_process_scheduled_modifications($params) {
       'option.limit'       => $params['limit'],
       'sequential'         => 1, // in the scheduled order(!)
       'option.sort'        => 'activity_date_time ASC, id ASC',
-      'return'             => 'id,activity_type_id,status_id,activity_date_time,subject,' . CRM_Contract_Change::getCustomFieldList(),
+      'return'             => 'id,activity_type_id,status_id,activity_date_time,subject,source_record_id,' . CRM_Contract_Change::getCustomFieldList(),
   ];
   if (!empty($params['id'])) {
     $activityParams['source_record_id'] = (int) $params['id'];
-  }
-  if (empty($params['limit'])) {
-    $params['limit'] = CE_ENGINE_PROCESSING_LIMIT;
   }
 
   // run query
@@ -87,6 +88,7 @@ function civicrm_api3_Contract_process_scheduled_modifications($params) {
     $result['order'][] = $change->getID();
     try {
       // verify the data before execution
+      $change->populateData();
       $change->verifyData();
     } catch (Exception $ex) {
       // verification failed

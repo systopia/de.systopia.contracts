@@ -25,15 +25,18 @@ class CRM_Contract_Change_Cancel extends CRM_Contract_Change {
   }
 
   /**
-   * Render the default subject
-   *
-   * @param $contract_after       array  data of the contract after
-   * @param $contract_before      array  data of the contract before
-   * @return                      string the subject line
+   * Derive/populate additional data
    */
-  public function renderDefaultSubject($contract_after, $contract_before = NULL) {
-    return CRM_Contract_Change_Sign::renderFullSubject($contract_after);
+  public function populateData() {
+    if (empty($this->data['contract_cancellation.contact_history_cancel_reason'])) {
+      $this->data['contract_cancellation.contact_history_cancel_reason'] = CRM_Utils_Array::value('membership_cancellation.membership_cancel_reason', $this->data, '');
+    } else {
+      $this->data['membership_cancellation.membership_cancel_reason'] = CRM_Utils_Array::value('contract_cancellation.contact_history_cancel_reason', $this->data, '');
+    }
+
+    parent::populateData();
   }
+
 
   /**
    * Apply the given change to the contract
@@ -58,35 +61,10 @@ class CRM_Contract_Change_Cancel extends CRM_Contract_Change {
         $this->data['membership_cancellation.membership_cancel_reason']);
 
     // update change activity
-    $this->setParameter('subject', $this->getSubject($contract_update));
+    $contract_after = $this->getContract();
+    $this->setParameter('subject', $this->getSubject($contract_after, $contract));
     $this->setStatus('Completed');
     $this->save();
-  }
-
-  /**
-   * Derive/populate additional data
-   */
-  public function populateData() {
-    if (empty($this->data['subject'])) {
-      // add default subject
-      $this->data['subject'] = E::ts("Cancel Contract");
-    }
-  }
-
-  /**
-   * Calculate the subject line for this activity
-   *
-   * @param $contract_before array contract before update
-   * @param $contract_after  array contract after update
-   *
-   * @return string subject line
-   */
-  public function getSubject($contract_after, $contract_before = NULL) {
-    $subject = "id{$this->data['id']}";
-    if (!empty($contract_after['membership_cancellation'])) {
-      $subject .= ' cancel reason ' . $contract_after['membership_cancellation'];
-    }
-    return $subject;
   }
 
   /**
@@ -136,5 +114,24 @@ class CRM_Contract_Change_Cancel extends CRM_Contract_Change {
         throw new Exception("Scheduling an (additional) cancellation request in not desired in this context.");
       }
     }
+  }
+
+  /**
+   * Render the default subject
+   *
+   * @param $contract_after       array  data of the contract after
+   * @param $contract_before      array  data of the contract before
+   * @return                      string the subject line
+   */
+  public function renderDefaultSubject($contract_after, $contract_before = NULL) {
+    $contract_id = $this->getContractID();
+    $subject = "id{$contract_id}:";
+    if (!empty($this->data['contract_cancellation.contact_history_cancel_reason'])) {
+      $subject .= ' cancel reason ' . $this->getOptionValue($this->data['contract_cancellation.contact_history_cancel_reason'], 'contract_cancel_reason');
+
+      // FIXME: I would prefer this:
+      //$subject .= ' cancel reason ' . $this->data['contract_cancellation.contact_history_cancel_reason'];
+    }
+    return $subject;
   }
 }

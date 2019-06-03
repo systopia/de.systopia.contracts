@@ -23,6 +23,38 @@ class CRM_Contract_Change_Sign extends CRM_Contract_Change {
   }
 
   /**
+   * Apply the given change to the contract
+   *
+   * @throws Exception should anything go wrong in the execution
+   */
+  public function execute() {
+    throw new Exception("New membership sign-ups are documentary, they cannot be scheduled into the future, and therefore not executed.");
+  }
+
+  /**
+   * Derive/populate additional data
+   */
+  public function populateData() {
+    parent::populateData();
+    $contract = $this->getContract(TRUE);
+    $this->data['contract_updates.ch_annual_diff'] = CRM_Utils_Array::value('membership_payment.membership_annual', $contract, '');
+  }
+
+
+  /**
+   * Check whether this change activity should actually be created
+   *
+   * CANCEL activities should not be created, if there is another one already there
+   *
+   * @throws Exception if the creation should be disallowed
+   */
+  public function shouldBeAccepted() {
+    parent::shouldBeAccepted();
+
+    // TODO: check if the parameters are good
+  }
+
+  /**
    * Render the default subject
    *
    * @param $contract_after       array  data of the contract after
@@ -67,53 +99,6 @@ class CRM_Contract_Change_Sign extends CRM_Contract_Change {
     }
 
     return "id{$contract['id']}: ".implode(' AND ', $attributes);
-  }
-
-  /**
-   * Apply the given change to the contract
-   *
-   * @throws Exception should anything go wrong in the execution
-   */
-  public function execute() {
-    throw new Exception("New membership sign-ups are documentary, they cannot be scheduled into the future, and therefore not executed.");
-  }
-
-  /**
-   * Derive/populate additional data
-   */
-  public function populateData() {
-    // TODO: populate data for sign-ups
-    if (empty($this->data['source_record_id'])) {
-      if (!empty($this->data['membership']['id'])) {
-        $this->data['source_record_id'] = $this->data['membership']['id'];
-      }
-    }
-
-    // populate
-    $contract = $this->getContract(TRUE);
-    foreach (CRM_Contract_Change::$field_mapping_change_contract as $contract_attribute => $change_attribute) {
-      $this->data[$change_attribute] = CRM_Utils_Array::value($contract_attribute, $contract, '');
-    }
-    $this->data['contract_updates.ch_annual_diff'] = CRM_Utils_Array::value('membership_payment.membership_annual', $contract, '');
-
-    // finally, set subject
-    if (empty($this->data['subject'])) {
-      $this->data['subject'] = $this->getSubject($contract);
-    }
-  }
-
-
-  /**
-   * Check whether this change activity should actually be created
-   *
-   * CANCEL activities should not be created, if there is another one already there
-   *
-   * @throws Exception if the creation should be disallowed
-   */
-  public function shouldBeAccepted() {
-    parent::shouldBeAccepted();
-
-    // TODO: check if the parameters are good
   }
 
 }

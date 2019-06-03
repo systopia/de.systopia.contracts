@@ -55,9 +55,6 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
    * @var array Maps the contract fields to the change activity fields
    */
   protected static $field_mapping_change_contract = [
-      'id'                                                   => 'source_record_id',
-      'contact_id'                                           => 'target_contact_id',
-      'campaign_id'                                          => 'campaign_id',
       'membership_type_id'                                   => 'contract_updates.ch_membership_type',
       'membership_payment.membership_recurring_contribution' => 'contract_updates.ch_recurring_contribution',
       'membership_payment.payment_instrument'                => 'contract_updates.ch_payment_instrument',
@@ -66,8 +63,6 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
       'membership_payment.from_ba'                           => 'contract_updates.ch_from_ba',
       'membership_payment.to_ba'                             => 'contract_updates.ch_to_ba',
       'membership_payment.cycle_day'                         => 'contract_updates.ch_cycle_day',
-      'membership_payment.defer_payment_start'               => 'contract_updates.ch_defer_payment_start',
-      'membership_cancellation.membership_cancel_reason'     => 'contract_cancellation.contact_history_cancel_reason',
   ];
 
 
@@ -113,10 +108,6 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
   ##                           COMMON FUNCTIONS                                 ##
   ################################################################################
 
-  /**
-   * Derive/populate additional data
-   */
-  public function populateData() {}
 
   /**
    * Check whether this change activity should actually be created
@@ -153,6 +144,26 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
    */
   public function getContractID() {
     return $this->data['source_record_id'];
+  }
+
+  /**
+   * Derive/populate additional data
+   */
+  public function populateData() {
+    // populate parameters
+    $contract = $this->getContract(TRUE);
+
+    // propagate derived fields
+    foreach (CRM_Contract_Change::$field_mapping_change_contract as $contract_attribute => $change_attribute) {
+      if (empty($this->data[$change_attribute])) {
+        $this->data[$change_attribute] = CRM_Utils_Array::value($contract_attribute, $contract, '');
+      }
+    }
+
+    if (empty($this->data['subject'])) {
+      // add default subject
+      $this->data['subject'] = $this->getSubject($contract, NULL);
+    }
   }
 
   /**
@@ -377,15 +388,45 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
     $conflictHandler->checkForConflicts($this->data['id']);
   }
 
+  /**
+   * Lookup function for OptionValues
+   *
+   * @param $value            string value
+   * @param $option_group_id  string option group id or name
+   * @return string option value
+s   */
   public function getOptionValueLabel($value, $option_group_id) {
     try {
-      // TODO: optimise/cache
+      // TODO: optimise/cache/use Core (if robust enough)
       return civicrm_api3('OptionValue', 'getvalue', [
           'return'          => "label",
           'value'           => $value,
           'option_group_id' => $option_group_id]);
     } catch (Exception $ex) {
       CRM_Core_Error::debug_log_message("Error looking up option value '{$value}' in {$option_group_id}");
+    }
+    return 'ERROR';
+  }
+
+  /**
+   * Lookup function for OptionValues
+   *
+   * @param $label            string label
+   * @param $option_group_id  string option group id or name
+   * @return string option value
+   */
+  public function getOptionValue($label, $option_group_id) {
+    if (is_numeric($label)) {
+      return (int) $label;
+    }
+    try {
+      // TODO: optimise/cache/use Core (if robust enough)
+      return civicrm_api3('OptionValue', 'getvalue', [
+          'return'          => 'value',
+          'label'           => $label,
+          'option_group_id' => $option_group_id]);
+    } catch (Exception $ex) {
+      CRM_Core_Error::debug_log_message("Error resolving option value '{$label}' in {$option_group_id}");
     }
     return 'ERROR';
   }
