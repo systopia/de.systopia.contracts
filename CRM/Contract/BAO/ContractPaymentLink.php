@@ -24,9 +24,9 @@ class CRM_Contract_BAO_ContractPaymentLink extends CRM_Contract_DAO_ContractPaym
    */
   public static function createPaymentLink($contract_id, $contribution_recur_id, $is_active = TRUE, $start_date = 'now', $end_date = NULL) {
     $params = array(
-        'contract_id'   => $contract_id,
-        'contribution_recur_id'    => $contribution_recur_id,
-        '$is_active'   => $is_active ? 1 : 0,
+        'contract_id'           => $contract_id,
+        'contribution_recur_id' => $contribution_recur_id,
+        '$is_active'            => $is_active ? 1 : 0,
     );
 
     // set dates

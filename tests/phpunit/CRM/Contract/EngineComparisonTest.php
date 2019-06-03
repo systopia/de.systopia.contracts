@@ -41,6 +41,8 @@ class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
     $this->assertEquals(1, count($activities_new), "Exactly one signed activity expected!");
     $activity_new = $activities_new[0];
     CRM_Contract_CustomData::labelCustomFields($activity_new);
+    CRM_Contract_CustomData::labelCustomFields($contract_new);
+
 
     CRM_Contract_Configuration::$use_new_engine = FALSE;
     $contract_old = $this->createNewContract([
@@ -53,6 +55,7 @@ class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
     $this->assertEquals(1, count($activities_old), "Exactly one signed activity expected!");
     $activity_old = $activities_old[0];
     CRM_Contract_CustomData::labelCustomFields($activity_old);
+    CRM_Contract_CustomData::labelCustomFields($contract_old);
 
     // mend subject for comparison
     $activity_new['subject'] = explode(':', $activity_new['subject'])[1]; // strip ID
@@ -60,5 +63,8 @@ class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
 
     // make sure they generate the same data in the fields that are supposed to
     $this->assertArraysEqual($activity_old, $activity_new, NULL, ['id', 'source_record_id', 'activity_date_time', 'details', 'created_date', 'contract_updates.ch_recurring_contribution', 'modified_date', 'contract_updates.ch_from_ba']);
+    $this->assertArraysEqual($contract_old, $contract_new, ['membership_type_id','join_date','start_date','end_date','status_id','is_test','is_pay_later','membership_name','membership_general.membership_dialoger','membership_payment.membership_annual','membership_payment.membership_frequency','membership_payment.to_ba','membership_payment.cycle_day','membership_payment.payment_instrument','membership_payment.defer_payment_start']);
+
+
   }
 }

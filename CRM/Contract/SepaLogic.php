@@ -323,6 +323,7 @@ class CRM_Contract_SepaLogic {
           TRUE,
           $date
       );
+
     } catch(Exception $ex) {
       // link couldn't be generated
       CRM_Core_Error::debug_log_message("Contract: Couldn't create payment link: " . $ex->getMessage());

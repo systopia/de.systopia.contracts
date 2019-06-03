@@ -30,6 +30,8 @@ function civicrm_api3_Contract_create($params){
       $params[CRM_Contract_Utils::getCustomFieldId($key)] = $value;
     }
   }
+
+  // create
   $membership = civicrm_api3('Membership', 'create', $params);
 
   // link SEPA Mandate
@@ -45,13 +47,15 @@ function civicrm_api3_Contract_create($params){
     $change = CRM_Contract_Change::getChangeForData($params);
     $change->setParameter('source_contact_id', CRM_Contract_Configuration::getUserID());
     $change->setParameter('source_record_id',  $membership['id']);
-    $contract = $change->getContract();
-    $change->setParameter('target_contact_id', $contract['contact_id']);
+    $change->setParameter('target_contact_id', $change->getContract()['contact_id']);
     $change->setStatus('Completed');
     $change->populateData();
     $change->verifyData();
     $change->shouldBeAccepted();
     $change->save();
+
+    // also derive contract fields
+    $change->updateContract(['membership_payment.membership_recurring_contribution' => $params[$recurring_contribution_field_key]]);
 
   } else {
     // old engine needed to update the generated activity
