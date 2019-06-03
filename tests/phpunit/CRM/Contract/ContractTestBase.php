@@ -308,4 +308,54 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
       $this->fail("Error while createing bank account: " . $ex->getMessage());
     }
   }
+
+  /**
+   * Get all change activities for the given contract ID
+   *
+   * @param $contract_id int    Contract ID
+   * @param $types       array  list of types
+   * @param $status      array  list of activity status
+   * @return array list of activities
+   */
+  public function getChangeActivities($contract_id, $types = NULL, $status = []) {
+    // compile query
+    $query = [
+        'source_record_id' => $contract_id,
+        'option.limit'     => 0,
+        'sequential'       => 1,
+    ];
+    if (!empty($types)) {
+      $query['activity_type_id'] = ['IN' => $types];
+    }
+    if (!empty($status)) {
+      $query['status_id'] = ['IN' => $status];
+    }
+
+    // load activities
+    $result = civicrm_api3('Activity', 'get', $query);
+    return $result['values'];
+  }
+
+
+  /**
+   * Compare two arrays by asserting all attributes are equal
+   *
+   * @param $expected_data       array expected data
+   * @param $current_data        array test data
+   * @param $attribute_list      array list of attributes to check. default is ALL
+   * @param $exception_list      array list of attributes to NOT check. default is NONE
+   */
+  public function assertArraysEqual($expected_data, $current_data, $attribute_list = NULL, $exception_list = []) {
+    if ($attribute_list == NULL) {
+      $attribute_list = array_keys(array_merge($expected_data, $current_data));
+    }
+
+    foreach ($attribute_list as $attribute) {
+      if (in_array($attribute, $exception_list)) continue;
+      $expected_value = CRM_Utils_Array::value($attribute, $expected_data);
+      $current_value  = CRM_Utils_Array::value($attribute, $current_data);
+      //$this->assertEquals($expected_value, $current_value, "Attribute '{$attribute}' differs. Expected: '{$expected_value}', got '{$current_value}'.");
+      $this->assertEquals($expected_value, $current_value);
+    }
+  }
 }

@@ -21,8 +21,7 @@ include_once 'ContractTestBase.php';
  *
  * @group headless
  */
-class CRM_Contract_BasicEngineTest extends CRM_Contract_ContractTestBase {
-
+class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
   public function setUp() {
     CRM_Contract_Configuration::$use_new_engine = TRUE;
   }
@@ -31,21 +30,30 @@ class CRM_Contract_BasicEngineTest extends CRM_Contract_ContractTestBase {
    * Test a simple create
    */
   public function testSimpleCreate() {
-    foreach ([0,1] as $is_sepa) {
-      // create a new contract
-      $contract = $this->createNewContract([
-          'is_sepa'            => $is_sepa,
-          'amount'             => '10.00',
-          'frequency_unit'     => 'month',
-          'frequency_interval' => '1',
-      ]);
+    CRM_Contract_Configuration::$use_new_engine = TRUE;
+    $contract_new = $this->createNewContract([
+        'is_sepa'            => 1,
+        'amount'             => '10.00',
+        'frequency_unit'     => 'month',
+        'frequency_interval' => '1',
+    ]);
+    $activities_new = $this->getChangeActivities($contract_new['id'], ['Contract_Signed']);
+    $this->assertEquals(1, count($activities_new), "Exactly one signed activity expected!");
+    $activity_new = $activities_new[0];
 
-      // annual amount
-      $this->assertEquals('120.00', $contract['membership_payment.membership_annual']);
-      $this->assertEquals('2', $contract['status_id']);
-      $this->assertNotEmpty($contract['membership_payment.membership_recurring_contribution']);
-      $this->assertNotEmpty($contract['membership_payment.cycle_day']);
-    }
+    CRM_Contract_Configuration::$use_new_engine = FALSE;
+    $contract_old = $this->createNewContract([
+        'is_sepa'            => 1,
+        'amount'             => '10.00',
+        'frequency_unit'     => 'month',
+        'frequency_interval' => '1',
+    ]);
+    $activities_old = $this->getChangeActivities($contract_old['id'], ['Contract_Signed']);
+    $this->assertEquals(1, count($activities_old), "Exactly one signed activity expected!");
+    $activity_old = $activities_old[0];
+
+    // make sure they generate the same data
+    $this->assertArraysEqual($activity_old, $activity_new, NULL, ['id', 'source_record_id', 'activity_date_time']);
   }
 
   /**

@@ -33,6 +33,7 @@ abstract class CRM_Contract_Change {
    */
   protected static $type2class = [
     'Contract_Cancelled' => 'CRM_Contract_Change_Cancel',
+    'Contract_Signed'    => 'CRM_Contract_Change_Sign',
   ];
 
   /**
@@ -41,6 +42,7 @@ abstract class CRM_Contract_Change {
    */
   protected static $action2class = [
       'cancel' => 'CRM_Contract_Change_Cancel',
+      'sign'   => 'CRM_Contract_Change_Sign',
   ];
 
   /**
@@ -137,7 +139,7 @@ abstract class CRM_Contract_Change {
       } catch (Exception $ex) {
         throw new Exception("Contract [{$contract_id}] not found!");
       }
-      CRM_Contract_CustomData::labelCustomFields($contract);
+      CRM_Contract_CustomData::labelCustomFields($this->contract);
     }
     return $this->contract;
   }
@@ -240,6 +242,40 @@ abstract class CRM_Contract_Change {
         $contract_change['membership_payment.from_ba'] = '';
         $contract_change['membership_payment.to_ba']   = '';
       }
+    }
+  }
+
+  /**
+   * Calculate annual amount
+   *
+   * @param $contributionRecur array recurring contribution data
+   * @return string properly formatted annual amount
+   */
+  protected function calcAnnualAmount($contributionRecur){
+    // only 'month' and 'year' should be in use
+    $frequencyUnitTranslate = ['month' => 12, 'year'  => 1];
+    return CRM_Contract_SepaLogic::formatMoney(CRM_Contract_SepaLogic::formatMoney($contributionRecur['amount']) * $frequencyUnitTranslate[$contributionRecur['frequency_unit']] / $contributionRecur['frequency_interval']);
+  }
+
+
+  /**
+   * Calculate the frequency from the unit/interval set in the recurring contribution data
+   * @param $contributionRecur array recurring contribution data
+   * @return int payment frequency (in months)
+   * @throws Exception if the unit is not recognised ('month' or 'year')
+   */
+  protected function calcPaymentFrequency($contributionRecur) {
+    if (empty($contributionRecur['frequency_interval'])) {
+      // unable to calculate
+      return 0;
+    }
+
+    if ($contributionRecur['frequency_unit'] == 'year') {
+      return 1 / $contributionRecur['frequency_interval'];
+    } else if ($contributionRecur['frequency_unit'] == 'month') {
+      return 12 / $contributionRecur['frequency_interval'];
+    } else {
+      throw new Exception("Frequency unit '{$contributionRecur['frequency_unit']}' not allowed.");
     }
   }
 
