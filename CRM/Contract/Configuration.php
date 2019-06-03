@@ -24,6 +24,22 @@ class CRM_Contract_Configuration {
   }
 
   /**
+   * Disable monitoring relevant entities, so we don't accidentally
+   *  record our own changes
+   */
+  public static function disableMonitoring() {
+    // FIXME: Monitoring currently not implemented
+  }
+
+  /**
+   * Re-enable monitoring relevant entities when
+   *  we're done with our changes
+   */
+  public static function enableMonitoring() {
+    // FIXME: Monitoring currently not implemented
+  }
+
+  /**
    * Get logged in contact ID
    *
    * @todo: make configurable

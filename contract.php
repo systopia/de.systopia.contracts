@@ -295,13 +295,8 @@ function contract_civicrm_pre($op, $objectName, $id, &$params) {
 
   // pass on to monitoring
   if (CRM_Contract_Configuration::useNewEngine()) {
-    if ($objectName == 'Membership') {
-      CRM_Contract_Monitoring_MembershipMonitor::processPreHook($op, $id, $params);
+    // FIXME: Monitoring currently not implemented in the new engine
 
-    } elseif ($objectName == 'Activity') {
-      CRM_Contract_Monitoring_ActivityMonitor::processPreHook($op, $id, $params);
-
-    }
   } else {
 
     // Using elseif would save *some* resources but make the code more brittle
@@ -340,13 +335,7 @@ function contract_civicrm_post($op, $objectName, $id, &$objectRef){
   //error_log("POST {$objectName} START");
   // pass on to monitoring
   if (CRM_Contract_Configuration::useNewEngine()) {
-    if ($objectName == 'Membership') {
-      CRM_Contract_Monitoring_MembershipMonitor::processPostHook($op, $id, $objectRef);
-
-    } elseif ($objectName == 'Activity') {
-      CRM_Contract_Monitoring_ActivityMonitor::processPostHook($op, $id, $objectRef);
-
-    }
+    // FIXME: Monitoring currently not implemented in the new engine
 
   } else {
     // Wrap calls to the Membership BAO so we can reverse engineer modification
