@@ -7,6 +7,9 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
+/**
+ * @deprecated
+ */
 class CRM_Contract_ModificationActivity_NoStatusChange extends CRM_Contract_ModificationActivity{
 
   public function __contruct($status_id) {

@@ -6,11 +6,12 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
+const CE_ENGINE_PROCESSING_LIMIT = 1000;
 
 /**
  * Process the scheduled contract modifications
  */
-  function _civicrm_api3_Contract_process_scheduled_modifications_spec(&$params){
+function _civicrm_api3_Contract_process_scheduled_modifications_spec(&$params){
   $params['id'] = array(
     'name'         => 'id',
     'title'        => 'Contract ID',
@@ -20,13 +21,13 @@
   $params['now'] = array(
     'name'         => 'now',
     'title'        => 'NOW Time',
-    'api.default'  => 'now',
+    'api.required' => 0,
     'description'  => 'You can provide another datetime for what the algorithm considers to be now',
     );
   $params['limit'] = array(
     'name'         => 'limit',
     'title'        => 'Limit',
-    'api.default'  => 1000,
+    'api.default'  => CE_ENGINE_PROCESSING_LIMIT,
     'description'  => 'Max count of modifications to be processed',
     );
 }
@@ -37,13 +38,16 @@
  */
 function civicrm_api3_Contract_process_scheduled_modifications($params) {
   // make sure no other task is running
+  /** @var $lock Civi\Core\Lock\LockInterface */
   $lock = Civi\Core\Container::singleton()->get('lockManager')->acquire("worker.member.contract_engine");
   if (!$lock->isAcquired()) {
     return civicrm_api3_create_success(array('message' => "Another instance of the Contract.process_scheduled_modifications process is running. Skipped."));
   }
 
   if (!CRM_Contract_Configuration::useNewEngine()) {
-    return civicrm_api3_Contract_process_scheduled_modifications_legacy($params);
+    $legacy_result = civicrm_api3_Contract_process_scheduled_modifications_legacy($params);
+    $lock->release();
+    return $legacy_result;
   }
 
   // make sure that the time machine only works with a single contract, see GP-936
@@ -59,14 +63,19 @@ function civicrm_api3_Contract_process_scheduled_modifications($params) {
       'option.limit'       => $params['limit'],
       'sequential'         => 1, // in the scheduled order(!)
       'option.sort'        => 'activity_date_time ASC, id ASC',
+      'return'             => 'id,activity_type_id,status_id,activity_date_time,subject,' . CRM_Contract_Change::getCustomFieldList(),
   ];
   if (!empty($params['id'])) {
     $activityParams['source_record_id'] = (int) $params['id'];
   }
+  if (empty($params['limit'])) {
+    $params['limit'] = CE_ENGINE_PROCESSING_LIMIT;
+  }
 
   // run query
+  $result  = [];
   $counter = 0;
-  $scheduled_activities = civicrm_api3('activity', 'get', $activityParams);
+  $scheduled_activities = civicrm_api3('Activity', 'get', $activityParams);
   foreach ($scheduled_activities['values'] as $scheduled_activity) {
     $counter++;
     if ($counter > $params['limit']) {
@@ -75,17 +84,44 @@ function civicrm_api3_Contract_process_scheduled_modifications($params) {
 
     // execute the changes
     $change = CRM_Contract_Change::getChangeForData($scheduled_activity);
-    $change->verifyData();
+    $result['order'][] = $change->getID();
     try {
+      // verify the data before execution
+      $change->verifyData();
+    } catch (Exception $ex) {
+      // verification failed
+      $change->setStatus('Failed');
+      $change->save();
+      continue;
+    }
+
+    try {
+      // execute
       CRM_Contract_Monitoring_EntityMonitor::disable();
       $change->execute();
       CRM_Contract_Monitoring_EntityMonitor::enable();
+
+      // log as executed
+      $result['completed'][] = $change->getID();
+
     } catch (Exception $ex) {
+      // something went wrong...
+      $result['failed'][] = $change->getID();
       CRM_Contract_Monitoring_EntityMonitor::enable();
-      throw $ex;
     }
   }
+
+  $lock->release();
+  return civicrm_api3_create_success($result);
 }
+
+
+
+
+
+
+
+
 
 /**
  * Legacy engine implementation
@@ -183,6 +219,6 @@ function civicrm_api3_Contract_process_scheduled_modifications_legacy($params){
     }
   }
 
-  $lock->release();
+//  $lock->release();
   return civicrm_api3_create_success($result);
 }

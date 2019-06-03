@@ -7,6 +7,9 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
+/**
+ * @deprecated
+ */
 class CRM_Contract_ModificationActivity_Cancel extends CRM_Contract_ModificationActivity{
 
   protected $allowed = ['membership_cancellation.membership_cancel_reason'];

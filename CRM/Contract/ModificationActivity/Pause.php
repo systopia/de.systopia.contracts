@@ -7,6 +7,9 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
+/**
+ * @deprecated
+ */
 class CRM_Contract_ModificationActivity_Pause extends CRM_Contract_ModificationActivity{
 
   protected $whitelist = ['resume_date'];

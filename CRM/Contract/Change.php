@@ -112,6 +112,13 @@ abstract class CRM_Contract_Change {
   }
 
   /**
+   * Get the change ID
+   */
+  public function getID() {
+    return $this->data['id'];
+  }
+
+  /**
    * Get the contract ID
    */
   public function getContractID() {
@@ -344,6 +351,14 @@ abstract class CRM_Contract_Change {
   }
 
   /**
+   * Get the list of valid activity type IDs representing changes
+   */
+  public static function getActivityTypeIds() {
+    $id2class = self::getActivityTypeId2Class();
+    return array_keys($id2class);
+  }
+
+  /**
    * Get a change with data
    *
    * @param $data array data
@@ -365,6 +380,20 @@ abstract class CRM_Contract_Change {
 
     // finally: create a change object on the data
     return new $change_class($data);
+  }
+
+  /**
+   * Get a comma separated list of all change activity custom fields
+   *
+   * @return string list of field names
+   */
+  public static function getCustomFieldList() {
+    $field_names = [];
+    $fields = CRM_Contract_CustomData::getCustomFieldsForGroups(['contract_cancellation','contract_updates']);
+    foreach ($fields as $field) {
+      $field_names[] = "custom_{$field['id']}";
+    }
+    return implode(',', $field_names);
   }
 
 }
