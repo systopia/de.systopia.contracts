@@ -288,57 +288,88 @@ function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &
   }
 }
 
-function contract_civicrm_pre($op, $objectName, $id, &$params){
+/**
+ * CiviCRM PRE hook: Monitoring of relevant entity changes
+ */
+function contract_civicrm_pre($op, $objectName, $id, &$params) {
+  // pass on to monitoring
+  if (CRM_Contract_Configuration::useNewEngine()) {
+    if ($objectName == 'Membership') {
+      CRM_Contract_Monitoring_MembershipMonitor::processPreHook($op, $id, $params);
 
-  // Using elseif would save *some* resources but make the code more brittle
-  // since the comparisons are a little involved and may change over time.
-  // Lets keep them independent by just using ifs
+    } elseif ($objectName == 'Activity') {
+      CRM_Contract_Monitoring_ActivityMonitor::processPreHook($op, $id, $params);
 
-  // Wrap calls to the Membership BAO so we can reverse engineer modification
-  // activities if necessary
-  if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
-    $wrapperMembership = CRM_Contract_Wrapper_Membership::one_shot_singleton();
-    $wrapperMembership->pre($op, $id, $params);
-  }
-
-  // Wrap calles to the Activity BAO so we can execute contract modifications
-  // and check for potential conflicts as appropriate
-
-  if($objectName == 'Activity'){
-
-    // TODO address weird CiviCRM where this hook is fired when deleting a
-    // membership via the UI. It gets called with $op == 'delete', a null $id
-    // and some odd params. This solves the issue for now.
-    if($op == 'delete' && is_null($id)){
-      return;
     }
-    $wrapperModificationActivity = CRM_Contract_Wrapper_ModificationActivity::one_shot_singleton();
-    $wrapperModificationActivity->pre($op, $params);
+  } else {
+
+    // Using elseif would save *some* resources but make the code more brittle
+    // since the comparisons are a little involved and may change over time.
+    // Lets keep them independent by just using ifs
+
+    // Wrap calls to the Membership BAO so we can reverse engineer modification
+    // activities if necessary
+    if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
+      $wrapperMembership = CRM_Contract_Wrapper_Membership::one_shot_singleton();
+      $wrapperMembership->pre($op, $id, $params);
+    }
+
+    // Wrap calls to the Activity BAO so we can execute contract modifications
+    // and check for potential conflicts as appropriate
+
+    if($objectName == 'Activity'){
+
+      // TODO address weird CiviCRM where this hook is fired when deleting a
+      // membership via the UI. It gets called with $op == 'delete', a null $id
+      // and some odd params. This solves the issue for now.
+      if($op == 'delete' && is_null($id)){
+        return;
+      }
+      $wrapperModificationActivity = CRM_Contract_Wrapper_ModificationActivity::one_shot_singleton();
+      $wrapperModificationActivity->pre($op, $params);
+    }
   }
+  //error_log("PRE {$objectName} DONE");
 }
 
+/**
+ * CiviCRM POST hook: Monitoring of relevant entity changes
+ */
 function contract_civicrm_post($op, $objectName, $id, &$objectRef){
+  //error_log("POST {$objectName} START");
+  // pass on to monitoring
+  if (CRM_Contract_Configuration::useNewEngine()) {
+    if ($objectName == 'Membership') {
+      CRM_Contract_Monitoring_MembershipMonitor::processPostHook($op, $id, $objectRef);
 
-  // Wrap calls to the Membership BAO so we can reverse engineer modification
-  // activities if necessary
-  if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
-    $wrapperMembership = CRM_Contract_Wrapper_Membership::one_shot_singleton();
-    $wrapperMembership->post($id);
-  }
+    } elseif ($objectName == 'Activity') {
+      CRM_Contract_Monitoring_ActivityMonitor::processPostHook($op, $id, $objectRef);
 
-  // Wrap calles to the Activity BAO to execute contract
-  // modifications and check when appropriate
-  if($objectName == 'Activity'){
-    $wrapperModificationActivity = CRM_Contract_Wrapper_ModificationActivity::one_shot_singleton();
-    $wrapperModificationActivity->post($id, $objectRef);
-  }
+    }
 
-  // Delete build in membership log activities
-  if($objectName == 'Activity'){
-    if($op == 'create' && in_array($objectRef->activity_type_id, CRM_Contract_Utils::getCoreMembershipHistoryActivityIds())){
-      civicrm_api3('Activity', 'delete', array('id' => $id));
+  } else {
+    // Wrap calls to the Membership BAO so we can reverse engineer modification
+    // activities if necessary
+    if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
+      $wrapperMembership = CRM_Contract_Wrapper_Membership::one_shot_singleton();
+      $wrapperMembership->post($id);
+    }
+
+    // Wrap calles to the Activity BAO to execute contract
+    // modifications and check when appropriate
+    if($objectName == 'Activity'){
+      $wrapperModificationActivity = CRM_Contract_Wrapper_ModificationActivity::one_shot_singleton();
+      $wrapperModificationActivity->post($id, $objectRef);
+    }
+
+    // Delete build in membership log activities
+    if($objectName == 'Activity'){
+      if($op == 'create' && in_array($objectRef->activity_type_id, CRM_Contract_Utils::getCoreMembershipHistoryActivityIds())){
+        civicrm_api3('Activity', 'delete', array('id' => $id));
+      }
     }
   }
+  //error_log("POST {$objectName} DONE");
 }
 
 /**
