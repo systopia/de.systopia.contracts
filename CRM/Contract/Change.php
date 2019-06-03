@@ -15,7 +15,7 @@ use CRM_Contract_ExtensionUtil as E;
  * This new 'Change' concept is the replacement for the CRM_Contract_ModificationActivity
  *  and the CRM_Contract_Handlers
  */
-abstract class CRM_Contract_Change {
+abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRendererInterface {
 
   /**
    * Data representing the data. Will mostly be the activity data
@@ -51,6 +51,25 @@ abstract class CRM_Contract_Change {
    */
   protected static $_type_id2class = NULL;
 
+  /**
+   * @var array Maps the contract fields to the change activity fields
+   */
+  protected static $field_mapping_change_contract = [
+      'id'                                                   => 'source_record_id',
+      'contact_id'                                           => 'target_contact_id',
+      'campaign_id'                                          => 'campaign_id',
+      'membership_type_id'                                   => 'contract_updates.ch_membership_type',
+      'membership_payment.membership_recurring_contribution' => 'contract_updates.ch_recurring_contribution',
+      'membership_payment.payment_instrument'                => 'contract_updates.ch_payment_instrument',
+      'membership_payment.membership_annual'                 => 'contract_updates.ch_annual',
+      'membership_payment.membership_frequency'              => 'contract_updates.ch_frequency',
+      'membership_payment.from_ba'                           => 'contract_updates.ch_from_ba',
+      'membership_payment.to_ba'                             => 'contract_updates.ch_to_ba',
+      'membership_payment.cycle_day'                         => 'contract_updates.ch_cycle_day',
+      'membership_payment.defer_payment_start'               => 'contract_updates.ch_defer_payment_start',
+      'membership_cancellation.membership_cancel_reason'     => 'contract_cancellation.contact_history_cancel_reason',
+  ];
+
 
   /**
    * CRM_Contract_Change constructor.
@@ -79,6 +98,15 @@ abstract class CRM_Contract_Change {
    * @return array list of required fields
    */
   abstract public function getRequiredFields();
+
+  /**
+   * Render the default subject
+   *
+   * @param $contract_after       array  data of the contract after
+   * @param $contract_before      array  data of the contract before
+   * @return                      string the subject line
+   */
+  abstract public function renderDefaultSubject($contract_after, $contract_before = NULL);
 
 
   ################################################################################
@@ -129,8 +157,10 @@ abstract class CRM_Contract_Change {
 
   /**
    * Get the contract data
+   *
+   * @param boolean $with_payment_data
    */
-  public function getContract() {
+  public function getContract($with_payment_data = FALSE) {
     $contract_id = $this->getContractID();
     if ($this->contract === NULL || $this->contract['id'] != $contract_id) {
       // (re)load contract
@@ -141,7 +171,58 @@ abstract class CRM_Contract_Change {
       }
       CRM_Contract_CustomData::labelCustomFields($this->contract);
     }
+
+    // add the payment data, if requested
+    if ($with_payment_data) {
+      if (empty($this->contract['membership_payment.membership_frequency'])) {
+        $this->derivePaymentData($this->contract);
+      }
+    }
+
     return $this->contract;
+  }
+
+  /**
+   * Enrich the given contact with payment data
+   *
+   * @param $contract array contract data
+   */
+  public function derivePaymentData(&$contract) {
+    if (!empty($contract['membership_payment.membership_recurring_contribution'])) {
+      // we have a recurring contribution!
+      try {
+        $contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', ['id' => $contract['membership_payment.membership_recurring_contribution']]);
+        $contract['membership_payment.membership_annual']    = $this->calcAnnualAmount($contributionRecur);
+        $contract['membership_payment.membership_frequency'] = $this->calcPaymentFrequency($contributionRecur);
+        $contract['membership_payment.cycle_day']            = $contributionRecur['cycle_day'];
+        $contract['membership_payment.payment_instrument']   = $contributionRecur['payment_instrument_id'];
+
+        // if this is a sepa payment, get the 'to' and 'from' bank account
+        $sepaMandateResult = civicrm_api3('SepaMandate', 'get', array(
+            'entity_table' => "civicrm_contribution_recur",
+            'entity_id'    => $contributionRecur['id']
+        ));
+        if($sepaMandateResult['count'] == 1) {
+          $sepaMandate = $sepaMandateResult['values'][$sepaMandateResult['id']];
+          $contract['membership_payment.from_ba'] = CRM_Contract_BankingLogic::getOrCreateBankAccount($sepaMandate['contact_id'], $sepaMandate['iban'], $sepaMandate['bic']);
+          $contract['membership_payment.to_ba']   = CRM_Contract_BankingLogic::getCreditorBankAccount();
+
+        } elseif ($sepaMandateResult['count'] == 0) {
+          // this should be a recurring contribution -> get from the latest contribution
+          list($from_ba, $to_ba) = CRM_Contract_BankingLogic::getAccountsFromRecurringContribution($contributionRecur['id']);
+          $contract['membership_payment.from_ba'] = $from_ba;
+          $contract['membership_payment.to_ba']   = $to_ba;
+
+        } else {
+          // this is an error:
+          $contract['membership_payment.from_ba'] = '';
+          $contract['membership_payment.to_ba']   = '';
+
+        }
+      } catch(Exception $ex) {
+        CRM_Core_Error::debug_log_message("Couldn't load recurring contribution [{$contract['membership_payment.membership_recurring_contribution']}]");
+      }
+    }
   }
 
   /**
@@ -172,7 +253,7 @@ abstract class CRM_Contract_Change {
     $updates['id'] = $this->getContractID();
 
     // derive fields if possible
-    $this->setDerivedFields($updates);
+    $this->derivePaymentData($updates);
 
     // make sure all fields are resolved
     CRM_Contract_CustomData::resolveCustomFields($updates);
@@ -193,57 +274,25 @@ abstract class CRM_Contract_Change {
    * @return string subject line
    */
   public function getSubject($contract_after, $contract_before = NULL) {
-    return "TO BE IMPLEMENTED";
-  }
-
-    /**
-   * Derive some missing fields based on the changes
-   *  for this contract
-   *
-   * @param $contract_change array changes for the contract
-   * @throws Exception should anything go wrong
-   */
-  public function setDerivedFields(&$contract_change) {
-
-    // DERIVE fields based on payment contract (recurring contribution)
-    if (!empty($contract_change['membership_payment.membership_recurring_contribution'])) {
-      $contribution_recur_id = (int) $contract_change['membership_payment.membership_recurring_contribution'];
-      try {
-        $contributionRecur = civicrm_api3('ContributionRecur', 'getsingle', array('id' => $contribution_recur_id));
-      } catch (Exception $ex) {
-        throw new Exception("Couldn't find recurring contribution [{$contribution_recur_id}]!");
-      }
-
-      $contract_change['membership_payment.membership_annual']    = $this->calcAnnualAmount($contributionRecur);
-      $contract_change['membership_payment.membership_frequency'] = $this->calcPaymentFrequency($contributionRecur);
-      $contract_change['membership_payment.cycle_day']            = $contributionRecur['cycle_day'];
-      $contract_change['membership_payment.payment_instrument']   = $contributionRecur['payment_instrument_id'];
-
-      // If this is a sepa payment, get the 'to' and 'from' bank account
-      $sepaMandateResult = civicrm_api3('SepaMandate', 'get', array(
-          'entity_table' => "civicrm_contribution_recur",
-          'entity_id'    => $contributionRecur['id']
-      ));
-      if($sepaMandateResult['count'] == 1){
-        // SEPA Mandate
-        $sepaMandate                          = $sepaMandateResult['values'][$sepaMandateResult['id']];
-        $contract_change['membership_payment.from_ba'] = CRM_Contract_BankingLogic::getOrCreateBankAccount($sepaMandate['contact_id'], $sepaMandate['iban'], $sepaMandate['bic']);
-        $contract_change['membership_payment.to_ba']   = CRM_Contract_BankingLogic::getCreditorBankAccount();
-
-      } elseif ($sepaMandateResult['count'] == 0) {
-        // Other recurring contribution
-        CRM_Contract_BankingLogic::getIbanReferenceTypeID();
-        list($from_ba, $to_ba) = CRM_Contract_BankingLogic::getAccountsFromRecurringContribution($contributionRecur['id']);
-        $contract_change['membership_payment.from_ba'] = $from_ba;
-        $contract_change['membership_payment.to_ba']   = $to_ba;
-
-      } else {
-        // ERROR
-        $contract_change['membership_payment.from_ba'] = '';
-        $contract_change['membership_payment.to_ba']   = '';
-      }
+    $subject_renderer = CRM_Contract_Configuration::getSubjectRender();
+    if (!$subject_renderer) {
+      $subject_renderer = $this; // use default renderer
     }
+    return $subject_renderer->renderChangeSubject($this, $contract_after, $contract_before);
   }
+
+  /**
+   * Calculate the activities subject
+   *
+   * @param $change               CRM_Contract_Change the change object
+   * @param $contract_before      array  data of the contract before
+   * @param null $contract_after  array  data of the contract after
+   * @return                      string the subject line
+   */
+  public function renderChangeSubject($change, $contract_after, $contract_before = NULL) {
+    return $change->renderDefaultSubject($contract_after, $contract_before);
+  }
+
 
   /**
    * Calculate annual amount
@@ -328,7 +377,18 @@ abstract class CRM_Contract_Change {
     $conflictHandler->checkForConflicts($this->data['id']);
   }
 
-
+  public function getOptionValueLabel($value, $option_group_id) {
+    try {
+      // TODO: optimise/cache
+      return civicrm_api3('OptionValue', 'getvalue', [
+          'return'          => "label",
+          'value'           => $value,
+          'option_group_id' => $option_group_id]);
+    } catch (Exception $ex) {
+      CRM_Core_Error::debug_log_message("Error looking up option value '{$value}' in {$option_group_id}");
+    }
+    return 'ERROR';
+  }
 
 
   ################################################################################
@@ -432,4 +492,24 @@ abstract class CRM_Contract_Change {
     return implode(',', $field_names);
   }
 
+  /**
+   * Convert the given contract data and convert it to change activity data
+   *
+   * @param $data array       the data
+   * @param $reverse boolean  reverse the transition
+   */
+  public static function convertContract2ChangeData($data, $reverse = FALSE) {
+    $mapping = self::$field_mapping_change_contract;
+    if ($reverse) {
+      $mapping = array_flip($mapping);
+    }
+
+    foreach ($mapping as $old_attribute => $new_attribute) {
+      if (isset($data[$old_attribute])) {
+        $data[$new_attribute] = $data[$old_attribute];
+        unset($data[$old_attribute]);
+      }
+    }
+    return $data;
+  }
 }

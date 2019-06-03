@@ -355,7 +355,7 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
       $expected_value = CRM_Utils_Array::value($attribute, $expected_data);
       $current_value  = CRM_Utils_Array::value($attribute, $current_data);
       //$this->assertEquals($expected_value, $current_value, "Attribute '{$attribute}' differs. Expected: '{$expected_value}', got '{$current_value}'.");
-      $this->assertEquals($expected_value, $current_value);
+      $this->assertEquals($expected_value, $current_value, "Attribute '{$attribute}' differs.");
     }
   }
 }

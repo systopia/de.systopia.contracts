@@ -25,6 +25,17 @@ class CRM_Contract_Change_Cancel extends CRM_Contract_Change {
   }
 
   /**
+   * Render the default subject
+   *
+   * @param $contract_after       array  data of the contract after
+   * @param $contract_before      array  data of the contract before
+   * @return                      string the subject line
+   */
+  public function renderDefaultSubject($contract_after, $contract_before = NULL) {
+    return CRM_Contract_Change_Sign::renderFullSubject($contract_after);
+  }
+
+  /**
    * Apply the given change to the contract
    *
    * @throws Exception should anything go wrong in the execution

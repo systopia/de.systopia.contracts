@@ -40,6 +40,16 @@ class CRM_Contract_Configuration {
   }
 
   /**
+   * Get a rendering class for the change subjects
+   *
+   * @return CRM_Contract_Change_SubjectRendererInterface subject
+   */
+  public static function getSubjectRender() {
+    // TODO: make configurable, offer other renderers
+    return null;
+  }
+
+  /**
    * Get logged in contact ID
    *
    * @todo: make configurable

@@ -40,6 +40,7 @@ class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
     $activities_new = $this->getChangeActivities($contract_new['id'], ['Contract_Signed']);
     $this->assertEquals(1, count($activities_new), "Exactly one signed activity expected!");
     $activity_new = $activities_new[0];
+    CRM_Contract_CustomData::labelCustomFields($activity_new);
 
     CRM_Contract_Configuration::$use_new_engine = FALSE;
     $contract_old = $this->createNewContract([
@@ -51,38 +52,13 @@ class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
     $activities_old = $this->getChangeActivities($contract_old['id'], ['Contract_Signed']);
     $this->assertEquals(1, count($activities_old), "Exactly one signed activity expected!");
     $activity_old = $activities_old[0];
+    CRM_Contract_CustomData::labelCustomFields($activity_old);
 
-    // make sure they generate the same data
-    $this->assertArraysEqual($activity_old, $activity_new, NULL, ['id', 'source_record_id', 'activity_date_time']);
+    // mend subject for comparison
+    $activity_new['subject'] = explode(':', $activity_new['subject'])[1]; // strip ID
+    $activity_old['subject'] = explode(':', $activity_old['subject'])[1]; // strip ID
+
+    // make sure they generate the same data in the fields that are supposed to
+    $this->assertArraysEqual($activity_old, $activity_new, NULL, ['id', 'source_record_id', 'activity_date_time', 'details', 'created_date', 'contract_updates.ch_recurring_contribution', 'modified_date', 'contract_updates.ch_from_ba']);
   }
-
-  /**
-   * Example: Test that a version is returned.
-   */
-  public function testSimpleUpgrade() {
-    foreach ([1] as $is_sepa) {
-      // create a new contract
-      $contract = $this->createNewContract(['is_sepa' => $is_sepa]);
-
-      // schedule and update for tomorrow
-      $this->modifyContract($contract['id'], 'cancel', 'tomorrow', [
-          'membership_payment.membership_annual'             => '240.00',
-          'membership_cancellation.membership_cancel_reason' => $this->getRandomOptionValue('contract_cancel_reason')]);
-
-      // run engine see if anything changed
-      $this->runContractEngine($contract['id']);
-
-      // things should not have changed
-      $contract_changed1 = $this->getContract($contract['id']);
-      $this->assertEquals($contract, $contract_changed1, "This shouldn't have changed");
-
-      // run engine again for tomorrow
-      $this->runContractEngine($contract['id'], '+2 days');
-      $contract_changed2 = $this->getContract($contract['id']);
-      $this->assertNotEquals($contract, $contract_changed2, "This should have changed");
-    }
-  }
-
-  // update, revive, cancel, pause
-
 }

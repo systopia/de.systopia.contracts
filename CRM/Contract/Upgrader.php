@@ -18,8 +18,6 @@ class CRM_Contract_Upgrader extends CRM_Contract_Upgrader_Base {
 
   public function install() {
     $this->executeSqlFile('sql/contract.sql');
-
-
   }
 
   public function enable() {
