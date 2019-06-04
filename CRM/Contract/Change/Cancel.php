@@ -49,7 +49,8 @@ class CRM_Contract_Change_Cancel extends CRM_Contract_Change {
     // cancel the contract by setting the end date
     $contract_update = [
         'end_date'                => date('YmdHis'),
-        'membership_cancellation' => $this->data['membership_cancellation.membership_cancel_reason']
+        'membership_cancellation' => $this->data['membership_cancellation.membership_cancel_reason'],
+        'status_id'               => 'Cancelled',
     ];
 
     // perform the update

@@ -94,9 +94,11 @@ class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
     $activities_old = $this->getChangeActivities($contract_old['id'], ['Contract_Cancelled']);
     $this->assertEquals(1, count($activities_old), "Exactly one signed activity expected!");
     $post_activity_old = $activities_old[0];
+    $contract_old_after = $this->getContract($contract_old['id']);
     CRM_Contract_CustomData::labelCustomFields($pre_activity_old);
     CRM_Contract_CustomData::labelCustomFields($post_activity_old);
     CRM_Contract_CustomData::labelCustomFields($contract_old);
+    CRM_Contract_CustomData::labelCustomFields($contract_old_after);
 
     // run the new engine
     CRM_Contract_Configuration::$use_new_engine = TRUE;
@@ -117,10 +119,11 @@ class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
     $activities_new = $this->getChangeActivities($contract_new['id'], ['Contract_Cancelled']);
     $this->assertEquals(1, count($activities_new), "Exactly one signed activity expected!");
     $post_activity_new = $activities_new[0];
-
+    $contract_new_after = $this->getContract($contract_new['id']);
     CRM_Contract_CustomData::labelCustomFields($pre_activity_new);
     CRM_Contract_CustomData::labelCustomFields($post_activity_new);
     CRM_Contract_CustomData::labelCustomFields($contract_new);
+    CRM_Contract_CustomData::labelCustomFields($contract_new_after);
 
     // mend subject for comparison
     $this->stripActivitySubjectID($pre_activity_new['subject']);
@@ -132,6 +135,7 @@ class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
     $this->assertArraysEqual($pre_activity_old, $pre_activity_new, NULL, ['id', 'source_record_id', 'activity_date_time', 'details', 'created_date', 'contract_updates.ch_recurring_contribution', 'modified_date', 'contract_updates.ch_from_ba'], 'Change Activity before execution');
     $this->assertArraysEqual($post_activity_old, $post_activity_new, NULL, ['id', 'source_record_id', 'activity_date_time', 'details', 'created_date', 'contract_updates.ch_recurring_contribution', 'modified_date', 'contract_updates.ch_from_ba'], 'Change Activity after execution');
     $this->assertArraysEqual($contract_old, $contract_new, ['membership_type_id','join_date','start_date','end_date','status_id','is_test','is_pay_later','membership_name','membership_general.membership_dialoger','membership_payment.membership_annual','membership_payment.membership_frequency','membership_payment.to_ba','membership_payment.cycle_day','membership_payment.payment_instrument','membership_payment.defer_payment_start'], [], 'Contract after execution');
+    $this->assertArraysEqual($contract_old_after, $contract_new_after, ['membership_type_id','join_date','start_date','end_date','status_id','is_test','is_pay_later','membership_name','membership_general.membership_dialoger','membership_payment.membership_annual','membership_payment.membership_frequency','membership_payment.to_ba','membership_payment.cycle_day','membership_payment.payment_instrument','membership_payment.defer_payment_start'], [], 'Contract after execution');
   }
 
 
@@ -159,9 +163,11 @@ class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
     $activities_old = $this->getChangeActivities($contract_old['id'], ['Contract_Updated']);
     $this->assertEquals(1, count($activities_old), "Exactly one update activity expected!");
     $post_activity_old = $activities_old[0];
+    $contract_old_after = $this->getContract($contract_old['id']);
     CRM_Contract_CustomData::labelCustomFields($pre_activity_old);
     CRM_Contract_CustomData::labelCustomFields($post_activity_old);
     CRM_Contract_CustomData::labelCustomFields($contract_old);
+    CRM_Contract_CustomData::labelCustomFields($contract_old_after);
 
     // run the new engine
     CRM_Contract_Configuration::$use_new_engine = TRUE;
@@ -183,10 +189,11 @@ class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
     $activities_new = $this->getChangeActivities($contract_new['id'], ['Contract_Updated']);
     $this->assertEquals(1, count($activities_new), "Exactly one update activity expected!");
     $post_activity_new = $activities_new[0];
-
+    $contract_new_after = $this->getContract($contract_new['id']);
     CRM_Contract_CustomData::labelCustomFields($pre_activity_new);
     CRM_Contract_CustomData::labelCustomFields($post_activity_new);
     CRM_Contract_CustomData::labelCustomFields($contract_new);
+    CRM_Contract_CustomData::labelCustomFields($contract_new_after);
 
     // mend subjects for comparison
     $this->stripActivitySubjectID($pre_activity_new['subject']);
@@ -198,6 +205,7 @@ class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
     $this->assertArraysEqual($pre_activity_old, $pre_activity_new, NULL, ['id', 'source_record_id', 'activity_date_time', 'details', 'created_date', 'contract_updates.ch_recurring_contribution', 'modified_date', 'contract_updates.ch_from_ba'], 'Change Activity before execution');
     $this->assertArraysEqual($post_activity_old, $post_activity_new, NULL, ['id', 'source_record_id', 'activity_date_time', 'details', 'created_date', 'contract_updates.ch_recurring_contribution', 'modified_date', 'contract_updates.ch_from_ba'], 'Change Activity after execution');
     $this->assertArraysEqual($contract_old, $contract_new, ['membership_type_id','join_date','start_date','end_date','status_id','is_test','is_pay_later','membership_name','membership_general.membership_dialoger','membership_payment.membership_annual','membership_payment.membership_frequency','membership_payment.to_ba','membership_payment.cycle_day','membership_payment.payment_instrument','membership_payment.defer_payment_start'], [], 'Contract after execution');
+    $this->assertArraysEqual($contract_old_after, $contract_new_after, ['membership_type_id','join_date','start_date','end_date','status_id','is_test','is_pay_later','membership_name','membership_general.membership_dialoger','membership_payment.membership_annual','membership_payment.membership_frequency','membership_payment.to_ba','membership_payment.cycle_day','membership_payment.payment_instrument','membership_payment.defer_payment_start'], [], 'Contract after execution');
   }
 
   /**
@@ -231,9 +239,11 @@ class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
     $activities_old = $this->getChangeActivities($contract_old['id'], ['Contract_Revived']);
     $this->assertEquals(1, count($activities_old), "Exactly one revive activity expected!");
     $post_activity_old = $activities_old[0];
+    $contract_old_after = $this->getContract($contract_old['id']);
     CRM_Contract_CustomData::labelCustomFields($pre_activity_old);
     CRM_Contract_CustomData::labelCustomFields($post_activity_old);
     CRM_Contract_CustomData::labelCustomFields($contract_old);
+    CRM_Contract_CustomData::labelCustomFields($contract_old_after);
 
     // run the new engine
     CRM_Contract_Configuration::$use_new_engine = TRUE;
@@ -260,10 +270,11 @@ class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
     $activities_new = $this->getChangeActivities($contract_new['id'], ['Contract_Revived']);
     $this->assertEquals(1, count($activities_new), "Exactly one revive activity expected!");
     $post_activity_new = $activities_new[0];
-
+    $contract_new_after = $this->getContract($contract_new['id']);
     CRM_Contract_CustomData::labelCustomFields($pre_activity_new);
     CRM_Contract_CustomData::labelCustomFields($post_activity_new);
     CRM_Contract_CustomData::labelCustomFields($contract_new);
+    CRM_Contract_CustomData::labelCustomFields($contract_new_after);
 
     // mend subjects for comparison
     $this->stripActivitySubjectID($pre_activity_new['subject']);
@@ -275,6 +286,7 @@ class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
     $this->assertArraysEqual($pre_activity_old, $pre_activity_new, NULL, ['id', 'source_record_id', 'activity_date_time', 'details', 'created_date', 'contract_updates.ch_recurring_contribution', 'modified_date', 'contract_updates.ch_from_ba'], 'Change Activity before execution');
     $this->assertArraysEqual($post_activity_old, $post_activity_new, NULL, ['id', 'source_record_id', 'activity_date_time', 'details', 'created_date', 'contract_updates.ch_recurring_contribution', 'modified_date', 'contract_updates.ch_from_ba'], 'Change Activity after execution');
     $this->assertArraysEqual($contract_old, $contract_new, ['membership_type_id','join_date','start_date','end_date','status_id','is_test','is_pay_later','membership_name','membership_general.membership_dialoger','membership_payment.membership_annual','membership_payment.membership_frequency','membership_payment.to_ba','membership_payment.cycle_day','membership_payment.payment_instrument','membership_payment.defer_payment_start'], [], 'Contract after execution');
+    $this->assertArraysEqual($contract_old_after, $contract_new_after, ['membership_type_id','join_date','start_date','end_date','status_id','is_test','is_pay_later','membership_name','membership_general.membership_dialoger','membership_payment.membership_annual','membership_payment.membership_frequency','membership_payment.to_ba','membership_payment.cycle_day','membership_payment.payment_instrument','membership_payment.defer_payment_start'], [], 'Contract after execution');
   }
 
 
