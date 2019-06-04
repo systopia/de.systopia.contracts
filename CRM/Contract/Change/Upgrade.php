@@ -64,7 +64,7 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
         $contract_update['membership_type_id'] = $membership_type_update;
       }
     } else {
-      // FIXME: replicate weird behaviour by old engine
+      // FIXME: replicating weird behaviour by old engine
       $this->setParameter('contract_updates.ch_membership_type', $contract_before['membership_type_id']);
     }
 
@@ -118,8 +118,7 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
    * @param $contract_before      array  data of the contract before
    * @return                      string the subject line
    */
-  public function renderDefaultSubject($contract_after, $contract_before = NULL)
-  {
+  public function renderDefaultSubject($contract_after, $contract_before = NULL) {
     // calculate differences
     $differences        = [];
     $field2abbreviation = [
@@ -139,7 +138,7 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
       $raw_value_after  = CRM_Utils_Array::value($field_name, $contract_after);
       $value_after      = $this->labelValue($raw_value_after, $field_name);
 
-      // FIXME: inconsistent behaviour by old engine
+      // FIXME: replicating weird behaviour by old engine
       if ($subject_abbreviation == 'member iban') {
         // add member iban in any case
         $differences[] = "{$subject_abbreviation} {$value_before} to {$value_after}";

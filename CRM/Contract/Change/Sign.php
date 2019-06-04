@@ -67,32 +67,29 @@ class CRM_Contract_Change_Sign extends CRM_Contract_Change {
 
     // collect values
     if (isset($contract['membership_type_id'])) {
-      try {
-        $attributes[] = 'type '.civicrm_api3('MembershipType', 'getvalue', [ 'return' => "name", 'id' =>  $contract['membership_type_id']]);
-      } catch(Exception $ex) {
-        CRM_Core_Error::debug_log_message("Couldn't load membership type {$contract['membership_type_id']}");
-      }
+      $membership_type = $this->labelValue($contract['membership_type_id'], 'membership_type_id');
+      $attributes[] = "type {$membership_type}";
     }
     if (isset($contract['membership_payment.membership_annual'])) {
       $attributes[] = 'amt. '. $contract['membership_payment.membership_annual'];
     }
     if (isset($contract['membership_payment.membership_frequency'])) {
-      // TODO: the old engine didn't do this -> use?
-      // $attributes[] = 'freq. ' . $this->getOptionValueLabel($contract['membership_payment.membership_frequency'], 'payment_frequency');
+      // FIXME: replicating weird behaviour by old engine
       $attributes[] = 'freq. ' . $contract['membership_payment.membership_frequency'];
+      //$attributes[] = 'freq. ' . $this->labelValue($contract['membership_payment.membership_frequency'], 'membership_payment.membership_frequency');
     }
     if (isset($contract['membership_payment.to_ba'])) {
-      $attributes[] = 'gp iban '.CRM_Contract_BankingLogic::getIBANforBankAccount($contract['membership_payment.to_ba']);
+      $attributes[] = 'gp iban ' . $this->labelValue($contract['membership_payment.to_ba'], 'membership_payment.to_ba');
     }
     if (isset($contract['membership_payment.from_ba'])) {
-      $attributes[] = 'member iban '.CRM_Contract_BankingLogic::getIBANforBankAccount($contract['membership_payment.from_ba']);
+      $attributes[] = 'member iban ' . $this->labelValue($contract['membership_payment.from_ba'], 'membership_payment.from_ba');
     }
     if (isset($contract['membership_payment.cycle_day'])) {
       $attributes[] = 'cycle day '. $contract['membership_payment.cycle_day'];
     }
     if (isset($contract['membership_payment.payment_instrument'])) {
-      $attributes[] = 'payment method ' . $this->getOptionValueLabel($contract['membership_payment.payment_instrument'], 'payment_instrument');
-      //$attributes[] = 'payment method ' . civicrm_api3('OptionValue', 'getvalue', ['return' => "label", 'value' =>  $contract['membership_payment.payment_instrument'], 'option_group_id' => "payment_instrument" ]);
+      // FIXME: replicating weird behaviour by old engine
+      $attributes[] = 'payment method ' . $this->labelValue($contract['membership_payment.payment_instrument'], 'membership_payment.payment_instrument');
     }
     if (isset($contract['membership_payment.defer_payment_start'])) {
       $attributes[] = 'defer '. $contract['membership_payment.defer_payment_start'];

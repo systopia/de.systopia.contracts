@@ -419,49 +419,6 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
   }
 
   /**
-   * Lookup function for OptionValues
-   *
-   * @param $value            string value
-   * @param $option_group_id  string option group id or name
-   * @return string option value
-s   */
-  public function getOptionValueLabel($value, $option_group_id) {
-    try {
-      // TODO: optimise/cache/use Core (if robust enough)
-      return civicrm_api3('OptionValue', 'getvalue', [
-          'return'          => "label",
-          'value'           => $value,
-          'option_group_id' => $option_group_id]);
-    } catch (Exception $ex) {
-      CRM_Core_Error::debug_log_message("Error looking up option value '{$value}' in {$option_group_id}");
-    }
-    return 'ERROR';
-  }
-
-  /**
-   * Lookup function for OptionValues
-   *
-   * @param $label            string label
-   * @param $option_group_id  string option group id or name
-   * @return string option value
-   */
-  public function getOptionValue($label, $option_group_id) {
-    if (is_numeric($label)) {
-      return (int) $label;
-    }
-    try {
-      // TODO: optimise/cache/use Core (if robust enough)
-      return civicrm_api3('OptionValue', 'getvalue', [
-          'return'          => 'value',
-          'label'           => $label,
-          'option_group_id' => $option_group_id]);
-    } catch (Exception $ex) {
-      CRM_Core_Error::debug_log_message("Error resolving option value '{$label}' in {$option_group_id}");
-    }
-    return 'ERROR';
-  }
-
-  /**
    * Cached query for API lookups
    *
    * @param $entity    string entity
@@ -528,6 +485,70 @@ s   */
           return $this->lookupValue('OptionValue', 'label', ['value' => $value, 'option_group_id' => 'payment_instrument']);
         } else {
           return $value;
+        }
+
+      case 'membership_cancellation.membership_cancel_reason':
+      case 'contract_cancellation.contact_history_cancel_reason':
+        if (is_numeric($value)) {
+          return $this->lookupValue('OptionValue', 'label', ['value' => $value, 'option_group_id' => 'contract_cancel_reason']);
+        } else {
+          return $value;
+        }
+
+      default:
+        return $value;
+    }
+  }
+
+  /**
+   * Provide a universal function to resolve the identity of a label
+   *
+   * @param $value       string current label
+   * @param $field_name  string field this value is from
+   * @return string      string labelled value
+   */
+  protected function resolveValue($value, $field_name) {
+    switch ($field_name) {
+      case 'membership_type_id':
+      case 'contract_updates.ch_membership_type':
+        if (is_numeric($value)) {
+          return $value;
+        } else {
+          return $this->lookupValue('MembershipType', 'id', ['name' => $value]);
+        }
+
+      case 'membership_payment.membership_frequency':
+      case 'contract_updates.ch_frequency':
+        if (is_numeric($value)) {
+          return $value;
+        } else {
+          return $this->lookupValue('OptionValue', 'value', ['label' => $value, 'option_group_id' => 'payment_frequency']);
+        }
+
+      case 'membership_payment.from_ba':
+      case 'contract_updates.ch_from_ba':
+      case 'membership_payment.to_ba':
+      case 'contract_updates.ch_to_ba':
+        if (is_numeric($value)) {
+          return $value;
+        } else {
+          return 'ERROR, cannot resolve bank account by IBAN';
+        }
+
+      case 'membership_payment.payment_instrument':
+      case 'contract_updates.ch_payment_instrument':
+        if (is_numeric($value)) {
+          return $value;
+        } else {
+          return $this->lookupValue('OptionValue', 'value', ['label' => $value, 'option_group_id' => 'payment_instrument']);
+        }
+
+      case 'membership_cancellation.membership_cancel_reason':
+      case 'contract_cancellation.contact_history_cancel_reason':
+        if (is_numeric($value)) {
+          return $value;
+        } else {
+          return $this->lookupValue('OptionValue', 'value', ['label' => $value, 'option_group_id' => 'contract_cancel_reason']);
         }
 
       default:
