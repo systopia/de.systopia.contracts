@@ -342,10 +342,11 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
    *
    * @param $expected_data       array expected data
    * @param $current_data        array test data
+   * @param $source              string indication where this came from, only used for a failed assertion message
    * @param $attribute_list      array list of attributes to check. default is ALL
    * @param $exception_list      array list of attributes to NOT check. default is NONE
    */
-  public function assertArraysEqual($expected_data, $current_data, $attribute_list = NULL, $exception_list = []) {
+  public function assertArraysEqual($expected_data, $current_data, $attribute_list = NULL, $exception_list = [], $source = 'Unknown') {
     if ($attribute_list == NULL) {
       $attribute_list = array_keys(array_merge($expected_data, $current_data));
     }
@@ -355,7 +356,17 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
       $expected_value = CRM_Utils_Array::value($attribute, $expected_data);
       $current_value  = CRM_Utils_Array::value($attribute, $current_data);
       //$this->assertEquals($expected_value, $current_value, "Attribute '{$attribute}' differs. Expected: '{$expected_value}', got '{$current_value}'.");
-      $this->assertEquals($expected_value, $current_value, "Attribute '{$attribute}' differs.");
+      $this->assertEquals($expected_value, $current_value, "Attribute '{$attribute}' differs. ({$source})");
     }
+  }
+
+  /**
+   * Change activity usually have the contract ID encoded, which makes comparison hard
+   * This function strips this id header
+   *
+   * @param $subject subject to be edited in-place
+   */
+  public function stripActivitySubjectID(&$subject) {
+    $subject = preg_replace('/^id[0-9]+[:]/', 'CONTRACT_ID', $subject);
   }
 }

@@ -119,6 +119,17 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
    * @return                      string the subject line
    */
   public function renderDefaultSubject($contract_after, $contract_before = NULL) {
+    if ($this->isNew()) {
+      // FIXME: replicating weird behaviour by old engine
+      $contract_before = [];
+      unset($contract_after['membership_type_id']);
+      unset($contract_after['membership_payment.from_ba']);
+      unset($contract_after['membership_payment.to_ba']);
+      unset($contract_after['membership_payment.defer_payment_start']);
+      unset($contract_after['membership_payment.payment_instrument']);
+      unset($contract_after['membership_payment.cycle_day']);
+    }
+
     // calculate differences
     $differences        = [];
     $field2abbreviation = [
@@ -139,7 +150,7 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
       $value_after      = $this->labelValue($raw_value_after, $field_name);
 
       // FIXME: replicating weird behaviour by old engine
-      if ($subject_abbreviation == 'member iban') {
+      if (!$this->isNew() && $subject_abbreviation == 'member iban') {
         // add member iban in any case
         $differences[] = "{$subject_abbreviation} {$value_before} to {$value_after}";
         continue;
@@ -156,6 +167,9 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
     }
 
     $contract_id = $this->getContractID();
-    return "id{$contract_id}: " . implode(' AND ', $differences);
+    $subject = "id{$contract_id}: " . implode(' AND ', $differences);
+
+    // compatibility with old engine, so we don't have to create a separate algorithm
+    return preg_replace('/  to/', ' to', $subject);
   }
 }

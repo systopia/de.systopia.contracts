@@ -178,7 +178,7 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
 
     if (empty($this->data['subject'])) {
       // add default subject
-      $this->data['subject'] = $this->getSubject($contract, NULL);
+      $this->setParameter('subject', $this->getSubject($contract, NULL));
     }
   }
 

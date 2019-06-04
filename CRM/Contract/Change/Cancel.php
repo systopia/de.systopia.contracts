@@ -28,13 +28,13 @@ class CRM_Contract_Change_Cancel extends CRM_Contract_Change {
    * Derive/populate additional data
    */
   public function populateData() {
-    if (empty($this->data['contract_cancellation.contact_history_cancel_reason'])) {
-      $this->data['contract_cancellation.contact_history_cancel_reason'] = CRM_Utils_Array::value('membership_cancellation.membership_cancel_reason', $this->data, '');
+    if ($this->isNew()) {
+      $this->setParameter('contract_cancellation.contact_history_cancel_reason', $this->getParameter('membership_cancellation.membership_cancel_reason'));
+      $this->setParameter('subject', $this->getSubject(NULL));
     } else {
-      $this->data['membership_cancellation.membership_cancel_reason'] = CRM_Utils_Array::value('contract_cancellation.contact_history_cancel_reason', $this->data, '');
+      parent::populateData();
+      $this->setParameter('membership_cancellation.membership_cancel_reason', $this->getParameter('contract_cancellation.contact_history_cancel_reason'));
     }
-
-    parent::populateData();
   }
 
 
@@ -124,13 +124,17 @@ class CRM_Contract_Change_Cancel extends CRM_Contract_Change {
    * @return                      string the subject line
    */
   public function renderDefaultSubject($contract_after, $contract_before = NULL) {
-    $contract_id = $this->getContractID();
-    $subject = "id{$contract_id}:";
-    if (!empty($this->data['contract_cancellation.contact_history_cancel_reason'])) {
-      // FIXME: replicating weird behaviour by old engine
-      $subject .= ' cancel reason ' . $this->resolveValue($this->data['contract_cancellation.contact_history_cancel_reason'], 'contract_cancellation.contact_history_cancel_reason');
-      //$subject .= ' cancel reason ' . $this->labelValue($this->data['contract_cancellation.contact_history_cancel_reason'], 'contract_cancellation.contact_history_cancel_reason');
+    if ($this->isNew()) {
+      return 'Cancel Contract';
+    } else {
+      $contract_id = $this->getContractID();
+      $subject = "id{$contract_id}:";
+      if (!empty($this->data['contract_cancellation.contact_history_cancel_reason'])) {
+        // FIXME: replicating weird behaviour by old engine
+        $subject .= ' cancel reason ' . $this->resolveValue($this->data['contract_cancellation.contact_history_cancel_reason'], 'contract_cancellation.contact_history_cancel_reason');
+        //$subject .= ' cancel reason ' . $this->labelValue($this->data['contract_cancellation.contact_history_cancel_reason'], 'contract_cancellation.contact_history_cancel_reason');
+      }
+      return $subject;
     }
-    return $subject;
   }
 }
