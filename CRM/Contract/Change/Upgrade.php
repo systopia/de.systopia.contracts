@@ -19,16 +19,13 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
    * @return array list of required fields
    */
   public function getRequiredFields() {
-    return [
-//        'membership_cancellation.membership_cancel_reason'
-    ];
+    return [];
   }
 
   /**
    * Derive/populate additional data
    */
   public function populateData() {
-
     if ($this->isNew()) {
       $contract = $this->getContract(TRUE);
       $contract_after_execution = $contract;

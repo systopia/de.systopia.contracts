@@ -37,7 +37,7 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
     'Contract_Updated'   => 'CRM_Contract_Change_Upgrade',
     'Contract_Resumed'   => 'CRM_Contract_Change_Resume',
     'Contract_Revived'   => 'CRM_Contract_Change_Revive',
-    //'Contract_Paused'    => 'CRM_Contract_Change_Pause',
+    'Contract_Paused'    => 'CRM_Contract_Change_Pause',
   ];
 
   /**
@@ -50,7 +50,7 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
       'update'  => 'CRM_Contract_Change_Upgrade',
       'resume'  => 'CRM_Contract_Change_Resume',
       'revive'  => 'CRM_Contract_Change_Revive',
-      //'pause'   => 'CRM_Contract_Change_Pause',
+      'pause'   => 'CRM_Contract_Change_Pause',
   ];
 
   /**

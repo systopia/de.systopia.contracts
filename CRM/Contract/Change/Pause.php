@@ -9,9 +9,9 @@
 use CRM_Contract_ExtensionUtil as E;
 
 /**
- * "Resume Membership" change
+ * "Pause Membership" change
  */
-class CRM_Contract_Change_Resume extends CRM_Contract_Change {
+class CRM_Contract_Change_Pause extends CRM_Contract_Change {
 
   /**
    * Get a list of required fields for this type
@@ -19,7 +19,49 @@ class CRM_Contract_Change_Resume extends CRM_Contract_Change {
    * @return array list of required fields
    */
   public function getRequiredFields() {
-    return [];
+    return [
+        'resume_date'
+    ];
+  }
+
+  /**
+   * Derive/populate additional data
+   */
+  public function populateData() {
+    $contract = $this->getContract();
+    $this->setParameter('subject', $this->getSubject($contract));
+
+    $resume_date = $this->getParameter('resume_date');
+    if (!$resume_date) {
+      $resume_date = $this->getParameter('activity_date_time', date('YmdHis'));
+      $this->setParameter('resume_date', $resume_date);
+    }
+
+    if (!$this->isNew()) {
+      parent::populateData();
+    }
+  }
+
+  /**
+   * In this case, don't only just save the pause, but also the resume!
+   */
+  public function save() {
+    if ($this->isNew()) {
+      // create resume change activity:
+      $resume_date = $this->getParameter('resume_date');
+      if ($resume_date) {
+        $contract = $this->getContract();
+        $resume_change = CRM_Contract_Change::getChangeForData(['activity_type_id' => 'Contract_Resumed']);
+        $resume_change->setParameter('activity_date_time', $resume_date);
+        $resume_change->setParameter('source_record_id', $this->getContractID());
+        $resume_change->setParameter('source_contact_id', $this->getParameter('source_contact_id'));
+        $resume_change->setParameter('target_contact_id', $contract['contact_id']);
+        $resume_change->setParameter('subject', $resume_change->getSubject($contract));
+        $resume_change->setStatus('Scheduled');
+        $resume_change->save();
+      }
+    }
+    parent::save();
   }
 
   /**
@@ -33,8 +75,8 @@ class CRM_Contract_Change_Resume extends CRM_Contract_Change {
     // pause the mandate
     $payment_contract_id = CRM_Utils_Array::value('membership_payment.membership_recurring_contribution', $contract);
     if ($payment_contract_id) {
-      CRM_Contract_SepaLogic::resumeSepaMandate($payment_contract_id);
-      $this->updateContract(['status_id' => 'Current']);
+      CRM_Contract_SepaLogic::pauseSepaMandate($payment_contract_id);
+      $this->updateContract(['status_id' => 'Paused']);
     }
 
     // update change activity
@@ -42,6 +84,18 @@ class CRM_Contract_Change_Resume extends CRM_Contract_Change {
     $this->setParameter('subject', $this->getSubject($contract_after, $contract));
     $this->setStatus('Completed');
     $this->save();
+  }
+
+  /**
+   * Check whether this change activity should actually be created
+   *
+   * CANCEL activities should not be created, if there is another one already there
+   *
+   * @throws Exception if the creation should be disallowed
+   */
+  public function shouldBeAccepted() {
+    // TODO: any restrictions?
+    parent::shouldBeAccepted();
   }
 
   /**
@@ -54,10 +108,8 @@ class CRM_Contract_Change_Resume extends CRM_Contract_Change {
   public function renderDefaultSubject($contract_after, $contract_before = NULL) {
     $contract_id = $this->getContractID();
     if ($this->isNew()) {
-      // FIXME: replicating weird behaviour by old engine
-      return "id{$contract_id}:";
+      return "id{$contract_id}: resume scheduled " . date('d/m/Y', strtotime($this->getParameter('resume_date')));
     } else {
-
       $subject = "id{$contract_id}:";
       if (!empty($this->data['contract_cancellation.contact_history_cancel_reason'])) {
         // FIXME: replicating weird behaviour by old engine

@@ -367,6 +367,6 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
    * @param $subject subject to be edited in-place
    */
   public function stripActivitySubjectID(&$subject) {
-    $subject = preg_replace('/^id[0-9]+[:]/', 'CONTRACT_ID', $subject);
+    $subject = preg_replace('/^id[0-9]+[:.]/', 'CONTRACT_ID', $subject);
   }
 }

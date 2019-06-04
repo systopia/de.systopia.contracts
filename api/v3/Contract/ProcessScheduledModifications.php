@@ -93,6 +93,7 @@ function civicrm_api3_Contract_process_scheduled_modifications($params) {
     } catch (Exception $ex) {
       // verification failed
       $change->setStatus('Failed');
+      $change->setParameter('details', "Error was: " . $ex->getMessage());
       $change->save();
       continue;
     }
