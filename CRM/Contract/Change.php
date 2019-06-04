@@ -32,8 +32,12 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
    *  activity_type_name => change class
    */
   protected static $type2class = [
-    'Contract_Cancelled' => 'CRM_Contract_Change_Cancel',
     'Contract_Signed'    => 'CRM_Contract_Change_Sign',
+    'Contract_Cancelled' => 'CRM_Contract_Change_Cancel',
+    'Contract_Updated'   => 'CRM_Contract_Change_Upgrade',
+    'Contract_Resumed'   => 'CRM_Contract_Change_Resume',
+    //'Contract_Revived'   => 'CRM_Contract_Change_Revive',
+    //'Contract_Paused'    => 'CRM_Contract_Change_Pause',
   ];
 
   /**
@@ -41,8 +45,12 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
    *  activity_type_name => change class
    */
   protected static $action2class = [
-      'cancel' => 'CRM_Contract_Change_Cancel',
-      'sign'   => 'CRM_Contract_Change_Sign',
+      'sign'    => 'CRM_Contract_Change_Sign',
+      'cancel'  => 'CRM_Contract_Change_Cancel',
+      'update'  => 'CRM_Contract_Change_Upgrade',
+      'resume'  => 'CRM_Contract_Change_Resume',
+      //'revive'  => 'CRM_Contract_Change_Revive',
+      //'pause'   => 'CRM_Contract_Change_Pause',
   ];
 
   /**
@@ -137,6 +145,14 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
    */
   public function getID() {
     return $this->data['id'];
+  }
+
+  /**
+   * Get the internal action name
+   */
+  public function getActionName() {
+    $class2action = array_flip(self::$action2class);
+    return $class2action[get_class($this)];
   }
 
   /**
@@ -249,6 +265,9 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
     // otherwise translate class to ID
     $id2class = self::getActivityTypeId2Class();
     $class2id = array_flip($id2class);
+    if (!isset($class2id[get_class($this)])) {
+      throw Exception("Missing contract change activity type: " . get_class($this));
+    }
     $activity_type_id = $class2id[get_class($this)];
     return $activity_type_id;
   }
@@ -351,6 +370,17 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
   }
 
   /**
+   * Get a parameter from the activity
+   *
+   * @param $key     string property name
+   * @param $default mixed  default to return if not set
+   * @return mixed value in the activity data
+   */
+  public function getParameter($key, $default = NULL) {
+    return CRM_Utils_Array::value($key, $this->data, $default);
+  }
+
+  /**
    * Save data to the DB (activity)
    */
   public function save() {
@@ -429,6 +459,80 @@ s   */
       CRM_Core_Error::debug_log_message("Error resolving option value '{$label}' in {$option_group_id}");
     }
     return 'ERROR';
+  }
+
+  /**
+   * Cached query for API lookups
+   *
+   * @param $entity    string entity
+   * @param $query     array query options
+   * @param $attribute string attribute having the desired value
+   * @return mixed value
+   */
+  protected function lookupValue($entity, $attribute, $query) {
+    static $lookup_cache = [];
+
+    // create a key
+    $query['return'] = $attribute;
+    $cache_key = "$entity" . serialize($query);
+    if (!isset($lookup_cache[$cache_key])) {
+      try {
+        $value = civicrm_api3($entity, 'getvalue', $query);
+      } catch (Exception $ex) {
+        CRM_Core_Error::debug_log_message("Error looking up value {$entity} attribute '{$attribute}' with " . json_encode($query));
+        $value = 'ERROR';
+      }
+      $lookup_cache[$cache_key] = $value;
+    }
+    return $lookup_cache[$cache_key];
+  }
+
+  /**
+   * Provide a universal function to label a internal ID with the corresponding label where applicable
+   *
+   * @param $value       string current value
+   * @param $field_name  string field this value is from
+   * @return string      string labelled value
+   */
+  protected function labelValue($value, $field_name) {
+    switch ($field_name) {
+      case 'membership_type_id':
+      case 'contract_updates.ch_membership_type':
+        if (is_numeric($value)) {
+          return $this->lookupValue('MembershipType', 'name', ['id' => $value]);
+        } else {
+          return $value;
+        }
+
+      case 'membership_payment.membership_frequency':
+      case 'contract_updates.ch_frequency':
+        if (is_numeric($value)) {
+          return $this->lookupValue('OptionValue', 'label', ['value' => $value, 'option_group_id' => 'payment_frequency']);
+        } else {
+          return $value;
+        }
+
+      case 'membership_payment.from_ba':
+      case 'contract_updates.ch_from_ba':
+      case 'membership_payment.to_ba':
+      case 'contract_updates.ch_to_ba':
+        if (is_numeric($value)) {
+          return CRM_Contract_BankingLogic::getIBANforBankAccount($value);
+        } else {
+          return $value;
+        }
+
+      case 'membership_payment.payment_instrument':
+      case 'contract_updates.ch_payment_instrument':
+        if (is_numeric($value)) {
+          return $this->lookupValue('OptionValue', 'label', ['value' => $value, 'option_group_id' => 'payment_instrument']);
+        } else {
+          return $value;
+        }
+
+      default:
+        return $value;
+    }
   }
 
 

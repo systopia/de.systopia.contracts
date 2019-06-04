@@ -8,7 +8,7 @@
 
 
 /**
- * Cancel membership change
+ * Interface to render the subject of the various changes
  */
 interface CRM_Contract_Change_SubjectRendererInterface {
 

@@ -68,6 +68,4 @@ class CRM_Contract_EngineStessTest extends CRM_Contract_ContractTestBase {
       $this->assertNotEquals($contract, $contract_changed2, "This should have changed");
     }
   }
-
-  
 }

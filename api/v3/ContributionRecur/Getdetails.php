@@ -8,6 +8,18 @@
 +--------------------------------------------------------------*/
 
 /**
+ * Schedule a Contract modification
+ */
+function _civicrm_api3_contribution_recur_getdetails_spec(&$params) {
+  $params['contact_id'] = array(
+      'name'         => 'contact_id',
+      'title'        => 'CiviCRM Contact ID',
+      'api.required' => 1,
+      'type'         => 1,
+  );
+}
+
+/**
  * Generate some information on recrring contributions
  */
 function civicrm_api3_contribution_recur_getdetails($params) {
@@ -16,14 +28,3 @@ function civicrm_api3_contribution_recur_getdetails($params) {
   return civicrm_api3_create_success($data);
 }
 
-/**
- * Schedule a Contract modification
- */
-function _civicrm_api3_contribution_recur_getdetails_spec(&$params) {
-  $params['contact_id'] = array(
-    'name'         => 'contact_id',
-    'title'        => 'CiviCRM Contact ID',
-    'api.required' => 1,
-    'type'         => 1,
-    );
-}

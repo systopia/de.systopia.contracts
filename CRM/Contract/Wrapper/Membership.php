@@ -22,7 +22,7 @@
 * CRM_Contract_Handler_Contract::usingActivityData method as otherwise we
 * would create duplicate modify contract activities.
 *
-* @deprecated - replcaed because it caused recursion errors
+* @deprecated - replaced because it caused recursion errors
 */
 class CRM_Contract_Wrapper_Membership{
 

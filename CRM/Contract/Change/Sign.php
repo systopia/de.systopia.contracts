@@ -9,7 +9,7 @@
 use CRM_Contract_ExtensionUtil as E;
 
 /**
- * New membership sign-up
+ * "New Membership Signed" record
  */
 class CRM_Contract_Change_Sign extends CRM_Contract_Change {
 
@@ -100,5 +100,4 @@ class CRM_Contract_Change_Sign extends CRM_Contract_Change {
 
     return "id{$contract['id']}: ".implode(' AND ', $attributes);
   }
-
 }

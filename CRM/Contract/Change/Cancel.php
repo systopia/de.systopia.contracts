@@ -9,7 +9,7 @@
 use CRM_Contract_ExtensionUtil as E;
 
 /**
- * Cancel membership change
+ * "Cancel Membership" change
  */
 class CRM_Contract_Change_Cancel extends CRM_Contract_Change {
 
