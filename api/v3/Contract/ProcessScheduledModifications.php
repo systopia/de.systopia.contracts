@@ -102,7 +102,6 @@ function civicrm_api3_Contract_process_scheduled_modifications($params) {
       // execute
       CRM_Contract_Configuration::disableMonitoring();
       $change->execute();
-      CRM_Contract_Configuration::enableMonitoring();
 
       // log as executed
       $result['completed'][] = $change->getID();
@@ -110,6 +109,9 @@ function civicrm_api3_Contract_process_scheduled_modifications($params) {
     } catch (Exception $ex) {
       // something went wrong...
       $result['failed'][] = $change->getID();
+      $result['error_details'][$change->getID()] = $ex->getMessage() . "\r\n" . $ex->getTraceAsString();
+
+    } finally {
       CRM_Contract_Configuration::enableMonitoring();
     }
   }

@@ -22,8 +22,10 @@ include_once 'ContractTestBase.php';
  * @group headless
  */
 class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
+
   public function setUp() {
     CRM_Contract_Configuration::$use_new_engine = TRUE;
+    parent::setUp();
   }
 
   /**
@@ -318,14 +320,14 @@ class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
     $pause_activities_old = $this->getChangeActivities($contract_old['id'], ['Contract_Paused']);
     $this->assertEquals(1, count($pause_activities_old), "Exactly one pause activity expected!");
     $post_pause_activity_old = $pause_activities_old[0];
-    $paused_contract_old = $this->assertAPI3('Contract', 'getsingle', ['id' => $contract_old['id']]);
+    $paused_contract_old = $this->callAPISuccess('Contract', 'getsingle', ['id' => $contract_old['id']]);
 
     // execute the resume change
     $this->runContractEngine($contract_old['id'], '+2 day');
     $pause_activities_old = $this->getChangeActivities($contract_old['id'], ['Contract_Resumed']);
     $this->assertEquals(1, count($pause_activities_old), "Exactly one resume activity expected!");
     $post_resume_activity_old = $pause_activities_old[0];
-    $resumed_contract_old = $this->assertAPI3('Contract', 'getsingle', ['id' => $contract_old['id']]);
+    $resumed_contract_old = $this->callAPISuccess('Contract', 'getsingle', ['id' => $contract_old['id']]);
 
     CRM_Contract_CustomData::labelCustomFields($pre_pause_activity_old);
     CRM_Contract_CustomData::labelCustomFields($post_pause_activity_old);
@@ -360,14 +362,14 @@ class CRM_Contract_EngineComparisonTest extends CRM_Contract_ContractTestBase {
     $pause_activities_new = $this->getChangeActivities($contract_new['id'], ['Contract_Paused']);
     $this->assertEquals(1, count($pause_activities_new), "Exactly one pause activity expected!");
     $post_pause_activity_new = $pause_activities_new[0];
-    $paused_contract_new = $this->assertAPI3('Contract', 'getsingle', ['id' => $contract_new['id']]);
+    $paused_contract_new = $this->callAPISuccess('Contract', 'getsingle', ['id' => $contract_new['id']]);
 
     // execute the resume change
     $this->runContractEngine($contract_new['id'], '+2 day');
     $pause_activities_new = $this->getChangeActivities($contract_new['id'], ['Contract_Resumed']);
     $this->assertEquals(1, count($pause_activities_new), "Exactly one resume activity expected!");
     $post_resume_activity_new = $pause_activities_new[0];
-    $resumed_contract_new = $this->assertAPI3('Contract', 'getsingle', ['id' => $contract_new['id']]);
+    $resumed_contract_new = $this->callAPISuccess('Contract', 'getsingle', ['id' => $contract_new['id']]);
 
     CRM_Contract_CustomData::labelCustomFields($pre_pause_activity_new);
     CRM_Contract_CustomData::labelCustomFields($post_pause_activity_new);

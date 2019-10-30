@@ -307,7 +307,7 @@ class CRM_Contract_Handler_Contract{
     // If the annual amount changed, calculate the difference
     if(isset($this->deltas['membership_payment.membership_annual'])){
       $params[CRM_Contract_Utils::getCustomFieldId('contract_updates.ch_annual_diff')] =
-      $this->deltas['membership_payment.membership_annual']['new'] - $this->deltas['membership_payment.membership_annual']['old'];
+        (float) $this->deltas['membership_payment.membership_annual']['new'] - (float) $this->deltas['membership_payment.membership_annual']['old'];
     }
     // Translate between contract and activity keys
     foreach($this->endState as $key => $value){

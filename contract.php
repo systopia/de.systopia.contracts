@@ -117,7 +117,7 @@ function contract_civicrm_pageRun( &$page ){
     // thus is the membership summary tab
     $contractStatuses = array();
     foreach(civicrm_api3('Membership', 'get', ['contact_id' => $page->_contactId])['values'] as $contract){
-      $contractStatuses[$contract['id']] = civicrm_api3('Contract', 'get_open_modification_counts', ['id' => $contract['id']]);
+      $contractStatuses[$contract['id']] = civicrm_api3('Contract', 'get_open_modification_counts', ['id' => $contract['id']])['values'];
     }
     CRM_Core_Resources::singleton()->addStyleFile('de.systopia.contract', 'css/contract.css');
     CRM_Core_Resources::singleton()->addVars('de.systopia.contract', array('contractStatuses' => $contractStatuses));

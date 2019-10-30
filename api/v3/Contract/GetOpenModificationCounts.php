@@ -10,7 +10,7 @@
 /**
  * Get the number of scheduled modifications for a contract
  */
-function _civicrm_api3_Contract_get_open_modification_counts_spec(&$params){
+function _civicrm_api3_Contract_get_open_modification_counts_spec(&$params) {
   $params['id'] = array(
     'name'         => 'id',
     'title'        => 'Contract ID',
@@ -22,7 +22,7 @@ function _civicrm_api3_Contract_get_open_modification_counts_spec(&$params){
 /**
  * Get the number of scheduled modifications for a contract
  */
-function civicrm_api3_Contract_get_open_modification_counts($params){
+function civicrm_api3_Contract_get_open_modification_counts($params) {
   $activitiesForReview = civicrm_api3('Activity', 'getcount', [
     'source_record_id' => $params['id'],
     'status_id' => 'Needs Review'
@@ -31,9 +31,8 @@ function civicrm_api3_Contract_get_open_modification_counts($params){
     'source_record_id' => $params['id'],
     'status_id' => ['IN' => ['Scheduled']]
   ]);
-  // TODO (Michael): return proper API results (civicrm_api3_create_success)
-  return [
+  return civicrm_api3_create_success([
     'needs_review' => $activitiesForReview,
     'scheduled' => $activitiesScheduled
-  ];
+  ]);
 }

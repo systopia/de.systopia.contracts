@@ -86,7 +86,7 @@ CRM.$(function($) {
     CRM.api3('Contract', 'get_open_modification_counts', {
       "id": membershipId
     }).done(function(result) {
-      contractStatuses[membershipId] = result;
+      contractStatuses[membershipId] = result.values;
       decorateRow(membershipId);
     });
   }
