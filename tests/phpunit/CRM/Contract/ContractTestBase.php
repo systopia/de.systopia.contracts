@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Test\Api3TestTrait;
 use CRM_Contract_ExtensionUtil as E;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
@@ -21,6 +22,7 @@ use Civi\Test\TransactionalInterface;
  */
 class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implements HeadlessInterface, HookInterface, TransactionalInterface
 {
+  use Api3TestTrait;
 
   protected static $counter = 0;
 
@@ -30,36 +32,43 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
     // See: https://docs.civicrm.org/dev/en/latest/testing/phpunit/#civitest
     return \Civi\Test::headless()
         ->installMe(__DIR__)
+        ->install('org.project60.sepa')
+        ->install('org.project60.banking')
         ->apply();
   }
 
   public function setUp()
   {
+    // fetch the test creditor
+    $creditor_id = $this->callAPISuccess('SepaCreditor', 'getvalue', [
+      'return'  => 'id',
+      'options' => [
+        'limit' => 1
+      ],
+    ]);
+    // make sure the test creditor has a creditor_type and currency
+    // (they're not set in org.project60.sepa's db seed)
+    $this->callAPISuccess('SepaCreditor', 'create', [
+      'id'            => $creditor_id,
+      'creditor_type' => 'SEPA',
+      'currency'      => 'EUR',
+    ]);
+    // make the creditor the default
+    CRM_Sepa_Logic_Settings::setSetting(
+      'batching_default_creditor',
+      civicrm_api3('SepaCreditor', 'getvalue', [
+        'return'  => 'id',
+        'options' => [
+          'limit' => 1
+        ],
+      ])
+    );
     parent::setUp();
   }
 
   public function tearDown()
   {
     parent::tearDown();
-  }
-
-
-  /**
-   * Execute the API call and assert that it is successfull
-   *
-   * @param $entity string entity
-   * @param $action string action
-   * @param $params array parameters
-   * @return array result
-   */
-  public function assertAPI3($entity, $action, $params)
-  {
-    try {
-      return civicrm_api3($entity, $action, $params);
-    } catch (CiviCRM_API3_Exception $ex) {
-      $this->assertFalse(TRUE, "API Exception: " . $ex->getMessage());
-      return NULL;
-    }
   }
 
   /**
@@ -70,7 +79,7 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
   public function runContractEngine($contract_id, $now = 'now')
   {
     $this->assertNotEmpty($contract_id, "You can only run the contract engine on a specific contract ID.");
-    $result = $this->assertAPI3('Contract', 'process_scheduled_modifications', [
+    $result = $this->callAPISuccess('Contract', 'process_scheduled_modifications', [
         'now' => $now,
         'id'  => $contract_id]);
     $this->assertTrue(empty($result['values']['failed']), "Contract Engine reports failure");
@@ -100,8 +109,8 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
     self::$counter++;
     $contact_data['email'] = sha1(microtime() . self::$counter) . '@nowhere.nil';
 
-    $contact     = $this->assertAPI3('Contact', 'create', $contact_data);
-    $new_contact = $this->assertAPI3('Contact', 'getsingle', ['id' => $contact['id']]);
+    $contact     = $this->callAPISuccess('Contact', 'create', $contact_data);
+    $new_contact = $this->callAPISuccess('Contact', 'getsingle', ['id' => $contact['id']]);
     return $new_contact;
   }
 
@@ -111,7 +120,7 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
    * @return integer payment instrument ID
    */
   public function getRandomPaymentInstrumentID() {
-    $pis = $this->assertAPI3('OptionValue', 'get', [
+    $pis = $this->callAPISuccess('OptionValue', 'get', [
         'is_active'       => 1,
         'option_group_id' => 'payment_instrument'
     ]);
@@ -127,14 +136,14 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
    */
   public function getRandomMembershipTypeID()
   {
-    $types = $this->assertAPI3('MembershipType', 'get', ['is_active' => 1]);
+    $types = $this->callAPISuccess('MembershipType', 'get', ['is_active' => 1]);
     if ($types['count'] > 0) {
       $type = $types['values'][array_rand($types['values'])];
       return $type['id'];
     } else {
       // create a new one
       $contact  = $this->createContactWithRandomEmail();
-      $new_type = $this->assertAPI3('MembershipType', 'create', [
+      $new_type = $this->callAPISuccess('MembershipType', 'create', [
           'member_of_contact_id' => $contact['id'],
           'financial_type_id'    => "1",
           'duration_unit'        => "year",
@@ -153,7 +162,7 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
    * @return array contract data
    */
   public function getContract($contract_id) {
-    $contract = $this->assertAPI3('Membership', 'getsingle', ['id' => $contract_id]);
+    $contract = $this->callAPISuccess('Membership', 'getsingle', ['id' => $contract_id]);
     CRM_Contract_CustomData::labelCustomFields($contract);
     return $contract;
   }
@@ -198,9 +207,9 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
         $params['type'] = 'RCUR';
       }
 
-      $mandate = $this->assertAPI3('SepaMandate', 'createfull', $params);
-      $mandate = $this->assertAPI3('SepaMandate', 'getsingle', ['id' => $mandate['id']]);
-      return $this->assertAPI3('ContributionRecur', 'getsingle', ['id' => $mandate['entity_id']]);
+      $mandate = $this->callAPISuccess('SepaMandate', 'createfull', $params);
+      $mandate = $this->callAPISuccess('SepaMandate', 'getsingle', ['id' => $mandate['id']]);
+      return $this->callAPISuccess('ContributionRecur', 'getsingle', ['id' => $mandate['entity_id']]);
 
     } else {
       // Standing Order (recurring contribution)
@@ -211,8 +220,8 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
         $params['status_id'] = 'Current';
       }
 
-      $payment = $this->assertAPI3('ContributionRecur', 'create', $params);
-      return $this->assertAPI3('ContributionRecur', 'getsingle', ['id' => $payment['id']]);
+      $payment = $this->callAPISuccess('ContributionRecur', 'create', $params);
+      return $this->callAPISuccess('ContributionRecur', 'getsingle', ['id' => $payment['id']]);
     }
   }
 
@@ -232,7 +241,7 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
 
 
     //membership_payment.membership_recurring_contribution
-    $contract = $this->assertAPI3('Contract', 'create', [
+    $contract = $this->callAPISuccess('Contract', 'create', [
         'contact_id'         => $contact_id,
         'membership_type_id' => (!empty($params['membership_type_id'])) ? $params['membership_type_id'] : $this->getRandomMembershipTypeID(),
         'join_date'          => (!empty($params['join_date'])) ? $params['join_date'] : date('YmdHis'),
@@ -272,14 +281,14 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
     if (empty($params['medium_id'])) {
       $params['medium_id'] = 1;
     }
-    return $this->assertAPI3('Contract', 'modify', $params);
+    return $this->callAPISuccess('Contract', 'modify', $params);
   }
 
   /**
    * Get a random value from the given option group
    */
   public function getRandomOptionValue($option_group_id, $label = TRUE) {
-    $all_option_values = $this->assertAPI3('OptionValue', 'get', [
+    $all_option_values = $this->callAPISuccess('OptionValue', 'get', [
         'option.limit'    => 0,
         'return'          => 'value,label',
         'option_group_id' => $option_group_id]);

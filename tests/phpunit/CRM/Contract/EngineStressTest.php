@@ -25,6 +25,7 @@ class CRM_Contract_EngineStessTest extends CRM_Contract_ContractTestBase {
 
   public function setUp() {
     CRM_Contract_Configuration::$use_new_engine = TRUE;
+    parent::setUp();
   }
 
   /**
@@ -35,7 +36,7 @@ class CRM_Contract_EngineStessTest extends CRM_Contract_ContractTestBase {
     foreach ([1,0] as $is_sepa) {
       // create a new contract
       $contract = $this->createNewContract(['is_sepa' => $is_sepa]);
-      $scheduled_updates = $this->assertAPI3('Contract', 'get_open_modification_counts', ['id' => $contract['id']]);
+      $scheduled_updates = $this->callAPISuccess('Contract', 'get_open_modification_counts', ['id' => $contract['id']])['values'];
       $this->assertEquals(0, $scheduled_updates['scheduled'], "There should not be a scheduled change");
 
       // schedule a bunch of updates
@@ -52,14 +53,14 @@ class CRM_Contract_EngineStessTest extends CRM_Contract_ContractTestBase {
       }
 
       // now... these should all be conflicting
-      $scheduled_updates = $this->assertAPI3('Contract', 'get_open_modification_counts', ['id' => $contract['id']]);
+      $scheduled_updates = $this->callAPISuccess('Contract', 'get_open_modification_counts', ['id' => $contract['id']])['values'];
       $this->assertEquals($ITERATION_COUNT, $scheduled_updates['needs_review'] + $scheduled_updates['scheduled'], "There should be {$ITERATION_COUNT} update scheduled.");
 
       // cheekily set all of the 'needs review' ones to 'scheduled'
       CRM_Core_DAO::executeQuery("UPDATE civicrm_activity SET status_id = 1 WHERE source_record_id = {$contract['id']} AND status_id <> 2;");
 
       // now... these should all be scheduled
-      $scheduled_updates = $this->assertAPI3('Contract', 'get_open_modification_counts', ['id' => $contract['id']]);
+      $scheduled_updates = $this->callAPISuccess('Contract', 'get_open_modification_counts', ['id' => $contract['id']])['values'];
       $this->assertEquals($ITERATION_COUNT, $scheduled_updates['scheduled'], "There should be {$ITERATION_COUNT} update scheduled.");
 
       // run engine again for tomorrow
