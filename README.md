@@ -1,5 +1,7 @@
 # Contracts
 
+[![CircleCI](https://circleci.com/gh/systopia/de.systopia.contract.svg?style=svg)](https://circleci.com/gh/systopia/de.systopia.contract)
+
 ## Downloading contract files
 
 The membership_contract custom field in membership_general custom group can hold
