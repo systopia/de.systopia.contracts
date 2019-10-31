@@ -22,7 +22,9 @@ use Civi\Test\TransactionalInterface;
  */
 class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implements HeadlessInterface, HookInterface, TransactionalInterface
 {
-  use Api3TestTrait;
+  use Api3TestTrait {
+    callAPISuccess as public traitCallAPISuccess;
+  }
 
   protected static $counter = 0;
 
@@ -378,4 +380,25 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
   public function stripActivitySubjectID(&$subject) {
     $subject = preg_replace('/^id[0-9]+[:.]/', 'CONTRACT_ID', $subject);
   }
+
+  /**
+   * Remove 'xdebug' result key set by Civi\API\Subscriber\XDebugSubscriber
+   *
+   * This breaks some tests when xdebug is present, and we don't need it.
+   *
+   * @param $entity
+   * @param $action
+   * @param $params
+   * @param null $checkAgainst
+   *
+   * @return array|int
+   */
+  public function callAPISuccess($entity, $action, $params, $checkAgainst = NULL) {
+    $result = $this->traitCallAPISuccess($entity, $action, $params, $checkAgainst);
+    if (is_array($result)) {
+      unset($result['xdebug']);
+    }
+    return $result;
+  }
+
 }
