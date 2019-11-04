@@ -41,40 +41,20 @@ function civicrm_api3_Contract_create($params){
     CRM_Contract_SepaLogic::setContractPaymentLink($membership['id'], $params[$recurring_contribution_field_key]);
   }
 
-  if (CRM_Contract_Configuration::useNewEngine()) {
-    // create 'sign' activity
-    $params['activity_type_id'] = 'sign';
-    $change = CRM_Contract_Change::getChangeForData($params);
-    $change->setParameter('source_contact_id', CRM_Contract_Configuration::getUserID());
-    $change->setParameter('source_record_id',  $membership['id']);
-    $change->setParameter('target_contact_id', $change->getContract()['contact_id']);
-    $change->setStatus('Completed');
-    $change->populateData();
-    $change->verifyData();
-    $change->shouldBeAccepted();
-    $change->save();
+  // create 'sign' activity
+  $params['activity_type_id'] = 'sign';
+  $change = CRM_Contract_Change::getChangeForData($params);
+  $change->setParameter('source_contact_id', CRM_Contract_Configuration::getUserID());
+  $change->setParameter('source_record_id',  $membership['id']);
+  $change->setParameter('target_contact_id', $change->getContract()['contact_id']);
+  $change->setStatus('Completed');
+  $change->populateData();
+  $change->verifyData();
+  $change->shouldBeAccepted();
+  $change->save();
 
-    // also derive contract fields
-    $change->updateContract(['membership_payment.membership_recurring_contribution' => $params[$recurring_contribution_field_key]]);
-
-  } else {
-    // old engine needed to update the generated activity
-    try {
-      $activity = civicrm_api3('Activity', 'getsingle', [
-          'source_record_id' => $membership['id'],
-          'activity_type_id' => 'Contract_Signed',
-      ]);
-      civicrm_api3('Activity', 'create', [
-          'id'                 => $activity['id'],
-          'details'            => $params['note'],
-          'activity_date_time' => date('YmdHi00'),
-          'medium_id'          => $params['medium_id'],
-          'campaign_id'        => CRM_Utils_Array::value('campaign_id', $params),
-      ]);
-    } catch (CiviCRM_API3_Exception $ex) {
-      CRM_Core_Error::debug_log_message("No membership signed activity was created!");
-    }
-  }
+  // also derive contract fields
+  $change->updateContract(['membership_payment.membership_recurring_contribution' => $params[$recurring_contribution_field_key]]);
 
   return $membership;
 }

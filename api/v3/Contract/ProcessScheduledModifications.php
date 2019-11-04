@@ -44,12 +44,6 @@ function civicrm_api3_Contract_process_scheduled_modifications($params) {
     return civicrm_api3_create_success(array('message' => "Another instance of the Contract.process_scheduled_modifications process is running. Skipped."));
   }
 
-  if (!CRM_Contract_Configuration::useNewEngine()) {
-    $legacy_result = civicrm_api3_Contract_process_scheduled_modifications_legacy($params);
-    $lock->release();
-    return $legacy_result;
-  }
-
   // make sure that the time machine only works with a single contract, see GP-936
   if (isset($params['now']) && empty($params['id'])) {
     return civicrm_api3_create_error("You can only use the time machine for specific contract! set the 'id' parameter.");
@@ -117,113 +111,5 @@ function civicrm_api3_Contract_process_scheduled_modifications($params) {
   }
 
   $lock->release();
-  return civicrm_api3_create_success($result);
-}
-
-
-
-
-
-
-
-
-
-/**
- * Legacy engine implementation
- * @author M. McAndrew (michaelmcandrew@thirdsectordesign.org)
- * @deprecated
- */
-function civicrm_api3_Contract_process_scheduled_modifications_legacy($params){
-  // make sure that the time machine only works with individual contracts
-  //  see GP-936
-  if (isset($params['now']) && empty($params['id'])) {
-    return civicrm_api3_create_error("You can only use the time machine for specific contract! set the 'id' parameter.");
-  }
-
-  // Passing the now param is useful for testing
-  $now = new DateTime(isset($params['now']) ? $params['now'] : '');
-
-  // Get the limit (defaults to 1000)
-  $limit = isset($params['limit']) ? $params['limit'] : 1000;
-
-  $activityParams = [
-    'activity_type_id'   => ['IN' => CRM_Contract_ModificationActivity::getModificationActivityTypeIds()],
-    'status_id'          => 'scheduled',
-    'activity_date_time' => ['<=' => $now->format('Y-m-d H:i:s')], // execute everything scheduled in the past
-    'option.limit'       => $limit,
-    'sequential'         => 1, // in the scheduled order(!)
-    'option.sort'        => 'activity_date_time ASC, id ASC',
-  ];
-  if(isset($params['id'])){
-    $activityParams['source_record_id'] = $params['id'];
-  }
-
-  $scheduledActivities = civicrm_api3('activity', 'get', $activityParams);
-
-  $counter = 0;
-
-  // // Going old school and sorting by timestamp //TODO can remove *IF* the above sort by activity date time is actually working
-  // foreach($scheduledActivities['values'] as $k => $scheduledActivity){
-  //   // TODO: Michael: please check this change
-  //   //  also: the "above sort by activity date time" is working in my tests
-  //   $scheduledActivities['values'][$k]['activity_date_unixtime'] = strtotime($scheduledActivity['activity_date_time']);
-  // }
-  // usort($scheduledActivities['values'], function($a, $b){
-  //   return $a['activity_date_unixtime'] - $b['activity_date_unixtime'];
-  // });
-
-  $result=[];
-
-  foreach($scheduledActivities['values'] as $scheduledActivity){
-    try {
-      $result['order'][]=$scheduledActivity['id'];
-      // If the limit parameter has been passed, only process $params['limit']
-      $counter++;
-      if($counter > $limit){
-        break;
-      }
-
-
-
-      $handler = new CRM_Contract_Handler_Contract;
-
-      // Set the initial state of the handler
-      $handler->setStartState($scheduledActivity['source_record_id']);
-      $handler->setModificationActivity($scheduledActivity);
-
-      // Pass the parameters of the change
-      $handler->setParams(CRM_Contract_Handler_ModificationActivityHelper::getContractParams($scheduledActivity));
-
-      // We ignore the lack of resume_date when processing alredy scheduled pauses
-      // as we assume that the resume has already been created when the pause wraps
-      // originally scheduled and hence we wouldn't want to create it again
-      // TODO I don't think the above is true any more. Should find out for sure
-      // and remove if so.
-      if ($handler->isValid(['resume_date'])) {
-        try {
-          $handler->modify();
-          $result['completed'][]=$scheduledActivity['id'];
-        } catch (Exception $e) {
-          // log problem
-          error_log("de.systopia.contract: Failed to execute handler for activity [{$scheduledActivity['id']}]: " . $e->getMessage());
-
-          // set activity to FAILED
-          $scheduledActivity['status_id'] = 'Failed';
-          $scheduledActivity['details'] .= '<p><b>Errors</b></p>'.implode($handler->getErrors(), ';') . ';' . $e->getMessage();
-          civicrm_api3('Activity', 'create', $scheduledActivity);
-          $result['failed'][]=$scheduledActivity['id'];
-        }
-      } else {
-        $scheduledActivity['status_id'] = 'Failed';
-        $scheduledActivity['details'] .= '<p><b>Errors</b></p>'.implode($handler->getErrors(), ';');
-        civicrm_api3('Activity', 'create', $scheduledActivity);
-        $result['failed'][]=$scheduledActivity['id'];
-      }
-    } catch (Exception $e) {
-      error_log("de.systopia.contract: Failed to execute activity [{$scheduledActivity['id']}]: " . $e->getMessage());
-    }
-  }
-
-//  $lock->release();
   return civicrm_api3_create_success($result);
 }

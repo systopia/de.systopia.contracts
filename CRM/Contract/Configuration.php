@@ -13,15 +13,7 @@
  */
 class CRM_Contract_Configuration {
 
-  public static $use_new_engine = TRUE;
   protected static $eligible_campaigns = NULL;
-
-  /**
-   * Should the new Engine be used?
-   */
-  public static function useNewEngine() {
-    return self::$use_new_engine;
-  }
 
   /**
    * Disable monitoring relevant entities, so we don't accidentally
