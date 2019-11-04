@@ -154,19 +154,19 @@ function showHidePaymentElements(){
  * update the payment info shown
  */
 function updatePaymentSummaryText() {
-  var mode = cj("#payment_option").val();
+  let mode = cj("#payment_option").val();
   if (mode == "select") {
     // display the selected recurring contribution
-    var recurring_contributions = CRM.vars['de.systopia.contract'].recurring_contributions;
-    var key = cj('[name=recurring_contribution]').val();
+    let recurring_contributions = CRM.vars['de.systopia.contract'].recurring_contributions;
+    let key = cj('[name=recurring_contribution]').val();
     if (key) {
       cj('.recurring-contribution-summary-text').html(recurring_contributions[key].text_summary);
     } else {
       cj('.recurring-contribution-summary-text').html('None');
     }
   } else if (mode == "nochange") {
-    var recurring_contributions = CRM.vars['de.systopia.contract'].recurring_contributions;
-    var key = CRM.vars['de.systopia.contract'].current_recurring;
+    let recurring_contributions = CRM.vars['de.systopia.contract'].recurring_contributions;
+    let key = CRM.vars['de.systopia.contract'].current_recurring;
     if (key in recurring_contributions) {
       cj('.recurring-contribution-summary-text').html(recurring_contributions[key].text_summary);
     } else {
