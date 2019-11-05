@@ -217,6 +217,7 @@ workflows:
             branches:
               only:
                 - master
+                - dev_purge_old_engine
     jobs:
       - build_mysql_5_7
       - build_mariadb_10_2
