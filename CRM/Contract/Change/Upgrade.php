@@ -166,7 +166,7 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
     $contract_id = $this->getContractID();
     $subject = "id{$contract_id}: " . implode(' AND ', $differences);
 
-    // compatibility with old engine, so we don't have to create a separate algorithm
+    // FIXME: replicating weird behaviour by old engine
     return preg_replace('/  to/', ' to', $subject);
   }
 }
