@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------+
 | SYSTOPIA Contract Extension                                  |
-| Copyright (C) 2017 SYSTOPIA                                  |
+| Copyright (C) 2017-2019 SYSTOPIA                             |
 | Author: B. Endres (endres -at- systopia.de)                  |
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
