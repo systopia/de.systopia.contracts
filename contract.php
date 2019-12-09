@@ -250,11 +250,9 @@ function contract_civicrm_buildForm($formName, &$form) {
 /**
  * Custom validation for membership forms
  */
-function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors){
+function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
   if($formName == 'CRM_Member_Form_Membership' && in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
-    $wrapper = new CRM_Contract_Wrapper_MembershipEditForm();
-    $wrapper->validate($form, CRM_Utils_Request::retrieve('id', 'Positive', $form), $fields);
-    $errors = $wrapper->getErrors();
+    CRM_Contract_Handler_MembershipForm::validateForm($formName, $fields, $files, $form, $errors);
   }
 }
 
@@ -334,7 +332,7 @@ function contract_civicrm_navigationMenu(&$menus){
 function contract_civicrm_apiWrappers(&$wrappers, $apiRequest) {
   // add contract reference validation for Memberships
   if ($apiRequest['entity'] == 'Membership') {
-    $wrappers[] = new CRM_Contract_Validation_ContractNumber();
+    $wrappers[] = new CRM_Contract_Handler_MembershipAPI();
   }
 }
 

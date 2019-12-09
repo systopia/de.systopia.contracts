@@ -133,7 +133,7 @@ class CRM_Contract_Page_Review extends CRM_Core_Page {
     $this->assign('paymentFrequencies', $paymentFrequencies);
 
     // Get activity types
-    $this->assign('activityTypes', CRM_Contract_ModificationActivity::getModificationActivityTypeLabels());
+    $this->assign('activityTypes', CRM_Contract_Change::getChangeTypes());
     $this->assign('includeWysiwygEditor', true);
 
     // Get membership types

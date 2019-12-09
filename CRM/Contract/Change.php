@@ -186,6 +186,7 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
    * Get the contract data
    *
    * @param boolean $with_payment_data
+   * @return array contract data
    */
   public function getContract($with_payment_data = FALSE) {
     $contract_id = $this->getContractID();
@@ -618,6 +619,28 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
   public static function getActivityTypeIds() {
     $id2class = self::getActivityTypeId2Class();
     return array_keys($id2class);
+  }
+
+  /**
+   * Get a list of all change (activity) types with label
+   *
+   * @return array [activity_type_id => activity label]
+   */
+  public static function getChangeTypes() {
+    static $change_types = NULL;
+    if ($change_types === NULL) {
+      $change_types = [];
+      $query = civicrm_api3('OptionValue', 'get', [
+          'option_group_id' => 'activity_type',
+          'option.limit'    => 0,
+          'value'           => ['IN' => self::getActivityTypeIds()],
+          'return'          => 'value,label',
+      ]);
+      foreach ($query['values'] as $activity_type) {
+        $change_types[$activity_type['value']] = $activity_type['label'];
+      }
+    }
+    return $change_types;
   }
 
   /**

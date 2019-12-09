@@ -108,7 +108,7 @@ class CRM_Contract_Change_Cancel extends CRM_Contract_Change {
       // contract is cancelled
       $pending_activity_count = civicrm_api3('Activity', 'getcount', array(
           'source_record_id' => $this->getContractID(),
-          'activity_type_id' => ['IN' => CRM_Contract_ModificationActivity::getModificationActivityTypeIds()],
+          'activity_type_id' => ['IN' => CRM_Contract_Change::getActivityTypeIds()],
           'status_id'        => ['IN' => ['Scheduled', 'Needs Review']],
       ));
       if ($pending_activity_count == 0) {

@@ -8,10 +8,8 @@
 
 /**
  * Contract validation functions
- *
- * @todo resolve hard dependecy to CiviBanking module
  */
-class CRM_Contract_Validation_ContractNumber implements API_Wrapper {
+class CRM_Contract_Validation_ContractNumber {
 
   /**
    * Verifies that a membership_general.membership_contract number is UNIQUE
@@ -71,31 +69,5 @@ class CRM_Contract_Validation_ContractNumber implements API_Wrapper {
         return NULL;
       }
     }
-  }
-
-
-  /**
-   * Membership API Wrapper: check API command
-   */
-  public function fromApiInput($apiRequest) {
-    if ($apiRequest['action'] == 'create' || $apiRequest['action'] == 'edit') {
-      $params = $apiRequest['params'];
-      CRM_Contract_CustomData::labelCustomFields($params);
-      if (!empty($params['membership_general.membership_contract'])) {
-        $validation_error = self::verifyContractNumber($params['membership_general.membership_contract'], CRM_Utils_Array::value('id', $params));
-        if ($validation_error) {
-          throw new Exception($validation_error, 1);
-        }
-      }
-    }
-    return $apiRequest;
-  }
-
-  /**
-   * Membership API Wrapper
-   */
-  public function toApiOutput($apiRequest, $result) {
-    // nothing to do here
-    return $result;
   }
 }
