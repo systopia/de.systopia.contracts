@@ -48,6 +48,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     }
 
     // Load the modificationActivity
+    // TODO: refactor
     $this->modify_action = CRM_Utils_Request::retrieve('modify_action', 'String');
     if($this->modify_action){
       $this->set('modify_action', $this->modify_action);

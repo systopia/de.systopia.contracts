@@ -97,4 +97,13 @@ class CRM_Contract_Change_Sign extends CRM_Contract_Change {
 
     return "id{$contract['id']}: ".implode(' AND ', $attributes);
   }
+
+  /**
+   * Get a list of the status names that this change can be applied to
+   *
+   * @return array list of membership status names
+   */
+  public static function getStartStatusList() {
+    return [];
+  }
 }

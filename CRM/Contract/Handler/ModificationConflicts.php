@@ -104,6 +104,7 @@ class CRM_Contract_Handler_ModificationConflicts{
 
     // If the first modification is a pause and that the second activity
     // is a resume, remove the scheduled modifications
+    // TODO: refactor
     $pauseActivityClass = CRM_Contract_ModificationActivity::findByAction('pause');
     $pauseActivity = current($this->scheduledModifications);
     $resumeActivityClass = CRM_Contract_ModificationActivity::findByAction('resume');

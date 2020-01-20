@@ -169,4 +169,32 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
     // FIXME: replicating weird behaviour by old engine
     return preg_replace('/  to/', ' to', $subject);
   }
+
+  /**
+   * Get a list of the status names that this change can be applied to
+   *
+   * @return array list of membership status names
+   */
+  public static function getStartStatusList() {
+    return ['Grace', 'Current'];
+  }
+
+  /**
+   * Modify action links provided to the user for a given membership
+   *
+   * @param $links                array  currently given links
+   * @param $current_status_name  string membership status as a string
+   * @param $membership_data      array  all known information on the membership in question
+   */
+  public static function modifyMembershipActionLinks(&$links, $current_status_name, $membership_data) {
+    if (in_array($current_status_name, self::getStartStatusList())) {
+      return [
+          'name'  => E::ts("Upgrade"),
+          'title' => E::ts("Upgrade Contract"),
+          'url'   => "civicrm/contract/modify",
+          'bit'   => CRM_Core_Action::UPDATE,
+          'qs'    => "modify_action=upgrade&id=%%id%%",
+      ];
+    }
+  }
 }

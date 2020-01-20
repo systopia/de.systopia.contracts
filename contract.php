@@ -261,10 +261,13 @@ function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$e
  */
 function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &$values ){
   if ($objectName == 'Membership') {
-    // alter membership link
-    $alter = new CRM_Contract_AlterMembershipLinks($objectId, $links, $mask, $values);
-    $alter->removeActions(array(CRM_Core_Action::RENEW, CRM_Core_Action::FOLLOWUP, CRM_Core_Action::DELETE, CRM_Core_Action::UPDATE));
-    $alter->addHistoryActions();
+    if ($objectId) {
+      // load membership
+      $membership_data = civicrm_api3('Membership', 'getsingle', ['id' => $objectId]);
+
+      // alter links
+      CRM_Contract_Change::modifyActionLinks($membership_data, $links);
+    }
 
   } elseif ($op=='contribution.selector.row') {
     // add a Contract link to contributions that are connected to memberships

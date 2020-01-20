@@ -103,7 +103,7 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
   abstract public function getRequiredFields();
 
   /**
-   * Render the default subject
+   * Get action name for
    *
    * @param $contract_after       array  data of the contract after
    * @param $contract_before      array  data of the contract before
@@ -115,7 +115,6 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
   ################################################################################
   ##                           COMMON FUNCTIONS                                 ##
   ################################################################################
-
 
   /**
    * Check whether this change activity should actually be created
@@ -557,10 +556,31 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
     }
   }
 
-
   ################################################################################
   ##                           STATIC FUNCTIONS                                 ##
   ################################################################################
+
+  /**
+   * @param $membership_data
+   * @param $links
+   */
+  public static function modifyActionLinks($membership_data, &$links) {
+    // first remove the default ones that shouldn't be used any more
+    $obsolete_actions = [CRM_Core_Action::RENEW, CRM_Core_Action::FOLLOWUP, CRM_Core_Action::DELETE, CRM_Core_Action::UPDATE];
+    foreach ($links as $key => $link) {
+      if (in_array($link['bit'], $obsolete_actions)) {
+        unset($links[$key]);
+      }
+    }
+
+    // add the replacement actions
+    $status_name = CRM_Contract_Utils::getMembershipStatusName($membership_data['status_id']);
+    foreach (self::getActivityTypeId2Class() as $change_class) {
+      if (method_exists($change_class, 'modifyMembershipActionLinks')) {
+        $action_links = $change_class::modifyMembershipActionLinks($links, $status_name, $membership_data);
+      }
+    }
+  }
 
   /**
    * Get the class for the given activity type
