@@ -72,38 +72,6 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     if(!in_array($membershipStatus, $this->change_class::getStartStatusList())){
       throw new Exception(E::ts("Invalid modification for status '%1'.", [1 => $membershipStatus]));
     }
-
-//    // TODO: refactor
-    // Load the modificationActivity
-//    $this->modify_action = CRM_Utils_Request::retrieve('modify_action', 'String');
-//    if($this->modify_action){
-//      $this->set('modify_action', $this->modify_action);
-//    }
-//    $modificationActivityClass = 'CRM_Contract_ModificationActivity_'.ucfirst($this->get('modify_action'));
-//    $this->modificationActivity = new $modificationActivityClass;
-//    $this->assign('modificationActivity', $this->modify_action);
-
-//    // Set the form title (based on the update action)
-//    CRM_Utils_System::setTitle(ucfirst($this->modify_action).' contract');
-
-//    // Set the destination for the form
-//    $this->controller->_destination = CRM_Utils_System::url('civicrm/contact/view', "reset=1&cid={$this->membership['contact_id']}&selectedChild=member");
-
-//    // Assign the contact id (necessary for the mandate popup)
-//    $this->assign('cid', $this->membership['contact_id']);
-//
-//    // check if BIC lookup is possible
-//    $this->assign('bic_lookup_accessible', CRM_Contract_SepaLogic::isLittleBicExtensionAccessible());
-
-//    // assign current cycle day
-//    $current_cycle_day = CRM_Contract_RecurringContribution::getCycleDay($this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')]);
-//    $this->assign('current_cycle_day', $current_cycle_day);
-
-//    // Validate that the contract has a valid start status
-//    $this->membershipStatus = civicrm_api3('MembershipStatus', 'getsingle', ['id' => $this->membership['status_id']]);
-//    if(!in_array($this->membershipStatus['name'], $this->modificationActivity->getStartStatuses())){
-//      CRM_Core_Error::fatal("You cannot {$this->modify_action} a membership when its status is '{$this->membershipStatus['name']}'.");
-//    }
   }
 
   function buildQuickForm(){

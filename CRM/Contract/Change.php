@@ -652,6 +652,18 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
   }
 
   /**
+   * Get the activity type ID for the given change class
+   *
+   * @param string $change_class the change classe
+   * @return int associated activity type ID
+   */
+  public static function getActivityIdForClass($change_class) {
+    $class2id = array_flip(self::getActivityTypeId2Class());
+    return CRM_Utils_Array::value($change_class, $class2id);
+  }
+
+
+  /**
    * Get a list of all change (activity) types with label
    *
    * @return array [activity_type_id => activity label]
