@@ -180,6 +180,15 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
   }
 
   /**
+   * Get a (human readable) title of this change
+   *
+   * @return string title
+   */
+  public static function getChangeTitle() {
+    return E::ts("Upgrade Contract");
+  }
+
+  /**
    * Modify action links provided to the user for a given membership
    *
    * @param $links                array  currently given links
@@ -190,7 +199,7 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
     if (in_array($current_status_name, self::getStartStatusList())) {
       return [
           'name'  => E::ts("Upgrade"),
-          'title' => E::ts("Upgrade Contract"),
+          'title' => self::getChangeTitle(),
           'url'   => "civicrm/contract/modify",
           'bit'   => CRM_Core_Action::UPDATE,
           'qs'    => "modify_action=upgrade&id=%%id%%",

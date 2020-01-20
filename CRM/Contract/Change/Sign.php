@@ -99,6 +99,15 @@ class CRM_Contract_Change_Sign extends CRM_Contract_Change {
   }
 
   /**
+   * Get a (human readable) title of this change
+   *
+   * @return string title
+   */
+  public static function getChangeTitle() {
+    return E::ts("Sign Contract");
+  }
+
+  /**
    * Get a list of the status names that this change can be applied to
    *
    * @return array list of membership status names

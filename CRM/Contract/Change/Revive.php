@@ -36,6 +36,15 @@ class CRM_Contract_Change_Revive extends CRM_Contract_Change_Upgrade
   }
 
   /**
+   * Get a (human readable) title of this change
+   *
+   * @return string title
+   */
+  public static function getChangeTitle() {
+    return E::ts("Revive Contract");
+  }
+
+  /**
    * Modify action links provided to the user for a given membership
    *
    * @param $links                array  currently given links
@@ -46,7 +55,7 @@ class CRM_Contract_Change_Revive extends CRM_Contract_Change_Upgrade
     if (in_array($current_status_name, self::getStartStatusList())) {
       return [
           'name'  => E::ts("Revive"),
-          'title' => E::ts("Revive Contract"),
+          'title' => self::getChangeTitle(),
           'url'   => "civicrm/contract/modify",
           'bit'   => CRM_Core_Action::UPDATE,
           'qs'    => "modify_action=revive&id=%%id%%",

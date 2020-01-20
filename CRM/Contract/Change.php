@@ -610,6 +610,16 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
   }
 
   /**
+   * Get the class for the given activity type
+   *
+   * @param $action string action name, e.g. 'cancel'
+   * @return string class name
+   */
+  public static function getClassByAction($action) {
+    return CRM_Utils_Array::value(strtolower($action), self::$action2class);
+  }
+
+  /**
    * Get the list of activity type ID to class
    *
    * @return array activity_type_id => class name

@@ -149,6 +149,15 @@ class CRM_Contract_Change_Cancel extends CRM_Contract_Change {
   }
 
   /**
+   * Get a (human readable) title of this change
+   *
+   * @return string title
+   */
+  public static function getChangeTitle() {
+    return E::ts("Cancel Contract");
+  }
+
+  /**
    * Modify action links provided to the user for a given membership
    *
    * @param $links                array  currently given links
@@ -159,7 +168,7 @@ class CRM_Contract_Change_Cancel extends CRM_Contract_Change {
     if (in_array($current_status_name, self::getStartStatusList())) {
       $links[] = [
           'name'  => E::ts("Cancel"),
-          'title' => E::ts("Cancel Contract"),
+          'title' => self::getChangeTitle(),
           'url'   => "civicrm/contract/modify",
           'bit'   => CRM_Core_Action::UPDATE,
           'qs'    => "modify_action=cancel&id=%%id%%",
