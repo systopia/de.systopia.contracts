@@ -382,6 +382,27 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
   }
 
   /**
+   * Get the status ID for the given membership status
+   *
+   * @param $status_name string membership status name
+   * @return int status ID
+   */
+  public function getMembershipStatusID($status_name) {
+    static $membership_status2id = NULL;
+    if ($membership_status2id === NULL) {
+      $membership_status2id = [];
+      $query = civicrm_api3('MembershipStatus', 'get', [
+         'option.limit' => 0,
+      ]);
+      foreach ($query['values'] as $membership_status) {
+        $membership_status2id[$membership_status['name']] = $membership_status['id'];
+      }
+    }
+
+    return CRM_Utils_Array::value($status_name, $membership_status2id);
+  }
+
+  /**
    * Remove 'xdebug' result key set by Civi\API\Subscriber\XDebugSubscriber
    *
    * This breaks some tests when xdebug is present, and we don't need it.

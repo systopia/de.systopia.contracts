@@ -49,7 +49,37 @@ class CRM_Contract_BasicEngineTest extends CRM_Contract_ContractTestBase {
   }
 
   /**
-   * Example: Test that a version is returned.
+   * Test a simple cancellation
+   */
+  public function testSimpleCancel() {
+    foreach ([1] as $is_sepa) {
+      // create a new contract
+      $contract = $this->createNewContract(['is_sepa' => $is_sepa]);
+
+      // schedule and update for tomorrow
+      $this->modifyContract($contract['id'], 'cancel', 'tomorrow', [
+          'membership_cancellation.membership_cancel_reason' => 'Unknown'
+      ]);
+
+      // run engine see if anything changed
+      $this->runContractEngine($contract['id']);
+
+      // things should not have changed
+      $contract_changed1 = $this->getContract($contract['id']);
+      $this->assertEquals($contract, $contract_changed1, "This shouldn't have changed");
+
+      // run engine again for tomorrow
+      $this->runContractEngine($contract['id'], '+2 days');
+      $contract_changed2 = $this->getContract($contract['id']);
+      $this->assertNotEquals($contract, $contract_changed2, "This should have changed");
+
+      // make sure status is cancelled
+      $this->assertEquals($this->getMembershipStatusID('Cancelled'), $contract_changed2['status_id'], "The contract wasn't cancelled");
+    }
+  }
+
+  /**
+   * Test a simple upgrade
    */
   public function testSimpleUpgrade() {
     foreach ([1] as $is_sepa) {
@@ -57,7 +87,7 @@ class CRM_Contract_BasicEngineTest extends CRM_Contract_ContractTestBase {
       $contract = $this->createNewContract(['is_sepa' => $is_sepa]);
 
       // schedule and update for tomorrow
-      $this->modifyContract($contract['id'], 'cancel', 'tomorrow', [
+      $this->modifyContract($contract['id'], 'update', 'tomorrow', [
           'membership_payment.membership_annual'             => '240.00',
           'membership_cancellation.membership_cancel_reason' => $this->getRandomOptionValue('contract_cancel_reason')]);
 
@@ -72,9 +102,74 @@ class CRM_Contract_BasicEngineTest extends CRM_Contract_ContractTestBase {
       $this->runContractEngine($contract['id'], '+2 days');
       $contract_changed2 = $this->getContract($contract['id']);
       $this->assertNotEquals($contract, $contract_changed2, "This should have changed");
+
+      // make sure status is current
+      $this->assertEquals($this->getMembershipStatusID('Current'), $contract_changed2['status_id'], "The contract isn't active");
+      $this->assertEquals(240.00, $contract_changed2['membership_payment.membership_annual'], "The contract has the wrong amount");
     }
   }
 
-  // update, revive, cancel, pause
+  /**
+   * Test a simple pause/resume
+   */
+  public function testSimplePauseResume() {
+    foreach ([1] as $is_sepa) {
+      // create a new contract
+      $contract = $this->createNewContract(['is_sepa' => $is_sepa]);
+
+      // schedule and update for tomorrow
+      $this->modifyContract($contract['id'], 'pause', 'tomorrow');
+      $changes = $this->callAPISuccess('Activity', 'get', ['source_record_id' => $contract['id']]);
+
+
+      // run engine see if anything changed
+      $this->runContractEngine($contract['id']);
+
+      // things should not have changed
+      $contract_changed1 = $this->getContract($contract['id']);
+      $this->assertEquals($contract, $contract_changed1, "This shouldn't have changed");
+
+      // run engine again for tomorrow
+      $this->runContractEngine($contract['id'], '+1 day');
+      $contract_changed2 = $this->getContract($contract['id']);
+      $this->assertEquals($this->getMembershipStatusID('Paused'), $contract_changed2['status_id'], "The contract isn't paused");
+    }
+  }
+
+  /**
+   * Test a simple revive
+   */
+  public function testSimpleRevive() {
+    foreach ([1] as $is_sepa) {
+      // create a new contract
+      $contract = $this->createNewContract(['is_sepa' => $is_sepa]);
+
+      // schedule and update for tomorrow
+      $this->modifyContract($contract['id'], 'cancel', 'tomorrow', [
+          'membership_cancellation.membership_cancel_reason' => 'Unknown'
+      ]);
+
+      // run engine again for tomorrow
+      $this->runContractEngine($contract['id'], '+1 days');
+      $contract_cancelled = $this->getContract($contract['id']);
+      $this->assertNotEquals($contract, $contract_cancelled, "This should have changed");
+
+      // make sure status is cancelled
+      $this->assertEquals($this->getMembershipStatusID('Cancelled'), $contract_cancelled['status_id'], "The contract wasn't cancelled");
+
+      // now: revive contract
+      $this->modifyContract($contract['id'], 'revive', '+2 days', [
+          'membership_payment.membership_annual'             => '240.00',
+          'membership_cancellation.membership_cancel_reason' => $this->getRandomOptionValue('contract_cancel_reason')]);
+
+      $this->runContractEngine($contract['id'], '+2 days');
+      $contract_revived = $this->getContract($contract['id']);
+      $this->assertNotEquals($contract_cancelled, $contract_revived, "This should have changed");
+
+      // make sure status is cancelled
+      $this->assertEquals($this->getMembershipStatusID('Current'), $contract_revived['status_id'], "The contract wasn't revived");
+      $this->assertEquals(240.00, $contract_revived['membership_payment.membership_annual'], "The contract has the wrong amount");
+    }
+  }
 
 }

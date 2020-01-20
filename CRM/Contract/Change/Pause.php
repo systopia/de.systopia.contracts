@@ -33,8 +33,8 @@ class CRM_Contract_Change_Pause extends CRM_Contract_Change {
 
     $resume_date = $this->getParameter('resume_date');
     if (!$resume_date) {
-      $resume_date = $this->getParameter('activity_date_time', date('YmdHis'));
-      $this->setParameter('resume_date', $resume_date);
+      $resume_date = $this->getParameter('activity_date_time', date('Y-m-d'));
+      $this->setParameter('resume_date', date('Y-m-d', strtotime("{$resume_date} + 1 day")));
     }
 
     if (!$this->isNew()) {
@@ -84,6 +84,22 @@ class CRM_Contract_Change_Pause extends CRM_Contract_Change {
     $this->setParameter('subject', $this->getSubject($contract_after, $contract));
     $this->setStatus('Completed');
     $this->save();
+  }
+
+  /**
+   * Make sure that the data for this change is valid
+   *
+   * @throws Exception if the data is not valid
+   */
+  public function verifyData() {
+    parent::verifyData();
+
+    // check that the resume date is not on the same day as the pause
+    $pause_date  = date('Y-m-d', strtotime($this->getParameter('activity_date_time')));
+    $resume_date = date('Y-m-d', strtotime($this->getParameter('resume_date')));
+    if ($pause_date >= $resume_date) {
+      throw new Exception(E::ts("Resume date cannot be before or on the same day as the pause."));
+    }
   }
 
   /**

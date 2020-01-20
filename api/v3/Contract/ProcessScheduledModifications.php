@@ -6,7 +6,7 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
-const CE_ENGINE_PROCESSING_LIMIT = 1000;
+const CE_ENGINE_PROCESSING_LIMIT = 500;
 
 /**
  * Process the scheduled contract modifications
