@@ -197,7 +197,7 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
    */
   public static function modifyMembershipActionLinks(&$links, $current_status_name, $membership_data) {
     if (in_array($current_status_name, self::getStartStatusList())) {
-      return [
+      $links[] = [
           'name'  => E::ts("Upgrade"),
           'title' => self::getChangeTitle(),
           'url'   => "civicrm/contract/modify",

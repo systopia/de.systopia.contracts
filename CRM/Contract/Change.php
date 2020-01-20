@@ -577,7 +577,7 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
     $status_name = CRM_Contract_Utils::getMembershipStatusName($membership_data['status_id']);
     foreach (self::getActivityTypeId2Class() as $change_class) {
       if (method_exists($change_class, 'modifyMembershipActionLinks')) {
-        $action_links = $change_class::modifyMembershipActionLinks($links, $status_name, $membership_data);
+        $change_class::modifyMembershipActionLinks($links, $status_name, $membership_data);
       }
     }
   }
