@@ -57,7 +57,7 @@ function civicrm_api3_Contract_process_scheduled_modifications($params) {
   $activityParams = [
       'activity_type_id'   => ['IN' => CRM_Contract_Change::getActivityTypeIds()],
       'status_id'          => 'scheduled',
-      'activity_date_time' => ['<=' => date('Y-m-d H:i:s', strtotime($params['now']))], // execute everything scheduled in the past
+      'activity_date_time' => ['<=' => date('Y-m-d H:i:s', strtotime(CRM_Utils_Array::value('now', $params, 'now')))], // execute everything scheduled in the past
       'option.limit'       => $params['limit'],
       'sequential'         => 1, // in the scheduled order(!)
       'option.sort'        => 'activity_date_time ASC, id ASC',
