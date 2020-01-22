@@ -8,6 +8,8 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
+use CRM_Contract_ExtensionUtil as E;
+
 class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
   function preProcess(){
@@ -50,8 +52,12 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     // Process the requested action
     $this->modify_action = strtolower(CRM_Utils_Request::retrieve('modify_action', 'String'));
     $this->assign('modificationActivity', $this->modify_action);
-
     $this->change_class = CRM_Contract_Change::getClassByAction($this->modify_action);
+    if (empty($this->change_class)) {
+      throw new Exception(E::ts("Unknown action '%1'.", [1 => $this->modify_action]));
+    }
+
+    // set title
     CRM_Utils_System::setTitle($this->change_class::getChangeTitle());
 
     // Set the destination for the form
