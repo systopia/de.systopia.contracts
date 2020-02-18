@@ -57,6 +57,15 @@ class CRM_Contract_Configuration {
   }
 
   /**
+   * Allows you to suppress the automatic creation of the given activity types
+   *
+   * @todo: make configurable
+   */
+  public static function suppressSystemActivityTypes() {
+    return ['Membership Signup', 'Change Membership Status', 'Change Membership Type'];
+  }
+
+  /**
    * derive gender_id from the given prefix_id
    *
    * @todo: make configurable

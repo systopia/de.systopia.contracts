@@ -313,6 +313,26 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
   }
 
   /**
+   * Get the max ID of an activity with the given criteria
+   *
+   * @param $params            array search criteria
+   * @param $after_activity_id int only consider activities with ID greater that this
+   * @return int ID if there is such an activity
+   */
+  public function getLastActivityID($params, $after_activity_id = NULL) {
+    $after_activity_id = (int) $after_activity_id;
+    if ($after_activity_id) {
+      $params['id'] = ['>', $after_activity_id];
+    }
+
+    $params['option.sort'] = 'id desc';
+    $params['option.limit'] = 1;
+
+    $search = $this->callAPISuccess('Activity', 'get', $params);
+    return CRM_Utils_Array::value('id', $search);
+  }
+
+  /**
    * Get the most recent change activity for the given contract
    * @param $contract_id int    Contract ID
    * @param $types       array  list of types
@@ -348,7 +368,7 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
     }
 
     // load activities
-    $result = civicrm_api3('Activity', 'get', $query);
+    $result = $this->callAPISuccess('Activity', 'get', $query);
     return $result['values'];
   }
 
