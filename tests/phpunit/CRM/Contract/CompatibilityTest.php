@@ -13,9 +13,11 @@ include_once 'ContractTestBase.php';
  *
  * @group headless
  */
-class CRM_Contract_CompatibilityTest extends CRM_Contract_ContractTestBase {
+class CRM_Contract_CompatibilityTest extends CRM_Contract_ContractTestBase
+{
 
-  public function setUp() {
+  public function setUp()
+  {
     parent::setUp();
     $this->setActivityFlavour('GP');
   }
@@ -25,7 +27,8 @@ class CRM_Contract_CompatibilityTest extends CRM_Contract_ContractTestBase {
    *
    * @see https://redmine.greenpeace.at/issues/1276#note-74
    */
-  public function testUpdateActivitySubject() {
+  public function testUpdateActivitySubject()
+  {
     // create a new contract
     $contract = $this->createNewContract([
         'is_sepa'            => 1,
@@ -58,7 +61,8 @@ class CRM_Contract_CompatibilityTest extends CRM_Contract_ContractTestBase {
    *
    * @see https://redmine.greenpeace.at/issues/1276#note-74
    */
-  public function testCancelActivitySubject() {
+  public function testCancelActivitySubject()
+  {
     // create a new contract
     $contract = $this->createNewContract([
         'is_sepa'            => 1,
@@ -87,7 +91,8 @@ class CRM_Contract_CompatibilityTest extends CRM_Contract_ContractTestBase {
    *
    * @see https://redmine.greenpeace.at/issues/1276#note-74
    */
-  public function testSuppressSystemActivities() {
+  public function testSuppressSystemActivities()
+  {
     $suppressed_types = CRM_Contract_Configuration::suppressSystemActivityTypes();
     if (!empty($suppressed_types)) {
       $contact_id = $this->createContactWithRandomEmail()['id'];
@@ -140,5 +145,31 @@ class CRM_Contract_CompatibilityTest extends CRM_Contract_ContractTestBase {
       ], $last_activity_id);
       $this->assertEmpty($next_activity_id, "A system activity was generated after contract pause event though it's supposed to be suppressed");
     }
+  }
+
+  /**
+   * Check if the Contract.modify can be called without a date
+   *
+   * @see https://redmine.greenpeace.at/issues/1276#note-74
+   */
+  public function testContractModifyWithoutDate() {
+    // create a new contract
+    $contract = $this->createNewContract([
+        'is_sepa'            => 1,
+        'amount'             => '12.00',
+        'frequency_unit'     => 'month',
+        'frequency_interval' => '1',
+        'cycle_day'          => 25,
+        'iban'               => 'DE89370400440532013000',
+        'bic'                => 'GENODEM1GLS',
+    ]);
+
+    // try the cancel API
+    $this->callAPISuccess('Contract', 'modify', [
+        'id'                                               => $contract['id'],
+        'modify_action'                                    => 'cancel',
+        'medium_id'                                        => 1,
+        'membership_cancellation.membership_cancel_reason' => 1,
+    ]);
   }
 }
