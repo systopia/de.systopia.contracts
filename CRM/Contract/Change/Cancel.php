@@ -131,9 +131,10 @@ class CRM_Contract_Change_Cancel extends CRM_Contract_Change {
       $contract_id = $this->getContractID();
       $subject = "id{$contract_id}:";
       if (!empty($this->data['contract_cancellation.contact_history_cancel_reason'])) {
+        // TODO: not needed any more? (see https://redmine.greenpeace.at/issues/1276#note-74)
         // FIXME: replicating weird behaviour by old engine
-        $subject .= ' cancel reason ' . $this->resolveValue($this->data['contract_cancellation.contact_history_cancel_reason'], 'contract_cancellation.contact_history_cancel_reason');
-        //$subject .= ' cancel reason ' . $this->labelValue($this->data['contract_cancellation.contact_history_cancel_reason'], 'contract_cancellation.contact_history_cancel_reason');
+        //$subject .= ' cancel reason ' . $this->resolveValue($this->data['contract_cancellation.contact_history_cancel_reason'], 'contract_cancellation.contact_history_cancel_reason');
+        $subject .= ' cancel reason ' . $this->labelValue($this->data['contract_cancellation.contact_history_cancel_reason'], 'contract_cancellation.contact_history_cancel_reason');
       }
       return $subject;
     }
