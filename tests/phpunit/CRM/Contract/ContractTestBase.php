@@ -320,13 +320,16 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
    * @return int ID if there is such an activity
    */
   public function getLastActivityID($params, $after_activity_id = NULL) {
+    // add 'after ID' criteria
     $after_activity_id = (int) $after_activity_id;
     if ($after_activity_id) {
       $params['id'] = ['>', $after_activity_id];
     }
 
+    // add standard parameters
     $params['option.sort'] = 'id desc';
     $params['option.limit'] = 1;
+    $params['return'] = 'id';
 
     $search = $this->callAPISuccess('Activity', 'get', $params);
     return CRM_Utils_Array::value('id', $search);

@@ -228,4 +228,30 @@ class CRM_Contract_Utils
       return FALSE;
     }
   }
+
+  /**
+   * If configured this way, this call will delete the defined
+   *  list of system-generated activities
+   *
+   * @param $contract_id int the contract number
+   */
+  public static function deleteSystemActivities($contract_id) {
+    if (empty($contract_id)) return;
+
+    $activity_types_to_delete = CRM_Contract_Configuration::suppressSystemActivityTypes();
+    if (!empty($activity_types_to_delete)) {
+      // find them
+      $activity_search = civicrm_api3('Activity', 'get', [
+          'source_record_id'   => $contract_id,
+          'activity_type_id'   => ['IN' => $activity_types_to_delete],
+          'activity_date_time' => ['>=' => date('Ymd') . '000000'],
+          'return'             => 'id',
+      ]);
+
+      // delete them
+      foreach ($activity_search['values'] as $activity) {
+        civicrm_api3('Activity', 'delete', ['id' => $activity['id']]);
+      }
+    }
+  }
 }

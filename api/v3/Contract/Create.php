@@ -57,6 +57,9 @@ function civicrm_api3_Contract_create($params){
   // also derive contract fields
   $change->updateContract(['membership_payment.membership_recurring_contribution' => $params[$recurring_contribution_field_key]]);
 
+  // maybe we need to do some cleanup:
+  CRM_Contract_Utils::deleteSystemActivities($membership['id']);
+
   return $membership;
 }
 

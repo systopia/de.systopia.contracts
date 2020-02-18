@@ -100,6 +100,9 @@ function civicrm_api3_Contract_process_scheduled_modifications($params) {
       // log as executed
       $result['completed'][] = $change->getID();
 
+      // maybe we need to do some cleanup:
+      CRM_Contract_Utils::deleteSystemActivities($change->getContractID());
+
     } catch (Exception $ex) {
       // something went wrong...
       $result['failed'][] = $change->getID();

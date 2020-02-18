@@ -86,7 +86,7 @@ class CRM_Contract_CompatibilityTest extends CRM_Contract_ContractTestBase {
           'activity_type_id'  => ['IN' => $suppressed_types],
           'target_contact_id' => $contact_id
       ], $last_activity_id);
-      $this->assertEmpty($next_activity_id, "A system activity was created event though it's supposed to be suppressed");
+      $this->assertEmpty($next_activity_id, "A system activity was generated after contract creation event though it's supposed to be suppressed");
 
       // modify contract
       $this->modifyContract($contract['id'], 'update', 'tomorrow', [
@@ -100,7 +100,16 @@ class CRM_Contract_CompatibilityTest extends CRM_Contract_ContractTestBase {
           'activity_type_id'  => ['IN' => $suppressed_types],
           'target_contact_id' => $contact_id
       ], $last_activity_id);
-      $this->assertEmpty($next_activity_id, "A system activity was created event though it's supposed to be suppressed");
+      $this->assertEmpty($next_activity_id, "A system activity was generated after contract update event though it's supposed to be suppressed");
+
+      // pause contract
+      $this->modifyContract($contract['id'], 'pause', '+2 days');
+      $this->runContractEngine($contract['id'], '+4 days');
+      $next_activity_id = $this->getLastActivityID([
+          'activity_type_id'  => ['IN' => $suppressed_types],
+          'target_contact_id' => $contact_id
+      ], $last_activity_id);
+      $this->assertEmpty($next_activity_id, "A system activity was generated after contract pause event though it's supposed to be suppressed");
     }
   }
 }
