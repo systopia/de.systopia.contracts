@@ -147,6 +147,8 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
       $value_after      = $this->labelValue($raw_value_after, $field_name);
 
       // FIXME: replicating weird behaviour by old engine
+      // TODO: not needed any more? (see https://redmine.greenpeace.at/issues/1276#note-74)
+      /*
       if (!$this->isNew() && $subject_abbreviation == 'member iban') {
         // add member iban in any case
         $differences[] = "{$subject_abbreviation} {$value_before} to {$value_after}";
@@ -156,6 +158,7 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
         $differences[] = "{$subject_abbreviation} {$raw_value_before} to {$raw_value_after}";
         continue;
       }
+      */
 
       // standard behaviour:
       if ($value_before != $value_after) {
