@@ -107,8 +107,8 @@ class CRM_Contract_Change_Cancel extends CRM_Contract_Change {
     if ($contract['status_id'] == $contract_cancelled_status['id']) {
       // contract is cancelled
       $pending_activity_count = civicrm_api3('Activity', 'getcount', array(
-          'source_record_id' => $params['id'],
-          'activity_type_id' => ['IN' => CRM_Contract_ModificationActivity::getModificationActivityTypeIds()],
+          'source_record_id' => $this->getContractID(),
+          'activity_type_id' => ['IN' => CRM_Contract_Change::getActivityTypeIds()],
           'status_id'        => ['IN' => ['Scheduled', 'Needs Review']],
       ));
       if ($pending_activity_count == 0) {
@@ -131,11 +131,49 @@ class CRM_Contract_Change_Cancel extends CRM_Contract_Change {
       $contract_id = $this->getContractID();
       $subject = "id{$contract_id}:";
       if (!empty($this->data['contract_cancellation.contact_history_cancel_reason'])) {
+        // TODO: not needed any more? (see https://redmine.greenpeace.at/issues/1276#note-74)
         // FIXME: replicating weird behaviour by old engine
-        $subject .= ' cancel reason ' . $this->resolveValue($this->data['contract_cancellation.contact_history_cancel_reason'], 'contract_cancellation.contact_history_cancel_reason');
-        //$subject .= ' cancel reason ' . $this->labelValue($this->data['contract_cancellation.contact_history_cancel_reason'], 'contract_cancellation.contact_history_cancel_reason');
+        //$subject .= ' cancel reason ' . $this->resolveValue($this->data['contract_cancellation.contact_history_cancel_reason'], 'contract_cancellation.contact_history_cancel_reason');
+        $subject .= ' cancel reason ' . $this->labelValue($this->data['contract_cancellation.contact_history_cancel_reason'], 'contract_cancellation.contact_history_cancel_reason');
       }
       return $subject;
+    }
+  }
+
+  /**
+   * Get a list of the status names that this change can be applied to
+   *
+   * @return array list of membership status names
+   */
+  public static function getStartStatusList() {
+    return ['Paused', 'New', 'Grace', 'Current', 'Pending'];
+  }
+
+  /**
+   * Get a (human readable) title of this change
+   *
+   * @return string title
+   */
+  public static function getChangeTitle() {
+    return E::ts("Cancel Contract");
+  }
+
+  /**
+   * Modify action links provided to the user for a given membership
+   *
+   * @param $links                array  currently given links
+   * @param $current_status_name  string membership status as a string
+   * @param $membership_data      array  all known information on the membership in question
+   */
+  public static function modifyMembershipActionLinks(&$links, $current_status_name, $membership_data) {
+    if (in_array($current_status_name, self::getStartStatusList())) {
+      $links[] = [
+          'name'  => E::ts("Cancel"),
+          'title' => self::getChangeTitle(),
+          'url'   => "civicrm/contract/modify",
+          'bit'   => CRM_Core_Action::UPDATE,
+          'qs'    => "modify_action=cancel&id=%%id%%",
+      ];
     }
   }
 }

@@ -1,9 +1,10 @@
 <?php
 /*-------------------------------------------------------------+
 | SYSTOPIA Contract Extension                                  |
-| Copyright (C) 2017 SYSTOPIA                                  |
-| Author: M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
-|         B. Endres (endres -at- systopia.de)                  |
+| Copyright (C) 2017-2019 SYSTOPIA                             |
+| Author: B. Endres (endres -at- systopia.de)                  |
+|         M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
+|         P. Figel (pfigel -at- greenpeace.org)                |
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
@@ -249,11 +250,9 @@ function contract_civicrm_buildForm($formName, &$form) {
 /**
  * Custom validation for membership forms
  */
-function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors){
+function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
   if($formName == 'CRM_Member_Form_Membership' && in_array($form->getAction(), array(CRM_Core_Action::UPDATE, CRM_Core_Action::ADD))){
-    $wrapper = new CRM_Contract_Wrapper_MembershipEditForm();
-    $wrapper->validate($form, CRM_Utils_Request::retrieve('id', 'Positive', $form), $fields);
-    $errors = $wrapper->getErrors();
+    CRM_Contract_Handler_MembershipForm::validateForm($formName, $fields, $files, $form, $errors);
   }
 }
 
@@ -262,10 +261,13 @@ function contract_civicrm_validateForm($formName, &$fields, &$files, &$form, &$e
  */
 function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &$values ){
   if ($objectName == 'Membership') {
-    // alter membership link
-    $alter = new CRM_Contract_AlterMembershipLinks($objectId, $links, $mask, $values);
-    $alter->removeActions(array(CRM_Core_Action::RENEW, CRM_Core_Action::FOLLOWUP, CRM_Core_Action::DELETE, CRM_Core_Action::UPDATE));
-    $alter->addHistoryActions();
+    if ($objectId) {
+      // load membership
+      $membership_data = civicrm_api3('Membership', 'getsingle', ['id' => $objectId]);
+
+      // alter links
+      CRM_Contract_Change::modifyActionLinks($membership_data, $links);
+    }
 
   } elseif ($op=='contribution.selector.row') {
     // add a Contract link to contributions that are connected to memberships
@@ -291,75 +293,15 @@ function contract_civicrm_links( $op, $objectName, $objectId, &$links, &$mask, &
 /**
  * CiviCRM PRE hook: Monitoring of relevant entity changes
  */
-function contract_civicrm_pre($op, $objectName, $id, &$params) {
-
-  // pass on to monitoring
-  if (CRM_Contract_Configuration::useNewEngine()) {
-    // FIXME: Monitoring currently not implemented in the new engine
-
-  } else {
-
-    // Using elseif would save *some* resources but make the code more brittle
-    // since the comparisons are a little involved and may change over time.
-    // Lets keep them independent by just using ifs
-
-    // Wrap calls to the Membership BAO so we can reverse engineer modification
-    // activities if necessary
-     if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
-       $wrapperMembership = CRM_Contract_Wrapper_Membership::one_shot_singleton();
-       $wrapperMembership->pre($op, $id, $params);
-     }
-
-     // Wrap calls to the Activity BAO so we can execute contract modifications
-     // and check for potential conflicts as appropriate
-
-     if($objectName == 'Activity'){
-
-       // TODO address weird CiviCRM where this hook is fired when deleting a
-       // membership via the UI. It gets called with $op == 'delete', a null $id
-       // and some odd params. This solves the issue for now.
-       if($op == 'delete' && is_null($id)){
-         return;
-       }
-       $wrapperModificationActivity = CRM_Contract_Wrapper_ModificationActivity::one_shot_singleton();
-       $wrapperModificationActivity->pre($op, $params);
-     }
-  }
-  //error_log("PRE {$objectName} DONE");
+function _contract_civicrm_pre($op, $objectName, $id, &$params) {
+  // FIXME: Monitoring currently not implemented in the new engine
 }
 
 /**
  * CiviCRM POST hook: Monitoring of relevant entity changes
  */
-function contract_civicrm_post($op, $objectName, $id, &$objectRef){
-  //error_log("POST {$objectName} START");
-  // pass on to monitoring
-  if (CRM_Contract_Configuration::useNewEngine()) {
-    // FIXME: Monitoring currently not implemented in the new engine
-
-  } else {
-    // Wrap calls to the Membership BAO so we can reverse engineer modification
-    // activities if necessary
-    if($objectName == 'Membership' && in_array($op, array('create', 'edit'))){
-      $wrapperMembership = CRM_Contract_Wrapper_Membership::one_shot_singleton();
-      $wrapperMembership->post($id);
-    }
-
-    // Wrap calles to the Activity BAO to execute contract
-    // modifications and check when appropriate
-    if($objectName == 'Activity'){
-      $wrapperModificationActivity = CRM_Contract_Wrapper_ModificationActivity::one_shot_singleton();
-      $wrapperModificationActivity->post($id, $objectRef);
-    }
-
-    // Delete build in membership log activities
-    if($objectName == 'Activity'){
-      if($op == 'create' && in_array($objectRef->activity_type_id, CRM_Contract_Utils::getCoreMembershipHistoryActivityIds())){
-        civicrm_api3('Activity', 'delete', array('id' => $id));
-      }
-    }
-  }
-  //error_log("POST {$objectName} DONE");
+function _contract_civicrm_post($op, $objectName, $id, &$objectRef){
+  // FIXME: Monitoring currently not implemented in the new engine
 }
 
 /**
@@ -393,7 +335,7 @@ function contract_civicrm_navigationMenu(&$menus){
 function contract_civicrm_apiWrappers(&$wrappers, $apiRequest) {
   // add contract reference validation for Memberships
   if ($apiRequest['entity'] == 'Membership') {
-    $wrappers[] = new CRM_Contract_Validation_ContractNumber();
+    $wrappers[] = new CRM_Contract_Handler_MembershipAPI();
   }
 }
 

@@ -103,7 +103,7 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
   abstract public function getRequiredFields();
 
   /**
-   * Render the default subject
+   * Get action name for
    *
    * @param $contract_after       array  data of the contract after
    * @param $contract_before      array  data of the contract before
@@ -115,7 +115,6 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
   ################################################################################
   ##                           COMMON FUNCTIONS                                 ##
   ################################################################################
-
 
   /**
    * Check whether this change activity should actually be created
@@ -186,6 +185,7 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
    * Get the contract data
    *
    * @param boolean $with_payment_data
+   * @return array contract data
    */
   public function getContract($with_payment_data = FALSE) {
     $contract_id = $this->getContractID();
@@ -556,10 +556,31 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
     }
   }
 
-
   ################################################################################
   ##                           STATIC FUNCTIONS                                 ##
   ################################################################################
+
+  /**
+   * @param $membership_data
+   * @param $links
+   */
+  public static function modifyActionLinks($membership_data, &$links) {
+    // first remove the default ones that shouldn't be used any more
+    $obsolete_actions = [CRM_Core_Action::RENEW, CRM_Core_Action::FOLLOWUP, CRM_Core_Action::DELETE, CRM_Core_Action::UPDATE];
+    foreach ($links as $key => $link) {
+      if (in_array($link['bit'], $obsolete_actions)) {
+        unset($links[$key]);
+      }
+    }
+
+    // add the replacement actions
+    $status_name = CRM_Contract_Utils::getMembershipStatusName($membership_data['status_id']);
+    foreach (self::getActivityTypeId2Class() as $change_class) {
+      if (method_exists($change_class, 'modifyMembershipActionLinks')) {
+        $change_class::modifyMembershipActionLinks($links, $status_name, $membership_data);
+      }
+    }
+  }
 
   /**
    * Get the class for the given activity type
@@ -586,6 +607,16 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
 
     // not found? not one of ours!
     return NULL;
+  }
+
+  /**
+   * Get the class for the given activity type
+   *
+   * @param $action string action name, e.g. 'cancel'
+   * @return string class name
+   */
+  public static function getClassByAction($action) {
+    return CRM_Utils_Array::value(strtolower($action), self::$action2class);
   }
 
   /**
@@ -618,6 +649,40 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
   public static function getActivityTypeIds() {
     $id2class = self::getActivityTypeId2Class();
     return array_keys($id2class);
+  }
+
+  /**
+   * Get the activity type ID for the given change class
+   *
+   * @param string $change_class the change classe
+   * @return int associated activity type ID
+   */
+  public static function getActivityIdForClass($change_class) {
+    $class2id = array_flip(self::getActivityTypeId2Class());
+    return CRM_Utils_Array::value($change_class, $class2id);
+  }
+
+
+  /**
+   * Get a list of all change (activity) types with label
+   *
+   * @return array [activity_type_id => activity label]
+   */
+  public static function getChangeTypes() {
+    static $change_types = NULL;
+    if ($change_types === NULL) {
+      $change_types = [];
+      $query = civicrm_api3('OptionValue', 'get', [
+          'option_group_id' => 'activity_type',
+          'option.limit'    => 0,
+          'value'           => ['IN' => self::getActivityTypeIds()],
+          'return'          => 'value,label',
+      ]);
+      foreach ($query['values'] as $activity_type) {
+        $change_types[$activity_type['value']] = $activity_type['label'];
+      }
+    }
+    return $change_types;
   }
 
   /**

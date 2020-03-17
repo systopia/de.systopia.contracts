@@ -1,9 +1,10 @@
 <?php
 /*-------------------------------------------------------------+
 | SYSTOPIA Contract Extension                                  |
-| Copyright (C) 2017 SYSTOPIA                                  |
-| Author: M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
-|         B. Endres (endres -at- systopia.de)                  |
+| Copyright (C) 2017-2019 SYSTOPIA                             |
+| Author: B. Endres (endres -at- systopia.de)                  |
+|         M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
+|         P. Figel (pfigel -at- greenpeace.org)                |
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 

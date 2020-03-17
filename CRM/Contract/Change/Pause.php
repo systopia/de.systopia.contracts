@@ -33,8 +33,8 @@ class CRM_Contract_Change_Pause extends CRM_Contract_Change {
 
     $resume_date = $this->getParameter('resume_date');
     if (!$resume_date) {
-      $resume_date = $this->getParameter('activity_date_time', date('YmdHis'));
-      $this->setParameter('resume_date', $resume_date);
+      $resume_date = $this->getParameter('activity_date_time', date('Y-m-d'));
+      $this->setParameter('resume_date', date('Y-m-d', strtotime("{$resume_date} + 1 day")));
     }
 
     if (!$this->isNew()) {
@@ -87,6 +87,22 @@ class CRM_Contract_Change_Pause extends CRM_Contract_Change {
   }
 
   /**
+   * Make sure that the data for this change is valid
+   *
+   * @throws Exception if the data is not valid
+   */
+  public function verifyData() {
+    parent::verifyData();
+
+    // check that the resume date is not on the same day as the pause
+    $pause_date  = date('Y-m-d', strtotime($this->getParameter('activity_date_time')));
+    $resume_date = date('Y-m-d', strtotime($this->getParameter('resume_date')));
+    if ($pause_date >= $resume_date) {
+      throw new Exception(E::ts("Resume date cannot be before or on the same day as the pause."));
+    }
+  }
+
+  /**
    * Check whether this change activity should actually be created
    *
    * CANCEL activities should not be created, if there is another one already there
@@ -117,6 +133,43 @@ class CRM_Contract_Change_Pause extends CRM_Contract_Change {
         //$subject .= ' cancel reason ' . $this->labelValue($this->data['contract_cancellation.contact_history_cancel_reason'], 'contract_cancellation.contact_history_cancel_reason');
       }
       return $subject;
+    }
+  }
+
+  /**
+   * Get a list of the status names that this change can be applied to
+   *
+   * @return array list of membership status names
+   */
+  public static function getStartStatusList() {
+    return ['New', 'Grace', 'Current'];
+  }
+
+  /**
+   * Get a (human readable) title of this change
+   *
+   * @return string title
+   */
+  public static function getChangeTitle() {
+    return E::ts("Pause Contract");
+  }
+
+  /**
+   * Modify action links provided to the user for a given membership
+   *
+   * @param $links                array  currently given links
+   * @param $current_status_name  string membership status as a string
+   * @param $membership_data      array  all known information on the membership in question
+   */
+  public static function modifyMembershipActionLinks(&$links, $current_status_name, $membership_data) {
+    if (in_array($current_status_name, self::getStartStatusList())) {
+      $links[] = [
+          'name'  => E::ts("Pause"),
+          'title' => self::getChangeTitle(),
+          'url'   => "civicrm/contract/modify",
+          'bit'   => CRM_Core_Action::UPDATE,
+          'qs'    => "modify_action=pause&id=%%id%%",
+      ];
     }
   }
 }

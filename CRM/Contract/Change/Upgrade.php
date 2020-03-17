@@ -147,6 +147,8 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
       $value_after      = $this->labelValue($raw_value_after, $field_name);
 
       // FIXME: replicating weird behaviour by old engine
+      // TODO: not needed any more? (see https://redmine.greenpeace.at/issues/1276#note-74)
+      /*
       if (!$this->isNew() && $subject_abbreviation == 'member iban') {
         // add member iban in any case
         $differences[] = "{$subject_abbreviation} {$value_before} to {$value_after}";
@@ -156,6 +158,7 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
         $differences[] = "{$subject_abbreviation} {$raw_value_before} to {$raw_value_after}";
         continue;
       }
+      */
 
       // standard behaviour:
       if ($value_before != $value_after) {
@@ -166,7 +169,44 @@ class CRM_Contract_Change_Upgrade extends CRM_Contract_Change {
     $contract_id = $this->getContractID();
     $subject = "id{$contract_id}: " . implode(' AND ', $differences);
 
-    // compatibility with old engine, so we don't have to create a separate algorithm
+    // FIXME: replicating weird behaviour by old engine
     return preg_replace('/  to/', ' to', $subject);
+  }
+
+  /**
+   * Get a list of the status names that this change can be applied to
+   *
+   * @return array list of membership status names
+   */
+  public static function getStartStatusList() {
+    return ['Grace', 'Current'];
+  }
+
+  /**
+   * Get a (human readable) title of this change
+   *
+   * @return string title
+   */
+  public static function getChangeTitle() {
+    return E::ts("Update Contract");
+  }
+
+  /**
+   * Modify action links provided to the user for a given membership
+   *
+   * @param $links                array  currently given links
+   * @param $current_status_name  string membership status as a string
+   * @param $membership_data      array  all known information on the membership in question
+   */
+  public static function modifyMembershipActionLinks(&$links, $current_status_name, $membership_data) {
+    if (in_array($current_status_name, self::getStartStatusList())) {
+      $links[] = [
+          'name'  => E::ts("Update"),
+          'title' => self::getChangeTitle(),
+          'url'   => "civicrm/contract/modify",
+          'bit'   => CRM_Core_Action::UPDATE,
+          'qs'    => "modify_action=update&id=%%id%%",
+      ];
+    }
   }
 }

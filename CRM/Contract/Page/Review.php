@@ -1,9 +1,10 @@
 <?php
 /*-------------------------------------------------------------+
 | SYSTOPIA Contract Extension                                  |
-| Copyright (C) 2017 SYSTOPIA                                  |
-| Author: M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
-|         B. Endres (endres -at- systopia.de)                  |
+| Copyright (C) 2017-2019 SYSTOPIA                             |
+| Author: B. Endres (endres -at- systopia.de)                  |
+|         M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
+|         P. Figel (pfigel -at- greenpeace.org)                |
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
@@ -28,7 +29,7 @@ class CRM_Contract_Page_Review extends CRM_Core_Page {
     $activityParams = [
       'source_record_id' => $id,
       'status_id' => ['NOT IN' => ['cancelled']],
-      'activity_type_id' => ['IN' => CRM_Contract_ModificationActivity::getModificationActivityTypeIds()],
+      'activity_type_id' => ['IN' => CRM_Contract_Change::getActivityTypeIds()],
       'return' => [
         'activity_date_time',
         'status_id',
@@ -132,7 +133,7 @@ class CRM_Contract_Page_Review extends CRM_Core_Page {
     $this->assign('paymentFrequencies', $paymentFrequencies);
 
     // Get activity types
-    $this->assign('activityTypes', CRM_Contract_ModificationActivity::getModificationActivityTypeLabels());
+    $this->assign('activityTypes', CRM_Contract_Change::getChangeTypes());
     $this->assign('includeWysiwygEditor', true);
 
     // Get membership types

@@ -1,11 +1,14 @@
 <?php
 /*-------------------------------------------------------------+
 | SYSTOPIA Contract Extension                                  |
-| Copyright (C) 2017 SYSTOPIA                                  |
-| Author: M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
-|         B. Endres (endres -at- systopia.de)                  |
+| Copyright (C) 2017-2019 SYSTOPIA                             |
+| Author: B. Endres (endres -at- systopia.de)                  |
+|         M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
+|         P. Figel (pfigel -at- greenpeace.org)                |
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
+
+use CRM_Contract_ExtensionUtil as E;
 
 class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
@@ -46,17 +49,16 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       CRM_Core_Error::fatal('Not a valid contract ID');
     }
 
-    // Load the modificationActivity
-    $this->modify_action = CRM_Utils_Request::retrieve('modify_action', 'String');
-    if($this->modify_action){
-      $this->set('modify_action', $this->modify_action);
+    // Process the requested action
+    $this->modify_action = strtolower(CRM_Utils_Request::retrieve('modify_action', 'String'));
+    $this->assign('modificationActivity', $this->modify_action);
+    $this->change_class = CRM_Contract_Change::getClassByAction($this->modify_action);
+    if (empty($this->change_class)) {
+      throw new Exception(E::ts("Unknown action '%1'.", [1 => $this->modify_action]));
     }
-    $modificationActivityClass = 'CRM_Contract_ModificationActivity_'.ucfirst($this->get('modify_action'));
-    $this->modificationActivity = new $modificationActivityClass;
-    $this->assign('modificationActivity', $this->modificationActivity->getAction());
 
-    // Set the form title (based on the update action)
-    CRM_Utils_System::setTitle(ucfirst($this->modificationActivity->getAction()).' contract');
+    // set title
+    CRM_Utils_System::setTitle($this->change_class::getChangeTitle());
 
     // Set the destination for the form
     $this->controller->_destination = CRM_Utils_System::url('civicrm/contact/view', "reset=1&cid={$this->membership['contact_id']}&selectedChild=member");
@@ -72,9 +74,9 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     $this->assign('current_cycle_day', $current_cycle_day);
 
     // Validate that the contract has a valid start status
-    $this->membershipStatus = civicrm_api3('MembershipStatus', 'getsingle', ['id' => $this->membership['status_id']]);
-    if(!in_array($this->membershipStatus['name'], $this->modificationActivity->getStartStatuses())){
-      CRM_Core_Error::fatal("You cannot {$this->modificationActivity->getAction()} a membership when its status is '{$this->membershipStatus['name']}'.");
+    $membershipStatus =  CRM_Contract_Utils::getMembershipStatusName($this->membership['status_id']);
+    if(!in_array($membershipStatus, $this->change_class::getStartStatusList())){
+      throw new Exception(E::ts("Invalid modification for status '%1'.", [1 => $membershipStatus]));
     }
   }
 
@@ -99,17 +101,17 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     }
 
     // Then add fields that are dependent on the action
-    if(in_array($this->modificationActivity->getAction(), array('update', 'revive'))){
+    if(in_array($this->modify_action, array('update', 'revive'))){
       $this->addUpdateFields();
-    }elseif($this->modificationActivity->getAction() == 'cancel'){
+    }elseif($this->modify_action == 'cancel'){
       $this->addCancelFields();
-    }elseif($this->modificationActivity->getAction() == 'pause'){
+    }elseif($this->modify_action == 'pause'){
       $this->addPauseFields();
     }
 
     $this->addButtons(array(
         array('type' => 'cancel', 'name' => 'Discard changes'), // since Cancel looks bad when viewed next to the Cancel action
-        array('type' => 'submit', 'name' => ucfirst($this->modificationActivity->getAction().' contract'), 'isDefault' => true)
+        array('type' => 'submit', 'name' => $this->change_class::getChangeTitle(), 'isDefault' => true)
     ));
 
     $this->setDefaults();
@@ -137,7 +139,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       'frequencies'             => CRM_Contract_SepaLogic::getPaymentFrequencies(),
       'grace_end'               => CRM_Contract_SepaLogic::getNextInstallmentDate($this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')]),
       // 'graceful_collections'    => CRM_Contract_SepaLogic::getNextCollections(),
-      'action'                  => $this->modificationActivity->getAction(),
+      'action'                  => $this->modify_action,
       'current_contract'        => CRM_Contract_RecurringContribution::getCurrentContract($this->membership['contact_id'], $this->membership[CRM_Contract_Utils::getCustomFieldId('membership_payment.membership_recurring_contribution')]),
       'recurring_contributions' => CRM_Contract_RecurringContribution::getAllForContact($this->membership['contact_id'], TRUE, $this->get('id'))));
     CRM_Contract_SepaLogic::addJsSepaTools();
@@ -148,7 +150,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
       'modify'   => 'modify');
 
     // update also has the option of no change to payment contract
-    if ($this->modificationActivity->getAction() == 'update') {
+    if ($this->modify_action == 'update') {
       $payment_options =  array('nochange' => 'no change') + $payment_options;
     }
     $this->add('select', 'payment_option', ts('Payment'), $payment_options);
@@ -214,7 +216,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
     $defaults['membership_type_id'] = $this->membership['membership_type_id'];
 
-    if ($this->modificationActivity->getAction() == 'cancel') {
+    if ($this->modify_action == 'cancel') {
       list($defaults['activity_date'], $defaults['activity_date_time']) = CRM_Utils_Date::setDateDefaults(date('Y-m-d H:i:00'), 'activityDateTime');
     } else {
       // if it's not a cancellation, set the default change date to tomorrow 12am (see GP-1507)
@@ -233,7 +235,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     if($activityDate < $midnightThisMorning){
       HTML_QuickForm::setElementError ( 'activity_date', 'Activity date must be either today (which will execute the change now) or in the future');
     }
-    if($this->modificationActivity->getAction() == 'pause'){
+    if($this->modify_action == 'pause'){
       $resumeDate = CRM_Utils_Date::processDate($submitted['resume_date']);
 
       if($activityDate > $resumeDate){
@@ -270,7 +272,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     // The following fields to be submitted in all cases
     $submitted = $this->exportValues();
     $params['id'] = $this->get('id');
-    $params['action'] = $this->modificationActivity->getAction();
+    $params['action'] = $this->modify_action;
     $params['medium_id'] = $submitted['activity_medium'];
     $params['note'] = $submitted['activity_details'];
 
@@ -280,7 +282,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     }
 
     // If this is an update or a revival
-    if(in_array($this->modificationActivity->getAction(), array('update', 'revive'))){
+    if(in_array($this->modify_action, array('update', 'revive'))){
       switch ($submitted['payment_option']) {
         case 'select': // select a new recurring contribution
           $params['membership_payment.membership_recurring_contribution'] = (int) $submitted['recurring_contribution'];
@@ -305,11 +307,11 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
 
 
     // If this is a cancellation
-    }elseif($this->modificationActivity->getAction() == 'cancel'){
+    }elseif($this->modify_action == 'cancel'){
       $params['membership_cancellation.membership_cancel_reason'] = $submitted['cancel_reason'];
 
     // If this is a pause
-    }elseif($this->modificationActivity->getAction() == 'pause'){
+    }elseif($this->modify_action == 'pause'){
       $params['resume_date'] = CRM_Utils_Date::processDate($submitted['resume_date'], false, false, 'Y-m-d');
 
     }

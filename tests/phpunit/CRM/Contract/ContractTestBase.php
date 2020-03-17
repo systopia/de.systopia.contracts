@@ -41,31 +41,23 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
 
   public function setUp()
   {
-    // fetch the test creditor
-    $creditor_id = $this->callAPISuccess('SepaCreditor', 'getvalue', [
-      'return'  => 'id',
-      'options' => [
-        'limit' => 1
-      ],
-    ]);
-    // make sure the test creditor has a creditor_type and currency
-    // (they're not set in org.project60.sepa's db seed)
-    $this->callAPISuccess('SepaCreditor', 'create', [
-      'id'            => $creditor_id,
-      'creditor_type' => 'SEPA',
-      'currency'      => 'EUR',
-    ]);
-    // make the creditor the default
-    CRM_Sepa_Logic_Settings::setSetting(
-      'batching_default_creditor',
-      civicrm_api3('SepaCreditor', 'getvalue', [
-        'return'  => 'id',
-        'options' => [
-          'limit' => 1
-        ],
-      ])
-    );
-    parent::setUp();
+    \PHPUnit_Framework_TestCase::setUp();
+
+    // check if there is a default creditor
+    $default_creditor_id = (int) CRM_Sepa_Logic_Settings::getSetting('batching_default_creditor');
+    if (empty($default_creditor_id)) {
+      // create if there isn't
+      $creditor = $this->callAPISuccess('SepaCreditor', 'create', [
+          'creditor_type'  => 'SEPA',
+          'currency'       => 'EUR',
+          'mandate_active' => 1
+      ]);
+      CRM_Sepa_Logic_Settings::setSetting($creditor['id'], 'batching_default_creditor');
+    }
+
+    // check again
+    $default_creditor_id = (int) CRM_Sepa_Logic_Settings::getSetting('batching_default_creditor');
+    $this->assertNotEmpty($default_creditor_id, "There is no default SEPA creditor set");
   }
 
   public function tearDown()
@@ -321,6 +313,41 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
   }
 
   /**
+   * Get the max ID of an activity with the given criteria
+   *
+   * @param $params            array search criteria
+   * @param $after_activity_id int only consider activities with ID greater that this
+   * @return int ID if there is such an activity
+   */
+  public function getLastActivityID($params, $after_activity_id = NULL) {
+    // add 'after ID' criteria
+    $after_activity_id = (int) $after_activity_id;
+    if ($after_activity_id) {
+      $params['id'] = ['>', $after_activity_id];
+    }
+
+    // add standard parameters
+    $params['option.sort'] = 'id desc';
+    $params['option.limit'] = 1;
+    $params['return'] = 'id';
+
+    $search = $this->callAPISuccess('Activity', 'get', $params);
+    return CRM_Utils_Array::value('id', $search);
+  }
+
+  /**
+   * Get the most recent change activity for the given contract
+   * @param $contract_id int    Contract ID
+   * @param $types       array  list of types
+   * @param $status      array  list of activity status
+   * @return array|null activity data
+   */
+  public function getLastChangeActivity($contract_id, $types = NULL, $status = []) {
+    $activities = $this->getChangeActivities($contract_id, $types, $status);
+    return reset($activities); // the first one should be the last one
+  }
+
+  /**
    * Get all change activities for the given contract ID
    *
    * @param $contract_id int    Contract ID
@@ -332,8 +359,9 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
     // compile query
     $query = [
         'source_record_id' => $contract_id,
-        'option.limit'     => 0,
         'sequential'       => 1,
+        'option.limit'     => 0,
+        'option.sort'      => 'activity_date_time desc',
     ];
     if (!empty($types)) {
       $query['activity_type_id'] = ['IN' => $types];
@@ -343,7 +371,7 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
     }
 
     // load activities
-    $result = civicrm_api3('Activity', 'get', $query);
+    $result = $this->callAPISuccess('Activity', 'get', $query);
     return $result['values'];
   }
 
@@ -382,6 +410,27 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
   }
 
   /**
+   * Get the status ID for the given membership status
+   *
+   * @param $status_name string membership status name
+   * @return int status ID
+   */
+  public function getMembershipStatusID($status_name) {
+    static $membership_status2id = NULL;
+    if ($membership_status2id === NULL) {
+      $membership_status2id = [];
+      $query = civicrm_api3('MembershipStatus', 'get', [
+         'option.limit' => 0,
+      ]);
+      foreach ($query['values'] as $membership_status) {
+        $membership_status2id[$membership_status['name']] = $membership_status['id'];
+      }
+    }
+
+    return CRM_Utils_Array::value($status_name, $membership_status2id);
+  }
+
+  /**
    * Remove 'xdebug' result key set by Civi\API\Subscriber\XDebugSubscriber
    *
    * This breaks some tests when xdebug is present, and we don't need it.
@@ -401,4 +450,11 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
     return $result;
   }
 
+  /**
+   * Define which flavour for change activities should be used
+   * @param $type string flavour type
+   */
+  public function setActivityFlavour($type) {
+    // TODO: this needs to be implemented when other flavours are available
+  }
 }

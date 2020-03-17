@@ -1,7 +1,7 @@
 <?php
 /*-------------------------------------------------------------+
 | SYSTOPIA Contract Extension                                  |
-| Copyright (C) 2017 SYSTOPIA                                  |
+| Copyright (C) 2017-2019 SYSTOPIA                             |
 | Author: B. Endres (endres -at- systopia.de)                  |
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
@@ -13,15 +13,7 @@
  */
 class CRM_Contract_Configuration {
 
-  public static $use_new_engine = TRUE;
   protected static $eligible_campaigns = NULL;
-
-  /**
-   * Should the new Engine be used?
-   */
-  public static function useNewEngine() {
-    return self::$use_new_engine;
-  }
 
   /**
    * Disable monitoring relevant entities, so we don't accidentally
@@ -62,6 +54,15 @@ class CRM_Contract_Configuration {
       $contact_id = 1;
     }
     return $contact_id;
+  }
+
+  /**
+   * Allows you to suppress the automatic creation of the given activity types
+   *
+   * @todo: make configurable
+   */
+  public static function suppressSystemActivityTypes() {
+    return ['Membership Signup', 'Change Membership Status', 'Change Membership Type'];
   }
 
   /**

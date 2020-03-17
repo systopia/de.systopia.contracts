@@ -1,9 +1,10 @@
 <?php
 /*-------------------------------------------------------------+
 | SYSTOPIA Contract Extension                                  |
-| Copyright (C) 2017 SYSTOPIA                                  |
-| Author: M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
-|         B. Endres (endres -at- systopia.de)                  |
+| Copyright (C) 2017-2019 SYSTOPIA                             |
+| Author: B. Endres (endres -at- systopia.de)                  |
+|         M. McAndrew (michaelmcandrew@thirdsectordesign.org)  |
+|         P. Figel (pfigel -at- greenpeace.org)                |
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
@@ -94,6 +95,8 @@ class CRM_Contract_Handler_ModificationConflicts{
       $this->scheduledModifications = [];
     }
   }
+
+
   function whitelistPauseResume(){
 
     // This whitelist only works when there are exactly two activities
@@ -103,14 +106,12 @@ class CRM_Contract_Handler_ModificationConflicts{
 
     // If the first modification is a pause and that the second activity
     // is a resume, remove the scheduled modifications
-    $pauseActivityClass = CRM_Contract_ModificationActivity::findByAction('pause');
-    $pauseActivity = current($this->scheduledModifications);
-    $resumeActivityClass = CRM_Contract_ModificationActivity::findByAction('resume');
+    $pauseActivity  = current($this->scheduledModifications);
     $resumeActivity = next($this->scheduledModifications);
 
-    if(
-      $pauseActivity['activity_type_id'] == $pauseActivityClass->getActivityTypeId() &&
-      $resumeActivity['activity_type_id'] == $resumeActivityClass->getActivityTypeId()
+    if (
+           $pauseActivity['activity_type_id']  == CRM_Contract_Change::getActivityIdForClass('CRM_Contract_Change_Pause')
+        && $resumeActivity['activity_type_id'] == CRM_Contract_Change::getActivityIdForClass('CRM_Contract_Change_Resume')
     ){
       $this->scheduledModifications = [];
     }

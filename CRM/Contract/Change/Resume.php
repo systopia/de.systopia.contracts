@@ -67,4 +67,41 @@ class CRM_Contract_Change_Resume extends CRM_Contract_Change {
       return $subject;
     }
   }
+
+  /**
+   * Get a list of the status names that this change can be applied to
+   *
+   * @return array list of membership status names
+   */
+  public static function getStartStatusList() {
+    return ['Paused'];
+  }
+
+  /**
+   * Get a (human readable) title of this change
+   *
+   * @return string title
+   */
+  public static function getChangeTitle() {
+    return E::ts("Resume Contract");
+  }
+
+  /**
+   * Modify action links provided to the user for a given membership
+   *
+   * @param $links                array  currently given links
+   * @param $current_status_name  string membership status as a string
+   * @param $membership_data      array  all known information on the membership in question
+   */
+  public static function modifyMembershipActionLinks(&$links, $current_status_name, $membership_data) {
+    if (in_array($current_status_name, self::getStartStatusList())) {
+      $links[] = [
+          'name'  => E::ts("Resume"),
+          'title' => self::getChangeTitle(),
+          'url'   => "civicrm/contract/modify",
+          'bit'   => CRM_Core_Action::UPDATE,
+          'qs'    => "modify_action=resume&id=%%id%%",
+      ];
+    }
+  }
 }
