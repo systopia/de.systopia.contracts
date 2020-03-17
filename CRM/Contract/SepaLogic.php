@@ -77,7 +77,7 @@ class CRM_Contract_SepaLogic {
       // nothing to do here
       return NULL;
     }
-    
+
     if (!in_array('contract_updates.ch_recurring_contribution', $mandate_relevant_changes)) {
       // if there is no new recurring contribution given, create a new one based
       //  on the parameters. See GP-669 / GP-789
@@ -252,7 +252,11 @@ class CRM_Contract_SepaLogic {
         $pending_contributions = civicrm_api3('Contribution', 'get', array(
           'return'                 => 'id',
           'contribution_recur_id'  => $mandate['entity_id'],
-          'contribution_status_id' => (int) CRM_Core_OptionGroup::getValue('contribution_status', 'Pending', 'name'),
+          'contribution_status_id' => (int) CRM_Core_PseudoConstant::getKey(
+            'CRM_Contribute_BAO_Contribution',
+            'contribution_status_id',
+            'Pending'
+          ),
           'receive_date'           => array('>=' => date('YmdHis'))));
         foreach ($pending_contributions['values'] as $pending_contribution) {
           civicrm_api3("Contribution", "delete", array('id' => $pending_contribution['id']));
@@ -323,6 +327,7 @@ class CRM_Contract_SepaLogic {
           TRUE,
           $date
       );
+
     } catch(Exception $ex) {
       // link couldn't be generated
       CRM_Core_Error::debug_log_message("Contract: Couldn't create payment link: " . $ex->getMessage());
@@ -359,7 +364,11 @@ class CRM_Contract_SepaLogic {
    */
   public static function getMandateUpdateStartDate($current_state, $desired_state, $activity) {
     $now = date('YmdHis');
-    $update_activity_type  = CRM_Core_OptionGroup::getValue('activity_type', 'Contract_Updated', 'name');
+    $update_activity_type  = CRM_Core_PseudoConstant::getKey(
+      'CRM_Activity_BAO_Activity',
+      'activity_type_id',
+      'Contract_Updated'
+    );
     $contribution_recur_id = CRM_Utils_Array::value('membership_payment.membership_recurring_contribution', $current_state);
 
     // check if it is a proper update and if we should defer the start date to respect already paid periods

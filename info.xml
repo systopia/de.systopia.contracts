@@ -20,6 +20,10 @@
   <compatibility>
     <ver>5.0</ver>
   </compatibility>
+  <requires>
+    <ext>org.project60.sepa</ext>
+    <ext>org.project60.banking</ext>
+  </requires>
   <civix>
     <namespace>CRM/Contract</namespace>
   </civix>

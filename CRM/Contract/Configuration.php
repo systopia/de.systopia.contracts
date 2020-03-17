@@ -13,7 +13,56 @@
  */
 class CRM_Contract_Configuration {
 
+  public static $use_new_engine = TRUE;
   protected static $eligible_campaigns = NULL;
+
+  /**
+   * Should the new Engine be used?
+   */
+  public static function useNewEngine() {
+    return self::$use_new_engine;
+  }
+
+  /**
+   * Disable monitoring relevant entities, so we don't accidentally
+   *  record our own changes
+   */
+  public static function disableMonitoring() {
+    // FIXME: Monitoring currently not implemented
+  }
+
+  /**
+   * Re-enable monitoring relevant entities when
+   *  we're done with our changes
+   */
+  public static function enableMonitoring() {
+    // FIXME: Monitoring currently not implemented
+  }
+
+  /**
+   * Get a rendering class for the change subjects
+   *
+   * @return CRM_Contract_Change_SubjectRendererInterface subject
+   */
+  public static function getSubjectRender() {
+    // TODO: make configurable, offer other renderers
+    return null;
+  }
+
+  /**
+   * Get logged in contact ID
+   *
+   * @todo: make configurable
+   */
+  public static function getUserID() {
+    $session = CRM_Core_Session::singleton();
+    $contact_id = $session->getLoggedInContactID();
+    if (!$contact_id) {
+      // TODO: make default configurable
+      $contact_id = 1;
+    }
+    return $contact_id;
+  }
 
   /**
    * derive gender_id from the given prefix_id

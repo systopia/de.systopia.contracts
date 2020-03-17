@@ -7,6 +7,9 @@
 | http://www.systopia.de/                                      |
 +--------------------------------------------------------------*/
 
+/**
+ * @deprecated
+ */
 class CRM_Contract_ModificationActivity_Resume extends CRM_Contract_ModificationActivity{
 
   function getStartStatuses(){

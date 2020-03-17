@@ -34,7 +34,7 @@ class CRM_Contract_Form_Modify extends CRM_Core_Form{
     }
 
     // Set a message when updating a contract if scheduled updates already exist
-    $modifications = civicrm_api3('Contract', 'get_open_modification_counts', ['id' => $this->get('id')]);
+    $modifications = civicrm_api3('Contract', 'get_open_modification_counts', ['id' => $this->get('id')])['values'];
     if($modifications['scheduled'] || $modifications['needs_review']){
       CRM_Core_Session::setStatus('Some updates have already been scheduled for this contract. Please ensure that this new update will not conflict with existing updates', 'Scheduled updates exist!', 'alert', ['expires' => 0]);
     }
