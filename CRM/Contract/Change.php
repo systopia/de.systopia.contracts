@@ -415,7 +415,7 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
   public function checkForConflicts() {
     // TODO: refactor CRM_Contract_Handler_ModificationConflicts
     $conflictHandler = new CRM_Contract_Handler_ModificationConflicts();
-    $conflictHandler->checkForConflicts($this->data['id']);
+    $conflictHandler->checkForConflicts($this->getContractID());
   }
 
   /**
