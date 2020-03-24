@@ -172,4 +172,97 @@ class CRM_Contract_BasicEngineTest extends CRM_Contract_ContractTestBase {
     }
   }
 
+  /**
+   * Test that an update with invalid parameters causes failure
+   */
+  public function testUpdateFailure() {
+    // create a new contract
+    $contract = $this->createNewContract();
+
+    // schedule and update with an invalid from_ba
+    $this->modifyContract($contract['id'], 'update', 'tomorrow', [
+      'membership_payment.from_ba'           => 12345,
+      'membership_payment.membership_annual' => '123.00',
+    ]);
+    // run engine for tomorrow
+    $result = $this->callEngineFailure(
+      $contract['id'],
+      '+1 days',
+      "Expected one BankingAccount"
+    );
+    $activityId = $result['failed'][0];
+    // contract update activity should be status failed and details should contain error
+    $this->callAPISuccess('Activity', 'getsingle', [
+      'id'        => $activityId,
+      'status_id' => 'Failed',
+      'details'   => ['LIKE' => '%Expected one BankingAccount%'],
+    ]);
+    $contract_changed = $this->getContract($contract['id']);
+    $this->assertEquals(
+      $contract,
+      $contract_changed,
+      'Contract shouldn\'t have changed after failure'
+    );
+  }
+
+  /**
+   * Test that cancellations of already-cancelled memberships aren't allowed
+   */
+  public function testAllowedStatusChangeCancellation() {
+    // create a new contract
+    $contract = $this->createNewContract();
+
+    // schedule cancel
+    $this->modifyContract($contract['id'], 'cancel', '+1 days', [
+      'membership_cancellation.membership_cancel_reason' => 'Unknown'
+    ]);
+    // also schedule an update a week from now
+    $this->modifyContract($contract['id'], 'update', '+7 days', [
+      'membership_payment.membership_annual' => '123.00',
+    ]);
+    // resolve "Needs Review"
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_activity SET status_id = 1 WHERE source_record_id = {$contract['id']} AND status_id <> 2;");
+    // run the cancellation (but not the update)
+    $this->runContractEngine($contract['id'], '+2 days');
+
+    $contract_changed = $this->getContract($contract['id']);
+    $this->assertEquals(
+      'Cancelled',
+      CRM_Contract_Utils::getMembershipStatusName($contract_changed['status_id']),
+      'Membership should be cancelled'
+    );
+
+    // cancel contract again (while it's already cancelled)
+    $this->modifyContract($contract['id'], 'cancel', '+1 days', [
+      'membership_cancellation.membership_cancel_reason' => 'Unknown'
+    ]);
+    // resolve "Needs Review"
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_activity SET status_id = 1 WHERE source_record_id = {$contract['id']} AND status_id <> 2;");
+    // run cancellation
+    $this->callEngineFailure(
+      $contract['id'],
+      '+2 days',
+      "Cannot cancel a membership when its status is 'Cancelled'"
+    );
+  }
+
+  /**
+   * Test that reviving active memberships is not possible
+   */
+  public function testAllowedStatusChangeRevive() {
+    // create a new contract
+    $contract = $this->createNewContract();
+
+    // schedule revive
+    $this->modifyContract($contract['id'], 'revive', '+1 days', [
+      'membership_payment.membership_annual' => '123.00',
+    ]);
+    // run revive
+    $this->callEngineFailure(
+      $contract['id'],
+      '+2 days',
+      "Cannot revive a membership when its status is 'Current'"
+    );
+  }
+
 }

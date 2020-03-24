@@ -44,7 +44,6 @@ function _civicrm_api3_Contract_modify_spec(&$params){
  * Schedule a new Contract modification
  */
 function civicrm_api3_Contract_modify($params) {
-  
   // set default date ('api.default' doesn't seem to work)
   if (empty($params['date'])) {
     $params['date'] = 'now';

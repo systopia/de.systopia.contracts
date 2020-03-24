@@ -80,6 +80,30 @@ class CRM_Contract_ContractTestBase extends \PHPUnit_Framework_TestCase implemen
     return $result;
   }
 
+  /**
+   * Run the contract engine and expect a failure
+   *
+   * @param $contract_id
+   * @param string $now
+   * @param string $expectedError
+   */
+  public function callEngineFailure($contract_id, $now = 'now', $expectedError = NULL) {
+    $result = $this->callAPISuccess('Contract', 'process_scheduled_modifications', [
+      'now' => $now,
+      'id'  => $contract_id
+    ])['values'];
+    $this->assertNotEmpty($result['failed'], "Contract Engine should report failure(s)");
+    if (!is_null($expectedError)) {
+      $errorDetails = implode("\n", $result['error_details']);
+      $this->assertContains(
+        $expectedError,
+        $errorDetails,
+        '$expectedError should be included in error_details'
+      );
+    }
+    return $result;
+  }
+
 
   /**
    * Create a new contact with a random email address. Good for simple

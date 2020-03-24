@@ -10,25 +10,16 @@ include_once 'ContractTestBase.php';
 /**
  * Basic Contract Engine Tests
  *
- * Tips:
- *  - With HookInterface, you may implement CiviCRM hooks directly in the test class.
- *    Simply create corresponding functions (e.g. "hook_civicrm_post(...)" or similar).
- *  - With TransactionalInterface, any data changes made by setUp() or test****() functions will
- *    rollback automatically -- as long as you don't manipulate schema or truncate tables.
- *    If this test needs to manipulate schema or truncate tables, then either:
- *       a. Do all that using setupHeadless() and Civi\Test.
- *       b. Disable TransactionalInterface, and handle all setup/teardown yourself.
- *
  * @group headless
  */
-class CRM_Contract_EngineStessTest extends CRM_Contract_ContractTestBase {
+class CRM_Contract_EngineStressTest extends CRM_Contract_ContractTestBase {
 
   public function setUp() {
     parent::setUp();
   }
 
   /**
-   * Example: Test that a version is returned.
+   * Test execution of multiple updates and conflict handling
    */
   public function testMultiUpgrade() {
     $ITERATION_COUNT = 11;
@@ -38,8 +29,7 @@ class CRM_Contract_EngineStessTest extends CRM_Contract_ContractTestBase {
       $scheduled_updates = $this->callAPISuccess('Contract', 'get_open_modification_counts', ['id' => $contract['id']])['values'];
       $this->assertEquals(0, $scheduled_updates['scheduled'], "There should not be a scheduled change");
 
-      // schedule a bunch of updates
-
+      // schedule a bunch of updates, one for each of the next $ITERATION_COUNT days
       for ($i = 1; $i <= $ITERATION_COUNT; $i++) {
         $update = [
             'membership_payment.membership_annual' => (1 * $i)
@@ -48,12 +38,12 @@ class CRM_Contract_EngineStessTest extends CRM_Contract_ContractTestBase {
           // FIXME: if this is not a SEPA contract, we need to pass the bank account
           $update['membership_payment.from_ba'] = $this->getBankAccountID($contract['contact_id']);
         }
-        $this->modifyContract($contract['id'], 'update', date('YmdHis', strtotime("now + {$i} minutes")), $update);
+        $this->modifyContract($contract['id'], 'update', date('YmdHis', strtotime("now + {$i} days")), $update);
       }
 
       // now... these should all be conflicting
       $scheduled_updates = $this->callAPISuccess('Contract', 'get_open_modification_counts', ['id' => $contract['id']])['values'];
-      $this->assertEquals($ITERATION_COUNT, $scheduled_updates['needs_review'] + $scheduled_updates['scheduled'], "There should be {$ITERATION_COUNT} update scheduled.");
+      $this->assertEquals($ITERATION_COUNT, $scheduled_updates['needs_review'], "There should be {$ITERATION_COUNT} updates that need review.");
 
       // cheekily set all of the 'needs review' ones to 'scheduled'
       CRM_Core_DAO::executeQuery("UPDATE civicrm_activity SET status_id = 1 WHERE source_record_id = {$contract['id']} AND status_id <> 2;");
@@ -62,10 +52,16 @@ class CRM_Contract_EngineStessTest extends CRM_Contract_ContractTestBase {
       $scheduled_updates = $this->callAPISuccess('Contract', 'get_open_modification_counts', ['id' => $contract['id']])['values'];
       $this->assertEquals($ITERATION_COUNT, $scheduled_updates['scheduled'], "There should be {$ITERATION_COUNT} update scheduled.");
 
-      // run engine again for tomorrow
-      $result = $this->runContractEngine($contract['id'], '+20 days');
+      // run engine for 5 days from now (should execute 5 updates)
+      $result = $this->runContractEngine($contract['id'], '+5 days');
       $contract_changed2 = $this->getContract($contract['id']);
       $this->assertNotEquals($contract, $contract_changed2, "This should have changed");
+
+      // should have executed 5 updates and set the remaining to "needs review"
+      $scheduled_updates = $this->callAPISuccess('Contract', 'get_open_modification_counts', ['id' => $contract['id']])['values'];
+      $expectedReviews = $ITERATION_COUNT - 5;
+      $this->assertEquals($expectedReviews, $scheduled_updates['needs_review'], "There should be {$expectedReviews} update that need review.");
+      $this->assertEquals(0, $scheduled_updates['scheduled'], "There should be no scheduled updates.");
     }
   }
 }

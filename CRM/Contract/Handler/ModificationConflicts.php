@@ -11,6 +11,7 @@
 class CRM_Contract_Handler_ModificationConflicts{
 
   private $scheduledModifications = [];
+  private $contractId = NULL;
 
   function __construct(){
     $this->needsReviewStatusId = civicrm_api3('OptionValue', 'getvalue', [ 'return' => "value", 'option_group_id' => "activity_status", 'name' => 'Needs Review']);;
@@ -37,7 +38,7 @@ class CRM_Contract_Handler_ModificationConflicts{
 
     $this->whitelistPauseResume();
 
-    if(count($this->scheduledModifications)){
+    if(count($this->scheduledModifications)) {
       foreach($this->scheduledModifications as $scheduledModification){
         if($scheduledModification['status_id'] != $this->needsReviewStatusId){
           $this->markForReview($scheduledModification['id']);

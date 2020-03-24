@@ -146,7 +146,7 @@ class CRM_Contract_Change_Cancel extends CRM_Contract_Change {
    * @return array list of membership status names
    */
   public static function getStartStatusList() {
-    return ['Paused', 'New', 'Grace', 'Current', 'Pending'];
+    return ['New', 'Grace', 'Current', 'Pending'];
   }
 
   /**
