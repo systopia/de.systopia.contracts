@@ -84,12 +84,14 @@ function civicrm_api3_Contract_process_scheduled_modifications($params) {
       // verify the data before execution
       $change->populateData();
       $change->verifyData();
+      $change->verifyStatusChange();
     } catch (Exception $ex) {
       // verification failed
+      $result['failed'][] = $change->getID();
+      $result['error_details'][$change->getID()] = CRM_Contract_Utils::formatExceptionForApi($ex);
       $change->setStatus('Failed');
       $change->setParameter('details', CRM_Contract_Utils::formatExceptionForActivityDetails($ex));
       $change->save();
-      // TODO: set $result?
       continue;
     }
 
@@ -110,7 +112,7 @@ function civicrm_api3_Contract_process_scheduled_modifications($params) {
     } catch (Exception $ex) {
       // something went wrong...
       $result['failed'][] = $change->getID();
-      $result['error_details'][$change->getID()] = $ex->getMessage() . "\r\n" . $ex->getTraceAsString();
+      $result['error_details'][$change->getID()] = CRM_Contract_Utils::formatExceptionForApi($ex);
       $change->setStatus('Failed');
       $change->setParameter('details', CRM_Contract_Utils::formatExceptionForActivityDetails($ex));
       $change->save();

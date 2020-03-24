@@ -139,6 +139,18 @@ abstract class CRM_Contract_Change implements  CRM_Contract_Change_SubjectRender
     }
   }
 
+  public function verifyStatusChange() {
+    $class = get_class($this);
+    if (!method_exists($class, 'getStartStatusList')) {
+      return;
+    }
+    $contract = $this->getContract();
+    $status_name = CRM_Contract_Utils::getMembershipStatusName($contract['status_id']);
+    if (!in_array($status_name, $class::getStartStatusList())) {
+      throw new Exception("Cannot {$this->getActionName()} a membership when its status is '{$status_name}'.");
+    }
+  }
+
   /**
    * Get the change ID
    */
