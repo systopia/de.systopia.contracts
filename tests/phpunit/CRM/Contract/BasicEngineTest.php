@@ -172,4 +172,42 @@ class CRM_Contract_BasicEngineTest extends CRM_Contract_ContractTestBase {
     }
   }
 
+  /**
+   * Test that an update with invalid parameters causes failure
+   */
+  public function testUpdateFailure() {
+    // create a new contract
+    $contract = $this->createNewContract();
+
+    // schedule and update with an invalid from_ba
+    $this->modifyContract($contract['id'], 'update', 'tomorrow', [
+      'membership_payment.from_ba'           => 12345,
+      'membership_payment.membership_annual' => '123.00',
+    ]);
+    // run engine for tomorrow
+    $result = $this->callAPISuccess('Contract', 'process_scheduled_modifications', [
+      'now' => '+1 days',
+      'id'  => $contract['id']
+    ])['values'];
+    $this->assertEquals(1, count($result['failed']), 'Should report one failed update');
+    $activityId = $result['failed'][0];
+    $this->assertContains(
+      'Expected one BankingAccount',
+      $result['error_details'][$activityId],
+      'Should contain error details'
+    );
+    // contract update activity should be status failed and details should contain error
+    $this->callAPISuccess('Activity', 'getsingle', [
+      'id'        => $activityId,
+      'status_id' => 'Failed',
+      'details'   => ['LIKE' => '%Expected one BankingAccount%'],
+    ]);
+    $contract_changed = $this->getContract($contract['id']);
+    $this->assertEquals(
+      $contract,
+      $contract_changed,
+      'Contract shouldn\'t have changed after failure'
+    );
+  }
+
 }

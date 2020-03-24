@@ -254,4 +254,9 @@ class CRM_Contract_Utils
       }
     }
   }
+
+  public static function formatExceptionForActivityDetails(Exception $e) {
+    return "Error was: {$e->getMessage()}<br><pre>{$e->getTraceAsString()}</pre>";
+  }
+
 }
